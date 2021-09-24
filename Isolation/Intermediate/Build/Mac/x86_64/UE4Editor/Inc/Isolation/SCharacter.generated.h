@@ -13,10 +13,10 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 #endif
 #define ISOLATION_SCharacter_generated_h
 
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_SPARSE_DATA
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_RPC_WRAPPERS
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_RPC_WRAPPERS_NO_PURE_DECLS
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_INCLASS_NO_PURE_DECLS \
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_SPARSE_DATA
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_RPC_WRAPPERS
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_RPC_WRAPPERS_NO_PURE_DECLS
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_INCLASS_NO_PURE_DECLS \
 private: \
 	static void StaticRegisterNativesASCharacter(); \
 	friend struct Z_Construct_UClass_ASCharacter_Statics; \
@@ -25,7 +25,7 @@ public: \
 	DECLARE_SERIALIZER(ASCharacter)
 
 
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_INCLASS \
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_INCLASS \
 private: \
 	static void StaticRegisterNativesASCharacter(); \
 	friend struct Z_Construct_UClass_ASCharacter_Statics; \
@@ -34,7 +34,7 @@ public: \
 	DECLARE_SERIALIZER(ASCharacter)
 
 
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_STANDARD_CONSTRUCTORS \
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_STANDARD_CONSTRUCTORS \
 	/** Standard constructor, called after all reflected properties have been initialized */ \
 	NO_API ASCharacter(const FObjectInitializer& ObjectInitializer); \
 	DEFINE_DEFAULT_OBJECT_INITIALIZER_CONSTRUCTOR_CALL(ASCharacter) \
@@ -47,7 +47,7 @@ private: \
 public:
 
 
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_ENHANCED_CONSTRUCTORS \
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_ENHANCED_CONSTRUCTORS \
 private: \
 	/** Private move- and copy-constructors, should never be used */ \
 	NO_API ASCharacter(ASCharacter&&); \
@@ -58,28 +58,28 @@ public: \
 	DEFINE_DEFAULT_CONSTRUCTOR_CALL(ASCharacter)
 
 
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_PRIVATE_PROPERTY_OFFSET
-#define Isolation_Source_Isolation_Public_SCharacter_h_9_PROLOG
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_GENERATED_BODY_LEGACY \
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_PRIVATE_PROPERTY_OFFSET
+#define Isolation_Source_Isolation_Public_SCharacter_h_14_PROLOG
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_GENERATED_BODY_LEGACY \
 PRAGMA_DISABLE_DEPRECATION_WARNINGS \
 public: \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_PRIVATE_PROPERTY_OFFSET \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_SPARSE_DATA \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_RPC_WRAPPERS \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_INCLASS \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_STANDARD_CONSTRUCTORS \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_PRIVATE_PROPERTY_OFFSET \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_SPARSE_DATA \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_RPC_WRAPPERS \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_INCLASS \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_STANDARD_CONSTRUCTORS \
 public: \
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
 
-#define Isolation_Source_Isolation_Public_SCharacter_h_12_GENERATED_BODY \
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_GENERATED_BODY \
 PRAGMA_DISABLE_DEPRECATION_WARNINGS \
 public: \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_PRIVATE_PROPERTY_OFFSET \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_SPARSE_DATA \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_RPC_WRAPPERS_NO_PURE_DECLS \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_INCLASS_NO_PURE_DECLS \
-	Isolation_Source_Isolation_Public_SCharacter_h_12_ENHANCED_CONSTRUCTORS \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_PRIVATE_PROPERTY_OFFSET \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_SPARSE_DATA \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_RPC_WRAPPERS_NO_PURE_DECLS \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_INCLASS_NO_PURE_DECLS \
+	Isolation_Source_Isolation_Public_SCharacter_h_17_ENHANCED_CONSTRUCTORS \
 private: \
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 

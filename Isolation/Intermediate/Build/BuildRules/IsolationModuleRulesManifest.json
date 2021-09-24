@@ -1,8 +1,8 @@
 {
 	"SourceFiles": [
-		"/Users/ellie/Documents/Unreal Projects/Isolation/Source/Isolation/Isolation.Build.cs",
-		"/Users/ellie/Documents/Unreal Projects/Isolation/Source/Isolation.Target.cs",
-		"/Users/ellie/Documents/Unreal Projects/Isolation/Source/IsolationEditor.Target.cs"
+		"/Users/ellie/Documents/isolation-game/Isolation/Source/Isolation/Isolation.Build.cs",
+		"/Users/ellie/Documents/isolation-game/Isolation/Source/Isolation.Target.cs",
+		"/Users/ellie/Documents/isolation-game/Isolation/Source/IsolationEditor.Target.cs"
 	],
 	"EngineVersion": "4.27.0"
 }

@@ -1,4 +1,4 @@
-/Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Development/Isolation/IsolationGameModeBase.gen.cpp.o: \
+/Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Development/Isolation/IsolationGameModeBase.gen.cpp.o: \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Public/TextureLayout.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Public/TextureLayout3d.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/SoundWave.generated.h \
@@ -1288,7 +1288,7 @@
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Core/Public/CoreTypes.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Core/Public/Containers/ContainersFwd.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Public/EngineSharedPCH.h \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/IsolationEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h \
+  /Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/IsolationEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/stddef.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/__config \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.0.0/include/stddef.h \
@@ -2652,13 +2652,13 @@
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/ctime \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/ratio \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/climits \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Isolation/IsolationGameModeBase.gen.cpp \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Development/Isolation/Definitions.Isolation.h \
+  /Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Isolation/IsolationGameModeBase.gen.cpp \
+  /Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Development/Isolation/Definitions.Isolation.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/CoreUObject/Public/UObject/GeneratedCppIncludes.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/CoreUObject/Public/UObject/MetaData.h \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Source/Isolation/IsolationGameModeBase.h \
+  /Users/ellie/Documents/isolation-game/Isolation/Source/Isolation/IsolationGameModeBase.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/GameFramework/GameModeBase.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/Engine/ServerStatReplicator.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/ServerStatReplicator.generated.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/GameModeBase.generated.h \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Isolation/IsolationGameModeBase.generated.h
+  /Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Isolation/IsolationGameModeBase.generated.h

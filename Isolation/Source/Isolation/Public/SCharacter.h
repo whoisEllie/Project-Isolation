@@ -23,19 +23,27 @@ public:
     //Hands mesh, assignable through blueprints
     UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
     USkeletalMeshComponent* MeshComp;
+	
+	//Camera Comp - component for the FPS camera
+	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
+	UCameraComponent* CameraComp;
+
+	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
+	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
+	USpringArmComponent* SpringArmComp;
     
     
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-    void MoveForward(float value)
+	void MoveForward(float value);
     
-    void MoveRight(float value)
+	void MoveRight(float value);
     
-    void LookUp(float value)
+	void LookUp(float value);
     
-    void LookRight(float value)
+	void LookRight(float value);
     
 public:	
 	// Called every frame

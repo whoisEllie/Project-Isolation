@@ -1,5 +1,5 @@
-/Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/IsolationEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h.gch: \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/IsolationEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h \
+/Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/IsolationEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h.gch: \
+  /Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/IsolationEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Public/EngineSharedPCH.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Core/Public/Containers/ContainersFwd.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Core/Public/CoreTypes.h \

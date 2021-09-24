@@ -1,4 +1,4 @@
-/Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Development/Isolation/SCharacter.cpp.o: \
+/Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Development/Isolation/SCharacter.cpp.o: \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Public/TextureLayout.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Public/TextureLayout3d.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/SoundWave.generated.h \
@@ -1288,7 +1288,7 @@
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Core/Public/CoreTypes.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Core/Public/Containers/ContainersFwd.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Public/EngineSharedPCH.h \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/IsolationEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h \
+  /Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/IsolationEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/stddef.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/__config \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.0.0/include/stddef.h \
@@ -2652,13 +2652,21 @@
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/ctime \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/ratio \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk/usr/include/c++/v1/climits \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Source/Isolation/Private/SCharacter.cpp \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Development/Isolation/Definitions.Isolation.h \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Source/Isolation/Public/SCharacter.h \
+  /Users/ellie/Documents/isolation-game/Isolation/Source/Isolation/Private/SCharacter.cpp \
+  /Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Development/Isolation/Definitions.Isolation.h \
+  /Users/ellie/Documents/isolation-game/Isolation/Source/Isolation/Public/SCharacter.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/GameFramework/Character.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/GameFramework/CharacterMovementReplication.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/CharacterMovementReplication.generated.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/GameFramework/RootMotionSource.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/RootMotionSource.generated.h \
   /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/Character.generated.h \
-  /Users/ellie/Documents/Unreal\ Projects/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Isolation/SCharacter.generated.h
+  /Users/ellie/Documents/isolation-game/Isolation/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Isolation/SCharacter.generated.h \
+  /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/Components/CapsuleComponent.h \
+  /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/Components/ShapeComponent.h \
+  /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/ShapeComponent.generated.h \
+  /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/CapsuleComponent.generated.h \
+  /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/Camera/CameraComponent.h \
+  /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/CameraComponent.generated.h \
+  /Users/Shared/Epic\ Games/UE_4.27/Engine/Source/Runtime/Engine/Classes/GameFramework/SpringArmComponent.h \
+  /Users/Shared/Epic\ Games/UE_4.27/Engine/Intermediate/Build/Mac/x86_64/UE4Editor/Inc/Engine/SpringArmComponent.generated.h
