@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "Isolation",
+			"Path": "/Users/ellie/Documents/Unreal Projects/Isolation/Source/Isolation.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "IsolationEditor",
+			"Path": "/Users/ellie/Documents/Unreal Projects/Isolation/Source/IsolationEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}
