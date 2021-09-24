@@ -72,3 +72,10 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Unwanted folders
+Content/*
+Intermediate/*
+Isolation.uproject
+Isolation.xcworkspace
+Script/*
