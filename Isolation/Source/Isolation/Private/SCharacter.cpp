@@ -65,6 +65,14 @@ void ASCharacter::Tick(float DeltaTime)
 void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	
+	// Move forward/back + left/right inputs
+	PlayerInputComponent->BindAxis("MoveForward", this, &ASCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ASCharacter::MoveRight);
+	
+	// Look up/down + left/right
+	PlayerInputComponent->BindAxis("LookUp", this, &ASCharacter::LookUp);
+	PlayerInputComponent->BindAxis("LookRight", this, &ASCharacter::LookRight);
 
 }
 

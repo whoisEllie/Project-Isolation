@@ -44,6 +44,8 @@ protected:
 	void LookUp(float value);
     
 	void LookRight(float value);
+	
+	void ExecCrouch();
     
 public:	
 	// Called every frame
