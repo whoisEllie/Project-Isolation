@@ -79,6 +79,6 @@ Isolation/Intermediate/*
 *Isolation.uproject
 *Isolation.xcworkspace
 Isolation/Script/*
-Isolation/Binaries/Mac
-Isolation/.idea/
+Isolation/Binaries/*
+Isolation/.idea/*
 .DS_Store
