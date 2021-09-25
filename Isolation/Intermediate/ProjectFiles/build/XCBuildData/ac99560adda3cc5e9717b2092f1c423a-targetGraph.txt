@@ -1,4 +1,0 @@
-Target dependency graph (2 targets)
-Isolation_Build in Isolation, no dependencies
-Isolation in Isolation, depends on:
-Isolation_Build in Isolation (explicit)
