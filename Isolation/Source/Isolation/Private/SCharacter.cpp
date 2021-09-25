@@ -131,7 +131,7 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	// Crouching
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASCharacter::ExecCrouch);
 	
-	// Sprinting (start/stop)
+	// Sprinting
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ASCharacter::StartSprint);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ASCharacter::StopSprint);
 

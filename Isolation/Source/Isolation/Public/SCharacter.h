@@ -57,6 +57,8 @@ protected:
 	
 	bool isSprinting; // true if the player is sprinting, false if not
 	
+	bool justTesting;
+	
 	// Floats
 	
 	// Variables for crouch system
