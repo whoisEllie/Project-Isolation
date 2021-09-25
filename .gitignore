@@ -67,15 +67,15 @@ Build/*/**
 Saved/*
 
 # Compiled source files for the engine to use
-Intermediate/*
-Plugins/*/Intermediate/*
+*Intermediate/*
+*Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
 
 # Unwanted folders
-Content/*
-Intermediate/*
-Isolation.uproject
-Isolation.xcworkspace
-Script/*
+*Content/*
+*Intermediate/*
+*Isolation.uproject
+*Isolation.xcworkspace
+*Script/*
