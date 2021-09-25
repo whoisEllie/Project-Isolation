@@ -46,6 +46,31 @@ protected:
 	void LookRight(float value);
 	
 	void ExecCrouch();
+	
+	void StartSprint();
+	
+	void StopSprint();
+	
+	// Booleans
+	
+	bool isCrouching; // true if the player is crouching, false if not
+	
+	bool isSprinting; // true if the player is sprinting, false if not
+	
+	// Floats
+	
+	// Variables for crouch system
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float finalCapsuleHalfHeight; // Sets the height of the player when crouched
+	float defaultCapsuleHalfHeight; // Set in the default values, the base height of the capsule
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float crouchSpeed; // Determines the rate at which the character crouches
+	
+	// Variables for sprint
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float sprintSpeed; // The maximum speed of the character when in the sprint state
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float walkSpeed; // The maximum speed of the character when in the walk state
     
 public:	
 	// Called every frame

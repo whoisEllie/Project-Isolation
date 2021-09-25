@@ -7,6 +7,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/SkeletalMesh.h"
+#include "GameFramework/PawnMovementComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -24,7 +26,15 @@ ASCharacter::ASCharacter()
     
     CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
     CameraComp->SetupAttachment(MeshComp, "cameraSocket");
+    
+    isCrouching = false;
+    
+    crouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
+    defaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
+    finalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
 
+    walkSpeed = 400.0f;
+    sprintSpeed = 550.0f;
 }
 
 // Called when the game starts or when spawned
@@ -54,11 +64,55 @@ void ASCharacter::LookRight(float value)
 	AddControllerYawInput(value);
 }
 
+void ASCharacter::ExecCrouch()
+{
+    if (!isCrouching)
+    {
+        if(isSprinting)
+        {
+            isSprinting = false;
+            GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+        }
+        isCrouching = true;
+    }
+    else
+    {
+        isCrouching = false;
+    }
+}
+
+void ASCharacter::StartSprint()
+{
+    if (isCrouching)
+    {
+        isCrouching = false;
+    }
+    
+    isSprinting = true;
+    GetCharacterMovement()->MaxWalkSpeed = sprintSpeed;
+}
+
+void ASCharacter::StopSprint()
+{
+    if (!isCrouching)
+    {
+        isSprinting = false;
+        GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+    }
+}
+
 // Called every frame
 void ASCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
+	// Crouching
+	// Sets the new Target Half Height based on whether the player is crouching or uncrouching
+	float targetHalfHeight = isCrouching? finalCapsuleHalfHeight : defaultCapsuleHalfHeight;
+	// Interpolates between the current height and the target height
+	float newHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), targetHalfHeight, DeltaTime, crouchSpeed);
+	// Sets the half height of the capsule component to the new interpolated half height
+	GetCapsuleComponent()->SetCapsuleHalfHeight(newHalfHeight);
 }
 
 // Called to bind functionality to input
@@ -73,6 +127,13 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	// Look up/down + left/right
 	PlayerInputComponent->BindAxis("LookUp", this, &ASCharacter::LookUp);
 	PlayerInputComponent->BindAxis("LookRight", this, &ASCharacter::LookRight);
+	
+	// Crouching
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASCharacter::ExecCrouch);
+	
+	// Sprinting
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ASCharacter::StartSprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ASCharacter::StopSprint);
 
 }
 

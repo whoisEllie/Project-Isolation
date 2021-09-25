@@ -58,7 +58,13 @@ public: \
 	DEFINE_DEFAULT_CONSTRUCTOR_CALL(ASCharacter)
 
 
-#define Isolation_Source_Isolation_Public_SCharacter_h_17_PRIVATE_PROPERTY_OFFSET
+#define Isolation_Source_Isolation_Public_SCharacter_h_17_PRIVATE_PROPERTY_OFFSET \
+	FORCEINLINE static uint32 __PPO__finalCapsuleHalfHeight() { return STRUCT_OFFSET(ASCharacter, finalCapsuleHalfHeight); } \
+	FORCEINLINE static uint32 __PPO__crouchSpeed() { return STRUCT_OFFSET(ASCharacter, crouchSpeed); } \
+	FORCEINLINE static uint32 __PPO__sprintSpeed() { return STRUCT_OFFSET(ASCharacter, sprintSpeed); } \
+	FORCEINLINE static uint32 __PPO__walkSpeed() { return STRUCT_OFFSET(ASCharacter, walkSpeed); }
+
+
 #define Isolation_Source_Isolation_Public_SCharacter_h_14_PROLOG
 #define Isolation_Source_Isolation_Public_SCharacter_h_17_GENERATED_BODY_LEGACY \
 PRAGMA_DISABLE_DEPRECATION_WARNINGS \
