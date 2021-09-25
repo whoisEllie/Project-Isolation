@@ -81,4 +81,5 @@ Isolation/Intermediate/*
 Isolation/Script/*
 Isolation/Binaries/*
 Isolation/.idea/*
+Isolation/Saved/*
 .DS_Store
