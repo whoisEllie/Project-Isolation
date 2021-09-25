@@ -74,8 +74,9 @@ Saved/*
 DerivedDataCache/*
 
 # Unwanted folders
-*Content/*
-*Intermediate/*
+Isolation/Content/*
+Isolation/Intermediate/*
 *Isolation.uproject
 *Isolation.xcworkspace
-*Script/*
+Isolation/Script/*
+.DS_Store
