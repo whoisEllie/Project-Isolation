@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "SWeaponBase.generated.h"
 
+class USkeletalMeshComponent;
+
 UCLASS()
 class ISOLATION_API ASWeaponBase : public AActor
 {
@@ -22,6 +24,50 @@ public:
 	void Fire();
 	
 	void Reload();
+	
+	// Components
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* meshComp;
+	
+	// General
+
+	bool canFire;
+
+	// Line Trace
+
+	FName muzzleSocketName;
+	FVector traceStart;
+	FRotator traceStartRotation;
+	FVector traceDirection;
+	FVector traceEnd;
+
+	FCollisionQueryParams queryParams;
+
+	// Damage
+
+	FHitResult hit;
+	float baseDamage;
+	float headshotMultiplier;
+	float finalDamage;
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	TSubclassOf<UDamageType> damageType;
+
+	// Damage surfaces
+
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPhysicalMaterial* NormalDamageSurface;
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPhysicalMaterial* HeadshotSurface;
+	
+	// Weapon Degradation
+
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float weaponDegredationRate;
+
+	// Timers
+
+	FTimerHandle timerHandleShotDelay;
 
 protected:
 	// Called when the game starts or when spawned
