@@ -6,6 +6,15 @@
 #include "Engine/GameInstance.h"
 #include "SIsolationGameInstance.generated.h"
 
+UENUM(BlueprintType)
+enum AmmoType
+{
+	VE_Pistol       UMETA(DisplayName = "Pistol Ammo"),
+	VE_Rifle        UMETA(DisplayName = "Rifle Ammo"),
+	VE_Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
+	VE_Special		UMETA(DisplayName = "Special Ammo"),	
+};
+
 // Struct holding the information for spawning a new enemy AI (spawn Location, target locations, weapon)
 USTRUCT(BlueprintType)
 struct FsingleWeaponParams
@@ -14,19 +23,23 @@ struct FsingleWeaponParams
     	
     // Ammunition
     
+    // The maximum size of the player's magazine
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        int clipCapacity; // The maximum size of the player's magazine
-    	    
+        int clipCapacity; 
+
+    // The amount of ammunition currently in the magazine
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        int clipSize; // The amount of ammunition currently in the magazine
+        int clipSize;
     
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        FString ammoType; // Choose between 'pistol' 'rifle' 'shotgun' or 'special'
+    // Enumerator holding the 4 possible ammo types defined above
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
+    	TEnumAsByte<AmmoType> ammoType;
     	    
     // Weapon Health
     	
+    // The current health of the weapon (degredation values are in the weapon class)
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    float weaponHealth; // The current health of the weapon (degredation values are in the weapon class)
+    float weaponHealth;
 };
 
 UCLASS()
@@ -40,14 +53,5 @@ public:
         TArray<FsingleWeaponParams> weaponParameters;
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        int pistolAmmo;
-        
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        int rifleAmmo;
-    
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        int shotgunAmmo;
-    
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        int specialAmmo;
+        TMap<TEnumAsByte<AmmoType>, int32> ammoMap;
 };

@@ -9,6 +9,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class USkeletalMeshComponent;
+class ASWeaponBase;
 
 
 UCLASS()
@@ -22,59 +23,64 @@ public:
 
     //Hands mesh, assignable through blueprints
     UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-        USkeletalMeshComponent* MeshComp;
-	
+    USkeletalMeshComponent* MeshComp;
 	//Camera Comp - component for the FPS camera
 	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-	    UCameraComponent* CameraComp;
-
+	UCameraComponent* CameraComp;
 	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
 	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-	    USpringArmComponent* SpringArmComp;
+	USpringArmComponent* SpringArmComp;
     
     
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	// Moving forward/backwards (takes axis as input from CharacterMovementComponent.h)
 	void MoveForward(float value);
-    
+    // Moving left/right (takes axis as input from CharacterMovementComponent.h)
 	void MoveRight(float value);
-    
+    // Looking up/down (takes axis as input from CharacterMovementComponent.h)
 	void LookUp(float value);
-    
+    // Looking left/right (takes axis as input from CharacterMovementComponent.h)
 	void LookRight(float value);
-	
+	// Overriding the built in crouch function
 	void ExecCrouch();
-	
+	// Starting to sprint
 	void StartSprint();
-	
+	// Stopping to sprint
 	void StopSprint();
-	
+	// Global system to update movement speed
 	void UpdateMovementSpeed();
 	
 	// Booleans
 	
-	bool isCrouching; // true if the player is crouching, false if not
-	
-	bool isSprinting; // true if the player is sprinting, false if not
-	
+	// true if the player is crouching, false if not
+	bool isCrouching;
+	// true if the player is sprinting, false if not
+	bool isSprinting;
+
 	// Floats
 	
 	// Variables for crouch system
+	// Sets the height of the player when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	    float finalCapsuleHalfHeight; // Sets the height of the player when crouched
-	float defaultCapsuleHalfHeight; // Set in the default values, the base height of the capsule
+	float finalCapsuleHalfHeight;
+	// Set in the default values, the base height of the capsule
+	float defaultCapsuleHalfHeight;
+	// Determines the rate at which the character crouches
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	    float crouchSpeed; // Determines the rate at which the character crouches
+	float crouchSpeed;
 	
 	// Variables for sprint
+	// The maximum speed of the character when in the sprint state
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	    float sprintSpeed; // The maximum speed of the character when in the sprint state
+	float sprintSpeed;
+	// The maximum speed of the character when in the walk state
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	    float walkSpeed; // The maximum speed of the character when in the walk state
+	float walkSpeed;
+	// Determines the speed of the character when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	    float crouchMovementSpeed; // Determines the speed of the character when crouched
+	float crouchMovementSpeed;
     
 public:	
 	// Called every frame
