@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SIsolationGameInstance.h"
 #include "SWeaponBase.generated.h"
 
 class USkeletalMeshComponent;

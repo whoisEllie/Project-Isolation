@@ -144,8 +144,6 @@ void ASWeaponBase::Reload()
     // Casting to the game instance (which stores all the ammunition and health variables)
     ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
-    
-    animTime = 0.0f;
 
     // Checking if we are not reloading, if a reloading montage exists, and if there is any point in reloading (current ammunition does not match maximum magazine capacity and there is spare ammunition to load into the gun)
     if(!bIsReloading && reloadMontage && CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] > 0 && CharacterController->weaponParameters[0].clipSize != CharacterController->weaponParameters[0].clipCapacity)
@@ -163,11 +161,6 @@ void ASWeaponBase::Reload()
         // Setting variables to make sure that the player cannot fire or reload during the time that the weapon is in it's reloading animation
         bCanFire = false;
         bIsReloading = true;
-
-        if (animTime == 0.0f)
-        {
-            animTime = 2.0f;
-        }
         
         // Starting the timer alongside the animation of the weapon reloading, casting to UpdateAmmo when it finishes
         GetWorldTimerManager().SetTimer(reloadingDelay, this, &ASWeaponBase::UpdateAmmo, animTime, false, animTime);
@@ -187,6 +180,7 @@ void ASWeaponBase::UpdateAmmo()
     if (CharacterController->weaponParameters[0].clipSize > 0 && bCanBeChambered)
     {
         value = 1;
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, "Value = 1", true);
     }
     
     // First, we set temp, which keeps track of the difference between the maximum ammunition and the amount that there is currently loaded (i.e. how much ammunition we need to reload into the gun)
@@ -205,6 +199,10 @@ void ASWeaponBase::UpdateAmmo()
         CharacterController->weaponParameters[0].clipSize = CharacterController->weaponParameters[0].clipSize + CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType];
         CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] = 0;
     }
+
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->weaponParameters[0].clipSize), true);
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType]), true);
+
 
     // Resetting bIsReloading and allowing the player to fire the gun again
     bIsReloading = false;
