@@ -11,7 +11,6 @@ class USpringArmComponent;
 class USkeletalMeshComponent;
 class ASWeaponBase;
 
-
 UCLASS()
 class ISOLATION_API ASCharacter : public ACharacter
 {
@@ -23,34 +22,69 @@ public:
 
     //Hands mesh, assignable through blueprints
     UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-    USkeletalMeshComponent* MeshComp;
+    USkeletalMeshComponent* meshComp;
 	//Camera Comp - component for the FPS camera
 	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-	UCameraComponent* CameraComp;
+	UCameraComponent* cameraComp;
 	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
 	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-	USpringArmComponent* SpringArmComp;
+	USpringArmComponent* springArmComp;
+
+	// Weapon classes
     
+	// A reference to the player's current primary weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
+	TSubclassOf<ASWeaponBase> primaryWeapon;
+	// A reference to the player's current secondary weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
+	TSubclassOf<ASWeaponBase> secondaryWeapon;
+	// The player's currently equipped weapon
+	ASWeaponBase* currentWeapon;
     
 protected:
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
 	// Moving forward/backwards (takes axis as input from CharacterMovementComponent.h)
 	void MoveForward(float value);
+
     // Moving left/right (takes axis as input from CharacterMovementComponent.h)
 	void MoveRight(float value);
+
     // Looking up/down (takes axis as input from CharacterMovementComponent.h)
 	void LookUp(float value);
+
     // Looking left/right (takes axis as input from CharacterMovementComponent.h)
 	void LookRight(float value);
+
 	// Overriding the built in crouch function
 	void ExecCrouch();
+
 	// Starting to sprint
 	void StartSprint();
+
 	// Stopping to sprint
 	void StopSprint();
+
 	// Global system to update movement speed
 	void UpdateMovementSpeed();
+
+	// Switches to new weapon
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> newWeapon);
+
+	void SwapToPrimary();
+
+	void SwapToSecondary();
+
+	// Fires the weapon
+	void StartFire();
+
+	// Stops firing the weapon
+	void StopFire();
+
+	// Reloads the weapon
+	void Reload();
 	
 	// Booleans
 	
@@ -58,6 +92,8 @@ protected:
 	bool isCrouching;
 	// true if the player is sprinting, false if not
 	bool isSprinting;
+	//  true if player can swap weapons, false if not
+	bool bCanWeaponSwap;
 
 	// Floats
 	

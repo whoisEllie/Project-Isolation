@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/GameInstance.h"
-#include "SIsolationGameInstance.generated.h"
+#include "GameFramework/PlayerController.h"
+#include "SCharacterController.generated.h"
 
 UENUM(BlueprintType)
 enum AmmoType
@@ -43,15 +43,16 @@ struct FsingleWeaponParams
 };
 
 UCLASS()
-class ISOLATION_API USIsolationGameInstance : public UGameInstance
+class ISOLATION_API ASCharacterController : public APlayerController
 {
 	GENERATED_BODY()
-	
-public:
+
+	public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
         TArray<FsingleWeaponParams> weaponParameters;
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
         TMap<TEnumAsByte<AmmoType>, int32> ammoMap;
+	
 };

@@ -7,8 +7,10 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/SkeletalMesh.h"
+#include "Engine/Engine.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "SWeaponBase.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -16,16 +18,16 @@ ASCharacter::ASCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
     
-    SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("springArmComp"));
-    SpringArmComp->bUsePawnControlRotation = true;
-    SpringArmComp->SetupAttachment(RootComponent);
+    springArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("springArmComp"));
+    springArmComp->bUsePawnControlRotation = true;
+    springArmComp->SetupAttachment(RootComponent);
     
-    MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("meshComp"));
-    MeshComp->CastShadow = false;
-    MeshComp->AttachToComponent(SpringArmComp, FAttachmentTransformRules::KeepRelativeTransform);
+    meshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("meshComp"));
+    meshComp->CastShadow = false;
+    meshComp->AttachToComponent(springArmComp, FAttachmentTransformRules::KeepRelativeTransform);
     
-    CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
-    CameraComp->SetupAttachment(MeshComp, "cameraSocket");
+    cameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
+    cameraComp->SetupAttachment(meshComp, "cameraSocket");
     
     crouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     defaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
@@ -34,6 +36,7 @@ ASCharacter::ASCharacter()
     crouchMovementSpeed = 250.0f;
     walkSpeed = 400.0f;
     sprintSpeed = 550.0f;
+    bCanWeaponSwap = true;
 }
 
 // Called when the game starts or when spawned
@@ -42,6 +45,7 @@ void ASCharacter::BeginPlay()
 	Super::BeginPlay();
 	
 	GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+    UpdateWeapon(primaryWeapon);
 }
 
 void ASCharacter::MoveForward(float value)
@@ -119,6 +123,49 @@ void ASCharacter::UpdateMovementSpeed()
     }
 }
 
+void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> newWeapon)
+{
+    if (bCanWeaponSwap)
+    {
+        FActorSpawnParameters spawnParams;
+        spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        if (currentWeapon)
+        {
+            currentWeapon->K2_DestroyActor();
+        }
+        currentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(newWeapon, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
+        if (currentWeapon)
+        {
+            currentWeapon->SetOwner(this);
+            currentWeapon->AttachToComponent(meshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, currentWeapon->weaponAttachmentSocketName);
+        }   
+    }
+}
+
+void ASCharacter::SwapToPrimary()
+{
+    UpdateWeapon(primaryWeapon);
+}
+
+void ASCharacter::SwapToSecondary()
+{
+    UpdateWeapon(secondaryWeapon);
+}
+
+void ASCharacter::StartFire()
+{
+    currentWeapon->StartFire();
+}
+
+void ASCharacter::StopFire()
+{
+    currentWeapon->StopFire();
+}
+
+void ASCharacter::Reload()
+{
+    currentWeapon->Reload();
+}
 
 // Called every frame
 void ASCharacter::Tick(float DeltaTime)
@@ -157,5 +204,15 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	// Jumping
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASCharacter::Jump);
 
+    // Weapon swap
+    PlayerInputComponent->BindAction("PrimaryWeapon", IE_Pressed, this, &ASCharacter::SwapToPrimary);
+    PlayerInputComponent->BindAction("SecondaryWeapon", IE_Pressed, this, &ASCharacter::SwapToSecondary);
+
+    // Firing
+    PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::StartFire);
+    PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASCharacter::StopFire);
+
+    // Reloading
+    PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ASCharacter::Reload);
 }
 

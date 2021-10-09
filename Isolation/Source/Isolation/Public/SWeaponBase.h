@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "SIsolationGameInstance.h"
 #include "SWeaponBase.generated.h"
 
 class USkeletalMeshComponent;
@@ -11,9 +12,6 @@ class UAnimMontage;
 class UNiagaraSystem;
 class USoundCue;
 class UPhysicalMaterial;
-
-
-
 
 UCLASS()
 class ISOLATION_API ASWeaponBase : public AActor
@@ -63,6 +61,9 @@ public:
 	// Determines if the weapon can have a round in the chamber or not
 	UPROPERTY(EditDefaultsOnly, Category = "General")
 	bool bCanBeChambered;
+	// Determines the socket or bone with which the weapon will be attached to the character's hand (typically the root bone or the grip bone)
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	FName weaponAttachmentSocketName;
 
 	// Line Trace
 
