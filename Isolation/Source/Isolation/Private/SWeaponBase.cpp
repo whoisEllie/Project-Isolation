@@ -64,8 +64,13 @@ void ASWeaponBase::Fire()
     // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
     if(bCanFire && CharacterController->weaponParameters[0].clipSize > 0 && !bIsReloading)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Fire", true);
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt(CharacterController->weaponParameters[0].clipSize), true);
+
+        // Printing debug strings
+        if(bShowDebug)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Fire", true);
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt(CharacterController->weaponParameters[0].clipSize), true);
+        }
         
         // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
         traceStart = meshComp->GetSocketLocation(muzzleSocketName);
@@ -80,7 +85,11 @@ void ASWeaponBase::Fire()
         // Subtracting from the ammunition count of the weapon
         CharacterController->weaponParameters[0].clipSize -= 1;
 
-        DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+        // Drawing debug line trace
+        if (bShowDebug)
+        {
+            DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+        }
 
         // Drawing a line trace based on the parameters calculated previously 
         if(GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
@@ -145,8 +154,15 @@ void ASWeaponBase::Reload()
     ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
+    // Changing the maximum ammunition based on if the weapon can hold a bullet in the chamber
+    int value = 0;
+    if(bCanBeChambered)
+    {
+        value = 1;
+    }
+
     // Checking if we are not reloading, if a reloading montage exists, and if there is any point in reloading (current ammunition does not match maximum magazine capacity and there is spare ammunition to load into the gun)
-    if(!bIsReloading && reloadMontage && CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] > 0 && CharacterController->weaponParameters[0].clipSize != CharacterController->weaponParameters[0].clipCapacity)
+    if(!bIsReloading && reloadMontage && CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] > 0 && CharacterController->weaponParameters[0].clipSize != CharacterController->weaponParameters[0].clipCapacity + value)
     {
          // Differenciating between having no ammunition in the magazine (having to chamber a round after reloading) or not, and playing an animation relevant to that
         if (CharacterController->weaponParameters[0].clipSize <= 0)
@@ -157,7 +173,12 @@ void ASWeaponBase::Reload()
         {
             animTime = meshComp->GetAnimInstance()->Montage_Play(reloadMontage, 1.0f);
         }
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Reload", true);
+        
+        // Printing debug strings
+        if(bShowDebug)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Reload", true);
+        }
         // Setting variables to make sure that the player cannot fire or reload during the time that the weapon is in it's reloading animation
         bCanFire = false;
         bIsReloading = true;
@@ -169,18 +190,28 @@ void ASWeaponBase::Reload()
 
 void ASWeaponBase::UpdateAmmo()
 {
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "UpdateAmmo", true);
+    // Printing debug strings
+    if(bShowDebug)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "UpdateAmmo", true);
+    }
+
     // Casting to the game instance (which stores all the ammunition and health variables)
     ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     
+    // value system to reload the correct amount of bullets if the weapon is using a chambered reloading system
     int value = 0;
 
     // Checking to see if there is already ammunition within the gun and that this particular gun supports chambered rounds
     if (CharacterController->weaponParameters[0].clipSize > 0 && bCanBeChambered)
     {
         value = 1;
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, "Value = 1", true);
+
+        if(bShowDebug)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, "Value = 1", true);
+        }
     }
     
     // First, we set temp, which keeps track of the difference between the maximum ammunition and the amount that there is currently loaded (i.e. how much ammunition we need to reload into the gun)
@@ -200,9 +231,12 @@ void ASWeaponBase::UpdateAmmo()
         CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] = 0;
     }
 
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->weaponParameters[0].clipSize), true);
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType]), true);
-
+    // Print debug strings
+    if(bShowDebug)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->weaponParameters[0].clipSize), true);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType]), true);
+    }
 
     // Resetting bIsReloading and allowing the player to fire the gun again
     bIsReloading = false;

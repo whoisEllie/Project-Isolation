@@ -39,6 +39,10 @@ public:
 	// Allows the player to fire again
 	void EnableFire();
 	
+	// Debug boolean, toggle for debug strings and line traces to be shown
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	bool bShowDebug;
+
 	// Components
 	
 	// The main skeletal mesh - holds the weapon model

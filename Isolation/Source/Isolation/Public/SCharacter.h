@@ -92,8 +92,6 @@ protected:
 	bool isCrouching;
 	// true if the player is sprinting, false if not
 	bool isSprinting;
-	//  true if player can swap weapons, false if not
-	bool bCanWeaponSwap;
 
 	// Floats
 	

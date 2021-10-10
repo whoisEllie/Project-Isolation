@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "SCharacterController.generated.h"
 
+// Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FsingleWeaponParams struct)
+// and to keep track of the total ammo the player has (ammoMap)
 UENUM(BlueprintType)
 enum AmmoType
 {
@@ -25,15 +27,15 @@ struct FsingleWeaponParams
     
     // The maximum size of the player's magazine
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        int clipCapacity; 
+    int clipCapacity; 
 
     // The amount of ammunition currently in the magazine
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        int clipSize;
+    int clipSize;
     
     // Enumerator holding the 4 possible ammo types defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
-    	TEnumAsByte<AmmoType> ammoType;
+    TEnumAsByte<AmmoType> ammoType;
     	    
     // Weapon Health
     	
@@ -50,9 +52,9 @@ class ISOLATION_API ASCharacterController : public APlayerController
 	public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        TArray<FsingleWeaponParams> weaponParameters;
+    TArray<FsingleWeaponParams> weaponParameters;
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-        TMap<TEnumAsByte<AmmoType>, int32> ammoMap;
+    TMap<TEnumAsByte<AmmoType>, int32> ammoMap;
 	
 };
