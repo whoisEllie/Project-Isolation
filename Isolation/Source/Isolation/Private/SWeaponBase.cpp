@@ -78,10 +78,6 @@ void ASWeaponBase::Fire()
 		traceDirection = traceStartRotation.Vector();
 		traceEnd = traceStart + (traceDirection * lengthMultiplier);
 
-        // Determining the spawn parameters for the line trace - forcing it to always spawn
-        FActorSpawnParameters spawnParams;
-        spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
         // Subtracting from the ammunition count of the weapon
         CharacterController->weaponParameters[0].clipSize -= 1;
 

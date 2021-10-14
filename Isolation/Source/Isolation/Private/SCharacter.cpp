@@ -154,7 +154,7 @@ void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> newWeapon)
     currentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(newWeapon, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
     if (currentWeapon)
     {
-       currentWeapon->SetOwner(this);
+        currentWeapon->SetOwner(this);
         currentWeapon->AttachToComponent(meshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, currentWeapon->weaponAttachmentSocketName);
     }   
 }
@@ -242,4 +242,3 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
     // Reloading
     PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ASCharacter::Reload);
 }
-
