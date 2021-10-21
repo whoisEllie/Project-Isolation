@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Math/UnrealMathUtility.h"
 #include "SCharacterController.h"
 #include "SCharacter.h"
 
@@ -37,7 +38,7 @@ void ASWeaponBase::StartFire()
     // If the weapon can be fired (i.e. not reloading, for example)
     if (bCanFire)
     {
-        // sets a timer for firing the weapon - if bAutomaticFire is true then this timer will repeat until cleared by StopFire(    ), leading to fully automatic fire
+        // sets a timer for firing the weapon - if bAutomaticFire is true then this timer will repeat until cleared by StopFire(), leading to fully automatic fire
         GetWorldTimerManager().SetTimer(shotDelay, this, &ASWeaponBase::Fire, rateOfFire, bAutomaticFire, 0.0f);
     }
     
@@ -72,74 +73,73 @@ void ASWeaponBase::Fire()
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt(CharacterController->weaponParameters[0].clipSize), true);
         }
         
-        // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
-        traceStart = meshComp->GetSocketLocation(muzzleSocketName);
-		traceStartRotation = meshComp->GetSocketRotation(muzzleSocketName);
-		traceDirection = traceStartRotation.Vector();
-		traceEnd = traceStart + (traceDirection * lengthMultiplier);
 
         // Subtracting from the ammunition count of the weapon
         CharacterController->weaponParameters[0].clipSize -= 1;
 
-        // Drawing debug line trace
-        if (bShowDebug)
+        int numberOfShots = 1;
+        // If the weapon is a shotgun, we set the amount of shots that are fired to the amount set in shotgunPelletCount
+        if(bIsShotgun)
         {
-            DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+            numberOfShots = shotgunPelletCount;
         }
-
-        // Drawing a line trace based on the parameters calculated previously 
-        if(GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
+        for (int i = 0; i < numberOfShots; i++)
         {
-            // Resetting finalDamage
-            finalDamage = 0.0f;
 
-            // Setting finalDamage based on the type of surface hit
-            if (hit.PhysMaterial.Get() == normalDamageSurface)
+            // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
+            traceStart = meshComp->GetSocketLocation(muzzleSocketName);
+	        traceStartRotation = meshComp->GetSocketRotation(muzzleSocketName);
+            traceStartRotation.Pitch += FMath::FRandRange(-weaponPitchVariation, weaponPitchVariation);
+            traceStartRotation.Yaw += FMath::FRandRange(-weaponYawVariation, weaponYawVariation);
+		    traceDirection = traceStartRotation.Vector();
+		    traceEnd = traceStart + (traceDirection * lengthMultiplier);
+
+            // Drawing debug line trace
+            if (bShowDebug)
             {
-                finalDamage = baseDamage;
+                DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
             }
-            if (hit.PhysMaterial.Get() == headshotDamageSurface)
+
+             // Drawing a line trace based on the parameters calculated previously 
+            if(GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
             {
-                finalDamage = baseDamage * headshotMultiplier;
+                // Resetting finalDamage
+                finalDamage = 0.0f;
+
+                // Setting finalDamage based on the type of surface hit
+                if (hit.PhysMaterial.Get() == normalDamageSurface)
+                {
+                   finalDamage = baseDamage;
+                }
+                if (hit.PhysMaterial.Get() == headshotDamageSurface)
+                {
+                   finalDamage = baseDamage * headshotMultiplier;
+                }
+
+                AActor* hitActor = hit.GetActor();
+
+                // Applying the previously set damage to the hit actor
+                UGameplayStatics::ApplyPointDamage(hitActor, finalDamage, traceDirection, hit, GetInstigatorController(), this, damageType);
             }
 
-            AActor* hitActor = hit.GetActor();
+            // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 
-            // Applying the previously set damage to the hit actor
-            UGameplayStatics::ApplyPointDamage(hitActor, finalDamage, traceDirection, hit, GetInstigatorController(), this, damageType);
-        }
-
-        // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
-
-        if (hit.PhysMaterial.Get() == normalDamageSurface || hit.PhysMaterial.Get() == headshotDamageSurface)
-        {
-            UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), enemyHitEffect, hit.ImpactPoint, hit.ImpactNormal.Rotation());
-        }
-        else if (hit.PhysMaterial.Get() == groundSurface)
-        {
-            UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), groundHitEffect, hit.ImpactPoint, hit.ImpactNormal.Rotation());
-        }
-        else if (hit.PhysMaterial.Get() == rockSurface)
-        {
-            UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), rockHitEffect, hit.ImpactPoint, hit.ImpactNormal.Rotation());
-        }
-        else
-        {
-            UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), defaultHitEffect, hit.ImpactPoint, hit.ImpactNormal.Rotation());
-        }
-
-        // If a fire montage is specified, play it
-        if (fireMontage)
-        {
-            animTime = meshComp->GetAnimInstance()->Montage_Play(fireMontage, 1.0f);
-        }
-
-        // If we wait for an animation (and fireMontage exists, since we need it to determine the length of the timer)
-        if (bWaitForAnim && fireMontage)
-        {
-            bCanFire = false;
-
-            GetWorldTimerManager().SetTimer(animationWaitDelay, this, &ASWeaponBase::EnableFire, animTime, false, animTime); // 
+            if (hit.PhysMaterial.Get() == normalDamageSurface || hit.PhysMaterial.Get() == headshotDamageSurface)
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), enemyHitEffect, hit.ImpactPoint, hit.ImpactNormal.Rotation());
+            }
+            else if (hit.PhysMaterial.Get() == groundSurface)
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), groundHitEffect, hit.ImpactPoint, hit.ImpactNormal.Rotation());
+            }
+            else if (hit.PhysMaterial.Get() == rockSurface)
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), rockHitEffect, hit.ImpactPoint, hit.ImpactNormal.Rotation());
+            }
+            else
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), defaultHitEffect, hit.ImpactPoint, hit.ImpactNormal.Rotation());
+            }
         }
     }
 }

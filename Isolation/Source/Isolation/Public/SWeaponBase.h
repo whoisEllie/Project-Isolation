@@ -67,6 +67,12 @@ public:
 	// Determines the socket or bone with which the weapon will be attached to the character's hand (typically the root bone or the grip bone)
 	UPROPERTY(EditDefaultsOnly, Category = "General")
 	FName weaponAttachmentSocketName;
+	// Determines if the weapon should fire more than one 'pellet' every time it is fired. Enable if you'd like your weapon to act like a shotgun
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	bool bIsShotgun;
+	// Determines the amount of pellets a shotgun will fire
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	int shotgunPelletCount;
 
 	// Line Trace
 
@@ -84,6 +90,10 @@ public:
 	// The range of the weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
 	float lengthMultiplier;
+	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	float weaponPitchVariation;
+	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	float weaponYawVariation;
 
 	// collision parameters for spawning the line trace
 	FCollisionQueryParams queryParams;
