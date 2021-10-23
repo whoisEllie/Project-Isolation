@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "SCharacterController.generated.h"
 
+class ASWeaponBase; 
+
 // Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FsingleWeaponParams struct)
 // and to keep track of the total ammo the player has (ammoMap)
 UENUM(BlueprintType)
@@ -52,7 +54,7 @@ class ISOLATION_API ASCharacterController : public APlayerController
 	public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    TArray<FsingleWeaponParams> weaponParameters;
+    TMap<TSubclassOf<ASWeaponBase>, FsingleWeaponParams> weaponParameters;
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
     TMap<TEnumAsByte<AmmoType>, int32> ammoMap;

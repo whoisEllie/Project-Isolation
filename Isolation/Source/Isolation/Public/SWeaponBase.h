@@ -73,6 +73,8 @@ public:
 	// Determines the amount of pellets a shotgun will fire
 	UPROPERTY(EditDefaultsOnly, Category = "General")
 	int shotgunPelletCount;
+	// Stores a reference to the class of the current weapon so we can access it's relevant ammunition and health values in SCharacterController
+	TSubclassOf<ASWeaponBase> referenceWeapon;
 
 	// Line Trace
 

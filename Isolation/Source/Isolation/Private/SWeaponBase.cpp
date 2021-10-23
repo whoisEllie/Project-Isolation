@@ -30,7 +30,8 @@ ASWeaponBase::ASWeaponBase()
 void ASWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+    referenceWeapon = this->GetClass();
 }
 
 void ASWeaponBase::StartFire()
@@ -63,26 +64,21 @@ void ASWeaponBase::Fire()
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     
     // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
-    if(bCanFire && CharacterController->weaponParameters[0].clipSize > 0 && !bIsReloading)
+    if(bCanFire && CharacterController->weaponParameters[referenceWeapon].clipSize > 0 && !bIsReloading)
     {
 
         // Printing debug strings
         if(bShowDebug)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Fire", true);
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt(CharacterController->weaponParameters[0].clipSize), true);
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt(CharacterController->weaponParameters[referenceWeapon].clipSize), true);
         }
         
 
         // Subtracting from the ammunition count of the weapon
-        CharacterController->weaponParameters[0].clipSize -= 1;
+        CharacterController->weaponParameters[referenceWeapon].clipSize -= 1;
 
-        int numberOfShots = 1;
-        // If the weapon is a shotgun, we set the amount of shots that are fired to the amount set in shotgunPelletCount
-        if(bIsShotgun)
-        {
-            numberOfShots = shotgunPelletCount;
-        }
+        int numberOfShots = bIsShotgun? shotgunPelletCount : 1;
         for (int i = 0; i < numberOfShots; i++)
         {
 
@@ -158,10 +154,10 @@ void ASWeaponBase::Reload()
     }
 
     // Checking if we are not reloading, if a reloading montage exists, and if there is any point in reloading (current ammunition does not match maximum magazine capacity and there is spare ammunition to load into the gun)
-    if(!bIsReloading && reloadMontage && CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] > 0 && CharacterController->weaponParameters[0].clipSize != CharacterController->weaponParameters[0].clipCapacity + value)
+    if(!bIsReloading && reloadMontage && CharacterController->ammoMap[CharacterController->weaponParameters[referenceWeapon].ammoType] > 0 && CharacterController->weaponParameters[referenceWeapon].clipSize != CharacterController->weaponParameters[referenceWeapon].clipCapacity + value)
     {
          // Differenciating between having no ammunition in the magazine (having to chamber a round after reloading) or not, and playing an animation relevant to that
-        if (CharacterController->weaponParameters[0].clipSize <= 0)
+        if (CharacterController->weaponParameters[referenceWeapon].clipSize <= 0)
         {
             animTime = meshComp->GetAnimInstance()->Montage_Play(emptyReloadMontage, 1.0f);
         }
@@ -200,7 +196,7 @@ void ASWeaponBase::UpdateAmmo()
     int value = 0;
 
     // Checking to see if there is already ammunition within the gun and that this particular gun supports chambered rounds
-    if (CharacterController->weaponParameters[0].clipSize > 0 && bCanBeChambered)
+    if (CharacterController->weaponParameters[referenceWeapon].clipSize > 0 && bCanBeChambered)
     {
         value = 1;
 
@@ -211,27 +207,27 @@ void ASWeaponBase::UpdateAmmo()
     }
     
     // First, we set temp, which keeps track of the difference between the maximum ammunition and the amount that there is currently loaded (i.e. how much ammunition we need to reload into the gun)
-    int temp = CharacterController->weaponParameters[0].clipCapacity - CharacterController->weaponParameters[0].clipSize;
+    int temp = CharacterController->weaponParameters[referenceWeapon].clipCapacity - CharacterController->weaponParameters[referenceWeapon].clipSize;
     // Making sure we have enough ammunition to reload
-    if (CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] >= temp + value)
+    if (CharacterController->ammoMap[CharacterController->weaponParameters[referenceWeapon].ammoType] >= temp + value)
     {
         // Then, we update the weapon to have full ammunition, plus the value (1 if there is a bullet in the chamber, 0 if not)
-        CharacterController->weaponParameters[0].clipSize = CharacterController->weaponParameters[0].clipCapacity + value;
+        CharacterController->weaponParameters[referenceWeapon].clipSize = CharacterController->weaponParameters[referenceWeapon].clipCapacity + value;
         // Finally, we remove temp (and an extra bullet, if one is chambered) from the player's ammunition store
-        CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] -= (temp + value);
+        CharacterController->ammoMap[CharacterController->weaponParameters[referenceWeapon].ammoType] -= (temp + value);
     }
     // If we don't, add the remaining ammunition to the clip, and set the remaining ammunition to 0
     else
     {
-        CharacterController->weaponParameters[0].clipSize = CharacterController->weaponParameters[0].clipSize + CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType];
-        CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType] = 0;
+        CharacterController->weaponParameters[referenceWeapon].clipSize = CharacterController->weaponParameters[referenceWeapon].clipSize + CharacterController->ammoMap[CharacterController->weaponParameters[referenceWeapon].ammoType];
+        CharacterController->ammoMap[CharacterController->weaponParameters[referenceWeapon].ammoType] = 0;
     }
 
     // Print debug strings
     if(bShowDebug)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->weaponParameters[0].clipSize), true);
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->ammoMap[CharacterController->weaponParameters[0].ammoType]), true);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->weaponParameters[referenceWeapon].clipSize), true);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->ammoMap[CharacterController->weaponParameters[referenceWeapon].ammoType]), true);
     }
 
     // Resetting bIsReloading and allowing the player to fire the gun again
