@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-// This is just a test
-
+//Testing again, just to make sure this bad boi is working >:D
 
 
 #include "SCharacter.h"
