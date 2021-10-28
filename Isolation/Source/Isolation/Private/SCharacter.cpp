@@ -1,14 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-//Testing again, just to make sure this bad boi is working >:D
-
 
 #include "SCharacter.h"
+#include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/Engine.h"
+#include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "SWeaponBase.h"
@@ -36,10 +37,6 @@ ASCharacter::ASCharacter()
     crouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     defaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
     finalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
-
-    crouchMovementSpeed = 250.0f; // the player's movement speed while crouched
-    walkSpeed = 400.0f; // the player's regular movement speed
-    sprintSpeed = 550.0f; // the player's movement speed while sprinting
 }
 
 // Called when the game starts or when spawned
@@ -76,27 +73,62 @@ void ASCharacter::LookRight(float value)
 }
 
 // Custom crouch function
-void ASCharacter::ExecCrouch()
+void ASCharacter::StartCrouch()
 {
-    // Code for when the player is not already crouching
-    if (!isCrouching)
+    holdingCrouch = true;
+    if (GetCharacterMovement()->IsMovingOnGround())
     {
-        // If the player is sprinting, turn the sprinting variable off
-        if(isSprinting)
+        if (movementState == VE_Crouch)
         {
-            isSprinting = false;
+            EndCrouch(false);
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
         }
-        
-        // Update the speed and set the player to crouch
-        isCrouching = true;
-        UpdateMovementSpeed();
+        else if (movementState == VE_Sprint && !performedSlide)
+        {
+            StartSlide();
+        }
+        else
+        {
+            movementState = VE_Crouch;
+            UpdateMovementSpeed();
+        }
     }
+}
 
-    // Code for when the player is crouching
-    else
+void ASCharacter::StopCrouch()
+{
+    holdingCrouch = false;    
+    if (movementState == VE_Slide)
     {
-        // Uncrouch the player and update the movement speed
-        isCrouching = false;
+        StopSlide();
+        performedSlide = false;
+    }
+}
+
+void ASCharacter::EndCrouch(bool toSprint)
+{
+    if (movementState == VE_Crouch || movementState == VE_Slide)
+    {
+        //FVector centerVector = GetActorLocation();
+        //centerVector.Z += 46;
+
+        //FCollisionShape CollisionCapsule = FCollisionShape::MakeCapsule(34.0f, defaultCapsuleHalfHeight);
+
+        //DrawDebugCapsule(GetWorld(), centerVector, defaultCapsuleHalfHeight, 34.0f, FQuat::Identity, FColor::Red);
+
+        //if (GetWorld()->SweepSingleByChannel(hit, centerVector, centerVector, FQuat::Identity, ECC_WorldStatic, CollisionCapsule))
+        //{
+        //    /* confetti or smth idk */
+        //    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
+        //}
+        if (toSprint)
+        {
+            movementState = VE_Sprint;
+        }
+        else
+        {
+            movementState = VE_Walk;
+        }
         UpdateMovementSpeed();
     }
 }
@@ -104,39 +136,75 @@ void ASCharacter::ExecCrouch()
 // Starting to sprint (IE_Pressed)
 void ASCharacter::StartSprint()
 {
-    // Disables crouch if the player was crouching
-    if (isCrouching)
-    {
-        isCrouching = false;
-    }
-    
+    holdingSprint = true;
     // Updates the sprint speed
-    isSprinting = true;
+    movementState = VE_Sprint;
     UpdateMovementSpeed();
 }
 
 // Stopping to sprint (IE_Released)
 void ASCharacter::StopSprint()
 {
+    holdingSprint = false;
     // Updates sprint speed
-    isSprinting = false;
+    movementState = VE_Walk;
     UpdateMovementSpeed();
+}
+
+void ASCharacter::StartSlide()
+{
+    movementState = VE_Slide;
+    performedSlide = true;
+    UpdateMovementSpeed();
+    GetCharacterMovement()->MaxAcceleration = 200.0f;
+    GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
+    GetCharacterMovement()->GroundFriction = 1.0f;
+    GetWorldTimerManager().SetTimer(slideStop, this, &ASCharacter::StopSlide, slideTime, false, slideTime);
+}
+
+void ASCharacter::StopSlide()
+{
+    performedSlide = false;
+    GetWorldTimerManager().ClearTimer(slideStop);
+    if (movementState == VE_Slide)
+    {
+        if (holdingSprint)
+        {
+            EndCrouch(true);
+        }
+        else if (holdingCrouch)
+        {
+            movementState = VE_Crouch;
+        }
+        else
+        {
+            movementState = VE_Walk;
+        }
+        GetCharacterMovement()->MaxAcceleration = 2048.0f;
+        GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
+        GetCharacterMovement()->GroundFriction = 8.0f;
+        UpdateMovementSpeed();
+    }
 }
 
 // Function that determines the player's maximum speed, based on whether they're crouching, sprinting or neither
 void ASCharacter::UpdateMovementSpeed()
 {
-    if (isCrouching)
+    if (movementState == VE_Crouch)
     {
         GetCharacterMovement()->MaxWalkSpeed = crouchMovementSpeed;
     }
-    if (isSprinting)
+    if (movementState == VE_Sprint)
     {
         GetCharacterMovement()->MaxWalkSpeed = sprintSpeed;
     }
-    if (!isSprinting && !isCrouching)
+    if (movementState == VE_Walk)
     {
         GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+    }
+    if (movementState == VE_Slide)
+    {
+        GetCharacterMovement()->MaxWalkSpeed = slideSpeed;
     }
 }
 
@@ -190,18 +258,37 @@ void ASCharacter::Reload()
     currentWeapon->Reload();
 }
 
+void ASCharacter::StartADS()
+{
+    bWantsToAim = true;
+}
+
+void ASCharacter::StopADS()
+{
+    bWantsToAim = false;
+}
+
 // Called every frame
 void ASCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
-	float targetHalfHeight = isCrouching? finalCapsuleHalfHeight : defaultCapsuleHalfHeight;
+	float targetHalfHeight = (movementState == VE_Crouch || movementState == VE_Slide)? finalCapsuleHalfHeight : defaultCapsuleHalfHeight;
 	// Interpolates between the current height and the target height
 	float newHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), targetHalfHeight, DeltaTime, crouchSpeed);
 	// Sets the half height of the capsule component to the new interpolated half height
 	GetCapsuleComponent()->SetCapsuleHalfHeight(newHalfHeight);
+
+    if (bWantsToAim == true && movementState != VE_Sprint && movementState != VE_Slide)
+    {
+        bIsAiming = true;
+    }
+    else
+    {
+        bIsAiming = false;
+    }
 }
 
 // Called to bind functionality to input
@@ -218,7 +305,8 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("LookRight", this, &ASCharacter::LookRight);
 	
 	// Crouching
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASCharacter::ExecCrouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASCharacter::StartCrouch);
+    PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ASCharacter::StopCrouch);
 	
 	// Sprinting
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ASCharacter::StartSprint);
@@ -242,4 +330,8 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
     // Reloading
     PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ASCharacter::Reload);
+
+    // Aiming Down Sights
+    PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &ASCharacter::StartADS);
+    PlayerInputComponent->BindAction("ADS", IE_Released, this, &ASCharacter::StopADS);
 }

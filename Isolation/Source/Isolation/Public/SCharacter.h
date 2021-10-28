@@ -11,6 +11,17 @@ class USpringArmComponent;
 class USkeletalMeshComponent;
 class ASWeaponBase;
 
+UENUM(BlueprintType)
+enum MovementState
+{
+	VE_Walk         UMETA(DisplayName = "Walking"),
+	VE_Sprint       UMETA(DisplayName = "Sprinting"),
+	VE_Crouch       UMETA(DisplayName = "Crouching"),
+	VE_Slide		UMETA(DisplayName = "Sliding"),
+	VE_Vault	    UMETA(DisplayName = "Vaulting")
+};
+
+
 UCLASS()
 class ISOLATION_API ASCharacter : public ACharacter
 {
@@ -40,6 +51,21 @@ public:
 	TSubclassOf<ASWeaponBase> secondaryWeapon;
 	// The player's currently equipped weapon
 	ASWeaponBase* currentWeapon;
+
+
+	// Booleans
+	
+	// The boolean holding whether the player wants to aim or not
+	bool bWantsToAim;
+	// The boolean holding whether we are aiming or not
+	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
+	bool bIsAiming;
+
+	// Enumerators
+
+	// Enumerator holding the 4 possible movement states defined above
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement State")
+    TEnumAsByte<MovementState> movementState;
     
 protected:
 
@@ -58,14 +84,24 @@ protected:
     // Looking left/right (takes axis as input from CharacterMovementComponent.h)
 	void LookRight(float value);
 
-	// Overriding the built in crouch function
-	void ExecCrouch();
+	// Alternative to the built in Crouch function
+	void StartCrouch();
+
+	// Alternative to the built in UnCrouch function
+	void StopCrouch();
+
+	// We do this so that we can perform checks based on the height above the player (can they even stand up?) and to handle sliding
+	void EndCrouch(bool toSprint);
 
 	// Starting to sprint
 	void StartSprint();
 
 	// Stopping to sprint
 	void StopSprint();
+
+	void StartSlide();
+
+	void StopSlide();
 
 	// Global system to update movement speed
 	void UpdateMovementSpeed();
@@ -85,13 +121,12 @@ protected:
 
 	// Reloads the weapon
 	void Reload();
-	
-	// Booleans
-	
-	// true if the player is crouching, false if not
-	bool isCrouching;
-	// true if the player is sprinting, false if not
-	bool isSprinting;
+
+	void StartADS();
+
+	void StopADS();
+
+	FHitResult hit;
 
 	// Floats
 	
@@ -104,8 +139,17 @@ protected:
 	// Determines the rate at which the character crouches
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float crouchSpeed;
-	
-	// Variables for sprint
+	// Slide time
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float slideTime;
+	// Keeps track whether the player is holding the Crouch button
+	bool holdingCrouch;
+	// Have we performed a slide yet?
+	bool performedSlide;
+	// Is holding the sprint key
+	bool holdingSprint;
+
+	// Variables for movement speed
 	// The maximum speed of the character when in the sprint state
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float sprintSpeed;
@@ -115,6 +159,12 @@ protected:
 	// Determines the speed of the character when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float crouchMovementSpeed;
+	// Determines the speed of the character when sliding
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float slideSpeed;
+
+	// Timer managers
+	FTimerHandle slideStop;
     
 public:	
 	// Called every frame
