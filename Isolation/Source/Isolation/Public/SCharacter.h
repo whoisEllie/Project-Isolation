@@ -50,6 +50,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASWeaponBase> secondaryWeapon;
 	// The player's currently equipped weapon
+	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
 	ASWeaponBase* currentWeapon;
 
 
@@ -60,12 +61,25 @@ public:
 	// The boolean holding whether we are aiming or not
 	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
 	bool bIsAiming;
+	// Keeps track whether the player is holding the Crouch button
+	bool holdingCrouch;
+	// Have we performed a slide yet?
+	bool performedSlide;
+	// Is holding the sprint key
+	bool holdingSprint;
+	// wants to slide? (is holding the crouch/slide key, but not on the ground)
+	bool wantsToSlide;
 
 	// Enumerators
 
 	// Enumerator holding the 4 possible movement states defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement State")
     TEnumAsByte<MovementState> movementState;
+
+	// Other
+	// Name of the socket we attach our camera to
+	UPROPERTY(EditDefaultsOnly, Category = "Other")
+	FName cameraSocketName;
     
 protected:
 
@@ -142,12 +156,17 @@ protected:
 	// Slide time
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float slideTime;
-	// Keeps track whether the player is holding the Crouch button
-	bool holdingCrouch;
-	// Have we performed a slide yet?
-	bool performedSlide;
-	// Is holding the sprint key
-	bool holdingSprint;
+	// Default FOV
+	float defaultFOV;
+	// target FOV
+	float speedFOV;
+	// change speed for the fov
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float fovChangeSpeed;
+	// amount for FOV to increase
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float fovChangeAmount;
+
 
 	// Variables for movement speed
 	// The maximum speed of the character when in the sprint state

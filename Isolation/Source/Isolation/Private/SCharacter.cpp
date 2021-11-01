@@ -46,6 +46,8 @@ void ASCharacter::BeginPlay()
 	
 	GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
     UpdateWeapon(primaryWeapon);
+    defaultFOV = cameraComp->FieldOfView;
+    speedFOV = defaultFOV + fovChangeAmount;
 }
 
 // Built in UE function for moving forward/back
@@ -81,7 +83,7 @@ void ASCharacter::StartCrouch()
         if (movementState == VE_Crouch)
         {
             EndCrouch(false);
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
+            //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
         }
         else if (movementState == VE_Sprint && !performedSlide)
         {
@@ -93,6 +95,11 @@ void ASCharacter::StartCrouch()
             UpdateMovementSpeed();
         }
     }
+    else if (!performedSlide)
+    {
+        wantsToSlide = true;
+    }
+    
 }
 
 void ASCharacter::StopCrouch()
@@ -145,9 +152,16 @@ void ASCharacter::StartSprint()
 // Stopping to sprint (IE_Released)
 void ASCharacter::StopSprint()
 {
+    if (movementState == VE_Slide && holdingCrouch)
+    {
+        movementState = VE_Crouch;
+    }
+    else
+    {
+        movementState = VE_Walk;
+    }
+    
     holdingSprint = false;
-    // Updates sprint speed
-    movementState = VE_Walk;
     UpdateMovementSpeed();
 }
 
@@ -156,9 +170,6 @@ void ASCharacter::StartSlide()
     movementState = VE_Slide;
     performedSlide = true;
     UpdateMovementSpeed();
-    GetCharacterMovement()->MaxAcceleration = 200.0f;
-    GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
-    GetCharacterMovement()->GroundFriction = 1.0f;
     GetWorldTimerManager().SetTimer(slideStop, this, &ASCharacter::StopSlide, slideTime, false, slideTime);
 }
 
@@ -180,9 +191,6 @@ void ASCharacter::StopSlide()
         {
             movementState = VE_Walk;
         }
-        GetCharacterMovement()->MaxAcceleration = 2048.0f;
-        GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
-        GetCharacterMovement()->GroundFriction = 8.0f;
         UpdateMovementSpeed();
     }
 }
@@ -193,18 +201,30 @@ void ASCharacter::UpdateMovementSpeed()
     if (movementState == VE_Crouch)
     {
         GetCharacterMovement()->MaxWalkSpeed = crouchMovementSpeed;
+        GetCharacterMovement()->MaxAcceleration = 2048.0f;
+        GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
+        GetCharacterMovement()->GroundFriction = 8.0f;
     }
     if (movementState == VE_Sprint)
     {
         GetCharacterMovement()->MaxWalkSpeed = sprintSpeed;
+        GetCharacterMovement()->MaxAcceleration = 2048.0f;
+        GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
+        GetCharacterMovement()->GroundFriction = 8.0f;
     }
     if (movementState == VE_Walk)
     {
         GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+        GetCharacterMovement()->MaxAcceleration = 2048.0f;
+        GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
+        GetCharacterMovement()->GroundFriction = 8.0f;
     }
     if (movementState == VE_Slide)
     {
         GetCharacterMovement()->MaxWalkSpeed = slideSpeed;
+        GetCharacterMovement()->MaxAcceleration = 200.0f;
+        GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
+        GetCharacterMovement()->GroundFriction = 1.0f;
     }
 }
 
@@ -281,6 +301,13 @@ void ASCharacter::Tick(float DeltaTime)
 	// Sets the half height of the capsule component to the new interpolated half height
 	GetCapsuleComponent()->SetCapsuleHalfHeight(newHalfHeight);
 
+    // FOV adjustments
+    float targetFOV = (movementState == VE_Sprint || movementState == VE_Slide)? speedFOV : defaultFOV;
+    //Interpolates between current fov and target fov
+    float newFOV = FMath::FInterpTo(cameraComp->FieldOfView, targetFOV, DeltaTime, fovChangeSpeed);
+    // Sets the new camera FOV
+    cameraComp->SetFieldOfView(newFOV);
+
     if (bWantsToAim == true && movementState != VE_Sprint && movementState != VE_Slide)
     {
         bIsAiming = true;
@@ -288,6 +315,15 @@ void ASCharacter::Tick(float DeltaTime)
     else
     {
         bIsAiming = false;
+    }
+
+    if (GetCharacterMovement()->IsMovingOnGround() && !performedSlide)
+    {
+        if(wantsToSlide)
+        {
+            StartSlide();
+            wantsToSlide = false;
+        }
     }
 }
 
