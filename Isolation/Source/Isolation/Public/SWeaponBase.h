@@ -166,6 +166,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
 	UAnimMontage* emptyReloadMontage;
 
+	// Sound bases
+	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
+	USoundBase* fireSound;
+
 	// Weapon Degradation
 	
 	// The amount of health taken away from the weapon every time the trigger is pulled

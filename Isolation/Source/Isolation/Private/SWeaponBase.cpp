@@ -32,6 +32,11 @@ void ASWeaponBase::BeginPlay()
 	Super::BeginPlay();
 
     referenceWeapon = this->GetClass();
+
+    //Sets the default values for our trace query
+	queryParams.AddIgnoredActor(this);
+	queryParams.bTraceComplex = true;
+	queryParams.bReturnPhysicalMaterial = true;
 }
 
 void ASWeaponBase::StartFire()
@@ -117,6 +122,10 @@ void ASWeaponBase::Fire()
                 // Applying the previously set damage to the hit actor
                 UGameplayStatics::ApplyPointDamage(hitActor, finalDamage, traceDirection, hit, GetInstigatorController(), this, damageType);
             }
+
+            // Spawning the firing sound
+
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), fireSound, traceStart);
 
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 
