@@ -263,19 +263,28 @@ void ASCharacter::SwapToSecondary()
 // Passing player inputs to SWeaponBase
 void ASCharacter::StartFire()
 {
-    currentWeapon->StartFire();
+    if (currentWeapon)
+    {
+        currentWeapon->StartFire();
+    }
 }
 
 // Passing player inputs to SWeaponBase
 void ASCharacter::StopFire()
 {
-    currentWeapon->StopFire();
+    if (currentWeapon)
+    {
+        currentWeapon->StopFire();
+    }
 }
 
 // Passing player inputs to SWeaponBase
 void ASCharacter::Reload()
 {
-    currentWeapon->Reload();
+    if (currentWeapon)
+    {
+        currentWeapon->Reload();
+    }
 }
 
 void ASCharacter::StartADS()

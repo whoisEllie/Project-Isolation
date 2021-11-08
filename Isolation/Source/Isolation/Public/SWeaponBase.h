@@ -81,6 +81,9 @@ public:
 	// The name of the socket on the meshComp where the line trace is shot from (start point)
 	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
 	FName muzzleSocketName;
+	// The name of the socket on the meshComp where the muzzle flash effect is played from
+	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	FName particleSocketName;
 	// Keeps track of the starting position of the line trace
 	FVector traceStart;
 	// keeps track of the starting rotation of the line trace (required for calculating the trace end point)
@@ -103,6 +106,7 @@ public:
 	// Damage
 
 	// hit result variable set when a line trace is spawned
+	UPROPERTY(BlueprintReadOnly, Category = "Damage")
 	FHitResult hit;
 	// unmodified damage values of this weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
@@ -146,6 +150,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
 	UNiagaraSystem* defaultHitEffect;
 
+	// particle effect (Niagara system) to be spawned at the muzzle when a shot is fired
+	UPROPERTY(EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* muzzleFlash;
+
 	// Animation Variables
 
 	// value used to keep track of the length of animations for timers
@@ -167,8 +175,15 @@ public:
 	UAnimMontage* emptyReloadMontage;
 
 	// Sound bases
+
+	// Firing sound
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
 	USoundBase* fireSound;
+	// Empty firing sound
+	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
+	USoundBase* emptyFireSound;
+
+
 
 	// Weapon Degradation
 	

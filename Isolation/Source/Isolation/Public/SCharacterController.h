@@ -11,12 +11,12 @@ class ASWeaponBase;
 // Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FsingleWeaponParams struct)
 // and to keep track of the total ammo the player has (ammoMap)
 UENUM(BlueprintType)
-enum AmmoType
+enum class EAmmoType : uint8
 {
-	VE_Pistol       UMETA(DisplayName = "Pistol Ammo"),
-	VE_Rifle        UMETA(DisplayName = "Rifle Ammo"),
-	VE_Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
-	VE_Special		UMETA(DisplayName = "Special Ammo"),	
+	Pistol       UMETA(DisplayName = "Pistol Ammo"),
+	Rifle        UMETA(DisplayName = "Rifle Ammo"),
+	Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
+	Special		 UMETA(DisplayName = "Special Ammo"),
 };
 
 // Struct holding the information for spawning a new enemy AI (spawn Location, target locations, weapon)
@@ -37,7 +37,7 @@ struct FsingleWeaponParams
     
     // Enumerator holding the 4 possible ammo types defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
-    TEnumAsByte<AmmoType> ammoType;
+    TEnumAsByte<EAmmoType> ammoType;
     	    
     // Weapon Health
     	
@@ -57,6 +57,6 @@ class ISOLATION_API ASCharacterController : public APlayerController
     TMap<TSubclassOf<ASWeaponBase>, FsingleWeaponParams> weaponParameters;
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    TMap<TEnumAsByte<AmmoType>, int32> ammoMap;
+    TMap<TEnumAsByte<EAmmoType>, int32> ammoMap;
 	
 };

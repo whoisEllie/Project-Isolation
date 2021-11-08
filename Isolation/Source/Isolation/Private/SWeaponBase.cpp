@@ -127,6 +127,9 @@ void ASWeaponBase::Fire()
 
             UGameplayStatics::PlaySoundAtLocation(GetWorld(), fireSound, traceStart);
 
+            // Spawning the firing particle effect
+            UNiagaraFunctionLibrary::SpawnSystemAttached(muzzleFlash, meshComp, particleSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
+
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 
             if (hit.PhysMaterial.Get() == normalDamageSurface || hit.PhysMaterial.Get() == headshotDamageSurface)
@@ -147,7 +150,12 @@ void ASWeaponBase::Fire()
             }
         }
     }
+    else if (bCanFire && !bIsReloading)
+    {
+    UGameplayStatics::PlaySoundAtLocation(GetWorld(), emptyFireSound, meshComp->GetSocketLocation(muzzleSocketName));
+    }
 }
+
 
 void ASWeaponBase::Reload()
 {
