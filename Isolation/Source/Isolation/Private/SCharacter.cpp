@@ -10,6 +10,7 @@
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "SWeaponBase.h"
@@ -37,7 +38,19 @@ ASCharacter::ASCharacter()
     crouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     defaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
     finalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
+
+
+    static ConstructorHelpers::FObjectFinder<UCurveFloat> Curvy(TEXT("CurveFloat'/Game/Blueprints/NotSoImportant/CurveFloatBP.CurveFloatBP'"));
+    if (Curvy.Object) {
+        fCurve = Curvy.Object;
+    }
+ 
+    ScoreTimeline = ObjectInitializer.CreateDefaultSubobject<UTimelineComponent>(this, TEXT("TimelineScore"));
+ 
+    InterpFunction.BindUFunction(this, FName{ TEXT("TimelineFloatReturn") });
 }
+
+
 
 // Called when the game starts or when spawned
 void ASCharacter::BeginPlay()
@@ -77,7 +90,7 @@ void ASCharacter::LookRight(float value)
 // Custom crouch function
 void ASCharacter::StartCrouch()
 {
-    holdingCrouch = true;
+    bHoldingCrouch = true;
     if (GetCharacterMovement()->IsMovingOnGround())
     {
         if (movementState == VE_Crouch)
@@ -85,7 +98,7 @@ void ASCharacter::StartCrouch()
             EndCrouch(false);
             //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
         }
-        else if (movementState == VE_Sprint && !performedSlide)
+        else if (movementState == VE_Sprint && !bPerformedSlide)
         {
             StartSlide();
         }
@@ -95,20 +108,20 @@ void ASCharacter::StartCrouch()
             UpdateMovementSpeed();
         }
     }
-    else if (!performedSlide)
+    else if (!bPerformedSlide)
     {
-        wantsToSlide = true;
+        bWantsToSlide = true;
     }
     
 }
 
 void ASCharacter::StopCrouch()
 {
-    holdingCrouch = false;    
+    bHoldingCrouch = false;    
     if (movementState == VE_Slide)
     {
         StopSlide();
-        performedSlide = false;
+        bPerformedSlide = false;
     }
 }
 
@@ -143,7 +156,7 @@ void ASCharacter::EndCrouch(bool toSprint)
 // Starting to sprint (IE_Pressed)
 void ASCharacter::StartSprint()
 {
-    holdingSprint = true;
+    bHoldingSprint = true;
     // Updates the sprint speed
     movementState = VE_Sprint;
     UpdateMovementSpeed();
@@ -152,7 +165,7 @@ void ASCharacter::StartSprint()
 // Stopping to sprint (IE_Released)
 void ASCharacter::StopSprint()
 {
-    if (movementState == VE_Slide && holdingCrouch)
+    if (movementState == VE_Slide && bHoldingCrouch)
     {
         movementState = VE_Crouch;
     }
@@ -161,29 +174,29 @@ void ASCharacter::StopSprint()
         movementState = VE_Walk;
     }
     
-    holdingSprint = false;
+    bHoldingSprint = false;
     UpdateMovementSpeed();
 }
 
 void ASCharacter::StartSlide()
 {
     movementState = VE_Slide;
-    performedSlide = true;
+    bPerformedSlide = true;
     UpdateMovementSpeed();
     GetWorldTimerManager().SetTimer(slideStop, this, &ASCharacter::StopSlide, slideTime, false, slideTime);
 }
 
 void ASCharacter::StopSlide()
 {
-    performedSlide = false;
+    bPerformedSlide = false;
     GetWorldTimerManager().ClearTimer(slideStop);
     if (movementState == VE_Slide)
     {
-        if (holdingSprint)
+        if (bHoldingSprint)
         {
             EndCrouch(true);
         }
-        else if (holdingCrouch)
+        else if (bHoldingCrouch)
         {
             movementState = VE_Crouch;
         }
@@ -195,36 +208,108 @@ void ASCharacter::StopSlide()
     }
 }
 
+void ASCharacter::CheckVault()
+{
+    float forwardVelocity = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
+    if (forwardVelocity > 0 && !bIsVaulting && GetCharacterMovement()->IsFalling())
+    {
+        FVector startLocation = GetActorLocation();
+        FVector endLocation = (GetActorLocation() + (GetActorForwardVector() * 75));
+        //DrawDebugCapsule(GetWorld(), startLocation, 30, 50, FQuat::Identity, FColor::Red);
+        if (GetWorld()->SweepSingleByChannel(hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50)))
+        {
+            if (hit.bBlockingHit)
+            {
+                FVector forwardImpactPoint = hit.ImpactPoint;
+                FVector forwardImpactNormal = hit.ImpactNormal;
+                FVector capsuleLocation = forwardImpactPoint;
+                capsuleLocation.Z = GetActorLocation().Z;
+                capsuleLocation += (forwardImpactNormal * -15);
+                startLocation = capsuleLocation;
+                startLocation.Z += (startLocation.Z + 100);
+                endLocation = capsuleLocation;
+                if (GetWorld()->SweepSingleByChannel(hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(0)))
+                {
+                    if (GetCharacterMovement()->IsWalkable(hit))
+                    {
+                        FVector downTracePoint = FVector::ZeroVector;
+                        downTracePoint = hit.Location;
+                        downTracePoint.Z = hit.ImpactPoint.Z;
+                        //UPrimitiveComponent* hitComponent = hit.Component;
+
+                        FVector calculationVector = FVector::ZeroVector;
+                        calculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
+                        downTracePoint += calculationVector;
+                        startLocation = downTracePoint;
+                        startLocation.Z += (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
+                        endLocation = downTracePoint;
+                        endLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
+                    
+                        if (GetWorld()->SweepSingleByChannel(hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetScaledCapsuleRadius())))
+                        {
+                            if (!hit.bBlockingHit)
+                            {
+                                forwardImpactNormal.X -= 1;
+                                forwardImpactNormal.Y -= 1;
+                                localTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(forwardImpactNormal), downTracePoint);
+                                float height = (localTargetTransform.GetLocation() - GetActorLocation()).Z;
+                                bIsVaulting = true;
+                                Vault(height, localTargetTransform);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void ASCharacter::Vault(float height, FTransform targetTransform)
+{
+    FTransform vaultStartLocation = GetActorTransform();
+    FTransform vaultEndLocation = targetTransform;
+    movementState = VE_Vault;
+}
+
 // Function that determines the player's maximum speed, based on whether they're crouching, sprinting or neither
 void ASCharacter::UpdateMovementSpeed()
 {
     if (movementState == VE_Crouch)
     {
         GetCharacterMovement()->MaxWalkSpeed = crouchMovementSpeed;
+        currentWeapon->bCanFire = true;
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    if (movementState == VE_Sprint)
+    else if (movementState == VE_Sprint)
     {
         GetCharacterMovement()->MaxWalkSpeed = sprintSpeed;
+        currentWeapon->bCanFire = false;
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    if (movementState == VE_Walk)
+    else if (movementState == VE_Walk)
     {
         GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+        currentWeapon->bCanFire = true;
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    if (movementState == VE_Slide)
+    else if (movementState == VE_Slide)
     {
         GetCharacterMovement()->MaxWalkSpeed = slideSpeed;
+        currentWeapon->bCanFire = false;
         GetCharacterMovement()->MaxAcceleration = 200.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
         GetCharacterMovement()->GroundFriction = 1.0f;
+    }
+    else if (movementState == VE_Vault)
+    {
+        currentWeapon->bCanFire = true;
+
     }
 }
 
@@ -326,13 +411,20 @@ void ASCharacter::Tick(float DeltaTime)
         bIsAiming = false;
     }
 
-    if (GetCharacterMovement()->IsMovingOnGround() && !performedSlide)
+    if (GetCharacterMovement()->IsMovingOnGround() && !bPerformedSlide)
     {
-        if(wantsToSlide)
+        if(bWantsToSlide)
         {
             StartSlide();
-            wantsToSlide = false;
+            bWantsToSlide = false;
         }
+    }
+
+    CheckVault();
+
+    if (MyTimeline != NULL)
+    {
+        MyTimeline->TickComponent(deltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
     }
 }
 

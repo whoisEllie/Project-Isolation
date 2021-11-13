@@ -61,14 +61,16 @@ public:
 	// The boolean holding whether we are aiming or not
 	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
 	bool bIsAiming;
+	// The boolean keeping track of whether we're vaulting or not
+	bool bIsVaulting;
 	// Keeps track whether the player is holding the Crouch button
-	bool holdingCrouch;
+	bool bHoldingCrouch;
 	// Have we performed a slide yet?
-	bool performedSlide;
+	bool bPerformedSlide;
 	// Is holding the sprint key
-	bool holdingSprint;
+	bool bHoldingSprint;
 	// wants to slide? (is holding the crouch/slide key, but not on the ground)
-	bool wantsToSlide;
+	bool bWantsToSlide;
 
 	// Enumerators
 
@@ -82,6 +84,7 @@ public:
 	FName cameraSocketName;
     
 protected:
+
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -113,10 +116,16 @@ protected:
 	// Stopping to sprint
 	void StopSprint();
 
+	// Starting to slide
 	void StartSlide();
 
+	// Stopping to slide
 	void StopSlide();
 
+	// Function that runs on tick and checks if we should execute the Vault() functions
+	void CheckVault();
+	// Function that actually executes the Vault
+	void Vault(float height, FTransform targetTransform);
 	// Global system to update movement speed
 	void UpdateMovementSpeed();
 
@@ -168,19 +177,23 @@ protected:
 	float fovChangeAmount;
 
 
-	// Variables for movement speed
+	// Variables for movement
 	// The maximum speed of the character when in the sprint state
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float sprintSpeed;
 	// The maximum speed of the character when in the walk state
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float walkSpeed;
 	// Determines the speed of the character when crouched
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float crouchMovementSpeed;
 	// Determines the speed of the character when sliding
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float slideSpeed;
+	//
+	FTransform localTargetTransform;
+	
+
 
 	// Timer managers
 	FTimerHandle slideStop;

@@ -37,7 +37,7 @@ struct FsingleWeaponParams
     
     // Enumerator holding the 4 possible ammo types defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
-    TEnumAsByte<EAmmoType> ammoType;
+    EAmmoType ammoType;
     	    
     // Weapon Health
     	
@@ -57,6 +57,6 @@ class ISOLATION_API ASCharacterController : public APlayerController
     TMap<TSubclassOf<ASWeaponBase>, FsingleWeaponParams> weaponParameters;
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    TMap<TEnumAsByte<EAmmoType>, int32> ammoMap;
+    TMap<EAmmoType, int32> ammoMap;
 	
 };
