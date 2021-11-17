@@ -4,12 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/TimelineComponent.h"
 #include "SCharacter.generated.h"
+
 
 class UCameraComponent;
 class USpringArmComponent;
 class USkeletalMeshComponent;
 class ASWeaponBase;
+class UAnimMontage;
+class UCurveFloat;
 
 UENUM(BlueprintType)
 enum MovementState
@@ -149,7 +153,22 @@ protected:
 
 	void StopADS();
 
+	UFUNCTION()
+	void TimelineProgress(float val);
+
+	FTimeline vaultTimeline;
+
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+	UCurveFloat* curveFloat;
+
 	FHitResult hit;
+
+	FTransform VaultStartLocation;
+
+	FTransform VaultEndLocation;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
+	UAnimMontage* vaultMontage;
 
 	// Floats
 	
