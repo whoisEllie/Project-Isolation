@@ -75,6 +75,9 @@ public:
 	bool bHoldingSprint;
 	// wants to slide? (is holding the crouch/slide key, but not on the ground)
 	bool bWantsToSlide;
+	// prints debug variables if enabled
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	bool bDrawDebug;
 
 	// Enumerators
 
@@ -163,6 +166,8 @@ protected:
 
 	FHitResult hit;
 
+	FHitResult vaultHit;
+
 	FTransform VaultStartLocation;
 
 	FTransform VaultEndLocation;
@@ -194,6 +199,12 @@ protected:
 	// amount for FOV to increase
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float fovChangeAmount;
+
+	// Integers
+
+	// amount of traces to draw for vault calculations, to get distance in unreal units, multiply by 5
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	int vaultTraceAmount;
 
 
 	// Variables for movement
