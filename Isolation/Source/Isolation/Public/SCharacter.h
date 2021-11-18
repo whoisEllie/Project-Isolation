@@ -156,6 +156,8 @@ protected:
 
 	void StopADS();
 
+	void CheckAngle();
+
 	UFUNCTION()
 	void TimelineProgress(float val);
 
@@ -167,6 +169,8 @@ protected:
 	FHitResult hit;
 
 	FHitResult vaultHit;
+
+	FHitResult angleHit;
 
 	FTransform VaultStartLocation;
 
@@ -199,6 +203,8 @@ protected:
 	// amount for FOV to increase
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float fovChangeAmount;
+	// current angle of floor
+	float floorAngle;
 
 	// Integers
 
