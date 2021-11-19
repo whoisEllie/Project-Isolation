@@ -205,6 +205,8 @@ protected:
 	float fovChangeAmount;
 	// current angle of floor
 	float floorAngle;
+	// vector of floor
+	FVector floorVector;
 
 	// Integers
 

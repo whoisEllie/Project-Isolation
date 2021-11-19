@@ -349,32 +349,18 @@ void ASCharacter::CheckAngle()
     TraceParams.bTraceComplex = true;
     TraceParams.AddIgnoredActor(this);
     float length = 0;
+    FRotator finalRotation = FRotator::ZeroRotator;
 
     FVector capsuleHeight = GetCapsuleComponent()->GetComponentLocation();
-    capsuleHeight.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() - 1);
-    FVector originLocation = capsuleHeight;
-    FVector traceStartLocation = (originLocation + (UKismetMathLibrary::GetForwardVector(GetCapsuleComponent()->GetComponentRotation()) * 10));
-    FVector traceEndLocation = traceStartLocation;
-    traceStartLocation.Z += 100;
-    traceEndLocation.Z = 0;
-    if (GetWorld()->LineTraceSingleByChannel(angleHit, traceStartLocation, traceEndLocation, ECC_WorldStatic, TraceParams))
+    capsuleHeight.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+    FVector angleStartTrace = capsuleHeight;
+    FVector angleEndTrace = angleStartTrace;
+    angleEndTrace.Z -= 5;
+    if (GetWorld()->LineTraceSingleByChannel(angleHit, angleStartTrace, angleEndTrace, ECC_WorldStatic, TraceParams))
     {
-        length = (traceStartLocation.Z - angleHit.ImpactPoint.Z - 1);
-        if (length > 200)
-        {
-            length = 0;
-        }
-        else if (length >= 100)
-        {
-            length -= 100;
-        }
-        else if (length < 10)
-        {
-            length = 100 - length;
-        }
+        floorVector = angleHit.ImpactNormal;
+        finalRotation = UKismetMathLibrary::MakeRotFromZX(floorVector, GetActorForwardVector());
     }
-    floorAngle = UKismetMathLibrary::Atan(length/10);
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::Printf(TEXT("%f"),length), true);
 }
 
 void ASCharacter::Vault(float height, FTransform targetTransform)
