@@ -343,7 +343,25 @@ void ASCharacter::CheckVault()
     }
 }
 
+void ASCharacter::CheckAngle()
+{
+    FCollisionQueryParams TraceParams;
+    TraceParams.bTraceComplex = true;
+    TraceParams.AddIgnoredActor(this);
+    float length = 0;
+    FRotator finalRotation = FRotator::ZeroRotator;
 
+    FVector capsuleHeight = GetCapsuleComponent()->GetComponentLocation();
+    capsuleHeight.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+    FVector angleStartTrace = capsuleHeight;
+    FVector angleEndTrace = angleStartTrace;
+    angleEndTrace.Z -= 5;
+    if (GetWorld()->LineTraceSingleByChannel(angleHit, angleStartTrace, angleEndTrace, ECC_WorldStatic, TraceParams))
+    {
+        floorVector = angleHit.ImpactNormal;
+        finalRotation = UKismetMathLibrary::MakeRotFromZX(floorVector, GetActorForwardVector());
+    }
+}
 
 void ASCharacter::Vault(float height, FTransform targetTransform)
 {
@@ -507,6 +525,8 @@ void ASCharacter::Tick(float DeltaTime)
     CheckVault();
 
     vaultTimeline.TickTimeline(DeltaTime);
+
+    CheckAngle();
 }
 
 // Called to bind functionality to input
