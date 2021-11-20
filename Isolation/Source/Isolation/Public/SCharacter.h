@@ -207,6 +207,9 @@ protected:
 	float floorAngle;
 	// vector of floor
 	FVector floorVector;
+	//
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float maxVaultHeight;
 
 	// Integers
 

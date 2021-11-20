@@ -195,9 +195,7 @@ void ASCharacter::StartSlide()
 
 void ASCharacter::StopSlide()
 {
-    bPerformedSlide = false;
-    GetWorldTimerManager().ClearTimer(slideStop);
-    if (movementState == VE_Slide)
+    if (movementState == VE_Slide && floorAngle > -15.0f)
     {
         if (bHoldingSprint)
         {
@@ -211,7 +209,13 @@ void ASCharacter::StopSlide()
         {
             movementState = VE_Walk;
         }
+        bPerformedSlide = false;
+        GetWorldTimerManager().ClearTimer(slideStop);
         UpdateMovementSpeed();
+    }
+    else if (floorAngle < -15.0f)
+    {
+        GetWorldTimerManager().SetTimer(slideStop, this, &ASCharacter::StopSlide, 0.1f, false, 0.1f);
     }
 }
 
@@ -279,7 +283,7 @@ void ASCharacter::CheckVault()
                                 }
                                 previousTraceHeight = currentTraceHeight;
                                 currentTraceHeight = traceLength;
-                                if (!(FMath::IsNearlyEqual(currentTraceHeight, initialTraceHeight, 20.0f)))
+                                if (!(FMath::IsNearlyEqual(currentTraceHeight, initialTraceHeight, 20.0f)) && currentTraceHeight < maxVaultHeight)
                                 {
                                     if (FMath::IsNearlyEqual(previousTraceHeight, currentTraceHeight, 3.0f))
                                     {
@@ -348,18 +352,22 @@ void ASCharacter::CheckAngle()
     FCollisionQueryParams TraceParams;
     TraceParams.bTraceComplex = true;
     TraceParams.AddIgnoredActor(this);
-    float length = 0;
     FRotator finalRotation = FRotator::ZeroRotator;
 
     FVector capsuleHeight = GetCapsuleComponent()->GetComponentLocation();
     capsuleHeight.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
     FVector angleStartTrace = capsuleHeight;
     FVector angleEndTrace = angleStartTrace;
-    angleEndTrace.Z -= 5;
+    angleEndTrace.Z -= 50;
     if (GetWorld()->LineTraceSingleByChannel(angleHit, angleStartTrace, angleEndTrace, ECC_WorldStatic, TraceParams))
     {
         floorVector = angleHit.ImpactNormal;
         finalRotation = UKismetMathLibrary::MakeRotFromZX(floorVector, GetActorForwardVector());
+        floorAngle = finalRotation.Pitch;
+        if (bDrawDebug)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%f"),floorAngle), true);
+        }
     }
 }
 
