@@ -25,7 +25,6 @@ enum MovementState
 	VE_Vault	    UMETA(DisplayName = "Vaulting")
 };
 
-
 UCLASS()
 class ISOLATION_API ASCharacter : public ACharacter
 {
@@ -89,6 +88,7 @@ public:
 	// Name of the socket we attach our camera to
 	UPROPERTY(EditDefaultsOnly, Category = "Other")
 	FName cameraSocketName;
+
     
 protected:
 
@@ -161,6 +161,8 @@ protected:
 	UFUNCTION()
 	void TimelineProgress(float val);
 
+	void WorldInteract();
+
 	FTimeline vaultTimeline;
 
 	UPROPERTY(EditAnywhere, Category = "Timeline")
@@ -171,6 +173,8 @@ protected:
 	FHitResult vaultHit;
 
 	FHitResult angleHit;
+
+	FHitResult interactionHit;
 
 	FTransform VaultStartLocation;
 

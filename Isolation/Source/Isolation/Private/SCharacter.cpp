@@ -10,6 +10,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
+#include "SInteractInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/PawnMovementComponent.h"
@@ -50,7 +51,7 @@ void ASCharacter::TimelineProgress(float val)
         bIsVaulting = false;
     }
     
-}   
+}
 
 // Called when the game starts or when spawned
 void ASCharacter::BeginPlay()
@@ -69,6 +70,26 @@ void ASCharacter::BeginPlay()
         vaultTimeline.AddInterpFloat(curveFloat, TimelineProgress);
     }
 }
+
+void ASCharacter::WorldInteract()
+{
+    FCollisionQueryParams TraceParams;
+    TraceParams.bTraceComplex = true;
+    TraceParams.AddIgnoredActor(this);
+    FVector cameraLocation = cameraComp->GetComponentLocation();
+    FRotator cameraRotation = cameraComp->GetComponentRotation();
+    FVector traceDirection = cameraRotation.Vector();
+    FVector traceEndLocation = cameraLocation + (traceDirection * 10000.0f);
+
+    if(GetWorld()->LineTraceSingleByChannel(interactionHit, cameraLocation, traceEndLocation, ECC_WorldStatic, TraceParams))
+    {
+        if(interactionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
+        {
+            Cast<ISInteractInterface>(interactionHit.GetActor())->Interact();
+        }
+    }
+}
+
 
 // Built in UE function for moving forward/back
 void ASCharacter::MoveForward(float value)
@@ -580,4 +601,6 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
     // Aiming Down Sights
     PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &ASCharacter::StartADS);
     PlayerInputComponent->BindAction("ADS", IE_Released, this, &ASCharacter::StopADS);
+
+    PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASCharacter::WorldInteract);
 }
