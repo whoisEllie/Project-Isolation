@@ -26,14 +26,14 @@ enum MovementState
 };
 
 UCLASS()
-class ISOLATION_API ASCharacter : public ACharacter
+class ISOLATION_API ASCharacter : public ACharacter	
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
 	ASCharacter();
-
+	
     //Hands mesh, assignable through blueprints
     UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
     USkeletalMeshComponent* meshComp;

@@ -8,6 +8,25 @@
 #include "SInteractInterface.h"
 #include "SAmmoPickup.generated.h"
 
+class UStaticMeshComponent;
+
+
+UENUM()
+enum class ELocalAmmoType : uint8
+{
+	Pistol       UMETA(DisplayName = "Pistol Ammo"),
+	Rifle        UMETA(DisplayName = "Rifle Ammo"),
+	Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
+	Special		 UMETA(DisplayName = "Special Ammo"),
+};
+
+UENUM()
+enum class EAmmoAmount : uint8
+{
+	Low    		UMETA(DisplayName="Low Ammo"),
+	Medium 		UMETA(DisplayName="Medium Ammo"),
+	High 		UMETA(DisplayName="High Ammo"),
+};
 
 UCLASS()
 class ISOLATION_API ASAmmoPickup : public AActor, public ISInteractInterface
@@ -20,6 +39,34 @@ public:
 
 	// Interface functions
 	virtual void Interact() override;
+
+
+	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
+	UStaticMeshComponent* previewMeshComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
+	UStaticMeshComponent* lowMeshComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
+	UStaticMeshComponent* mediumMeshComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
+	UStaticMeshComponent* highMeshComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
+	int lowAmmoCount;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
+	int mediumAmmoCount;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
+	int highAmmoCount;
+
+	UPROPERTY(EditAnywhere, Category = "Ammo Amount")
+    EAmmoAmount ammoAmount;
+
+	UPROPERTY(EditAnywhere, Category = "Ammo Type")
+	ELocalAmmoType ammoType;
 
 protected:
 	// Called when the game starts or when spawned
