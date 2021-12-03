@@ -10,20 +10,23 @@ ASAmmoPickup::ASAmmoPickup()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	previewMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("lowMeshComp"));
-	RootComponent = previewMeshComp;
+	arrowComp = CreateDefaultSubobject<USceneComponent>(TEXT("arrowComp"));
+	RootComponent = arrowComp;
+
+	previewMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("previewMeshComp"));
+	previewMeshComp->SetupAttachment(arrowComp);
 
 	lowMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("lowMeshComp"));
+	lowMeshComp->SetupAttachment(arrowComp);
 	lowMeshComp->ToggleVisibility(false);
-	lowMeshComp->AttachToComponent(previewMeshComp, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
 	mediumMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("mediumMeshComp"));
+	mediumMeshComp->SetupAttachment(arrowComp);
 	mediumMeshComp->ToggleVisibility(false);
-	mediumMeshComp->AttachToComponent(previewMeshComp, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
 	highMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("highMeshComp"));
+	highMeshComp->SetupAttachment(arrowComp);
 	highMeshComp->ToggleVisibility(false);
-	highMeshComp->AttachToComponent(previewMeshComp, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
 // Called when the game starts or when spawned

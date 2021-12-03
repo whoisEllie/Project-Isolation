@@ -9,6 +9,7 @@
 #include "SAmmoPickup.generated.h"
 
 class UStaticMeshComponent;
+class USceneComponent;
 
 
 UENUM()
@@ -40,6 +41,8 @@ public:
 	// Interface functions
 	virtual void Interact() override;
 
+	UPROPERTY()
+	USceneComponent* arrowComp;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
 	UStaticMeshComponent* previewMeshComp;
