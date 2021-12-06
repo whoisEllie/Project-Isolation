@@ -10,6 +10,7 @@
 
 class UStaticMeshComponent;
 class USceneComponent;
+class UStaticMesh;
 
 
 UENUM()
@@ -42,34 +43,36 @@ public:
 	virtual void Interact() override;
 
 	UPROPERTY()
-	USceneComponent* arrowComp;
+	USceneComponent* ArrowComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
-	UStaticMeshComponent* previewMeshComp;
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMeshComponent* PreviewMeshComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
-	UStaticMeshComponent* lowMeshComp;
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMeshComponent* LowMeshComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
-	UStaticMeshComponent* mediumMeshComp;
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMeshComponent* MediumMeshComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Static Meshes")
-	UStaticMeshComponent* highMeshComp;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
-	int lowAmmoCount;
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMeshComponent* HighMeshComp;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
-	int mediumAmmoCount;
+	int LowAmmoCount;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
-	int highAmmoCount;
+	int MediumAmmoCount;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
+	int HighAmmoCount;
 
 	UPROPERTY(EditAnywhere, Category = "Ammo Amount")
-    EAmmoAmount ammoAmount;
+    EAmmoAmount AmmoAmount;
 
-	UPROPERTY(EditAnywhere, Category = "Ammo Type")
-	ELocalAmmoType ammoType;
+	UPROPERTY(EditDefaultsOnly, Category = "Ammo Type")
+	ELocalAmmoType AmmoType;
+
+	int UpdateAmmo;
 
 protected:
 	// Called when the game starts or when spawned

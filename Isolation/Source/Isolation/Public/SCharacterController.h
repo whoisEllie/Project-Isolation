@@ -38,7 +38,7 @@ struct FsingleWeaponParams
     // Enumerator holding the 4 possible ammo types defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
     EAmmoType ammoType;
-    	    
+	
     // Weapon Health
     	
     // The current health of the weapon (degredation values are in the weapon class)
@@ -58,5 +58,4 @@ class ISOLATION_API ASCharacterController : public APlayerController
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
     TMap<EAmmoType, int32> ammoMap;
-	
 };

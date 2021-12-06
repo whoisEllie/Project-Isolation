@@ -2,6 +2,9 @@
 
 
 #include "SAmmoPickup.h"
+#include "SCharacter.h"
+#include "SCharacterController.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 
 // Sets default values
@@ -10,23 +13,23 @@ ASAmmoPickup::ASAmmoPickup()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	arrowComp = CreateDefaultSubobject<USceneComponent>(TEXT("arrowComp"));
-	RootComponent = arrowComp;
+	ArrowComp = CreateDefaultSubobject<USceneComponent>(TEXT("arrowComp"));
+	RootComponent = ArrowComp;
 
-	previewMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("previewMeshComp"));
-	previewMeshComp->SetupAttachment(arrowComp);
+	PreviewMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("previewMeshComp"));
+	PreviewMeshComp->SetupAttachment(ArrowComp);
 
-	lowMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("lowMeshComp"));
-	lowMeshComp->SetupAttachment(arrowComp);
-	lowMeshComp->ToggleVisibility(false);
+	LowMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("lowMeshComp"));
+	LowMeshComp->SetupAttachment(ArrowComp);
+	LowMeshComp->ToggleVisibility(false);
 
-	mediumMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("mediumMeshComp"));
-	mediumMeshComp->SetupAttachment(arrowComp);
-	mediumMeshComp->ToggleVisibility(false);
+	MediumMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("mediumMeshComp"));
+	MediumMeshComp->SetupAttachment(ArrowComp);
+	MediumMeshComp->ToggleVisibility(false);
 
-	highMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("highMeshComp"));
-	highMeshComp->SetupAttachment(arrowComp);
-	highMeshComp->ToggleVisibility(false);
+	HighMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("highMeshComp"));
+	HighMeshComp->SetupAttachment(ArrowComp);
+	HighMeshComp->ToggleVisibility(false);
 }
 
 // Called when the game starts or when spawned
@@ -34,20 +37,23 @@ void ASAmmoPickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	previewMeshComp->ToggleVisibility(false);
+	PreviewMeshComp->ToggleVisibility(false);
 
-	switch(ammoAmount)
+	switch(AmmoAmount)
 	{
 		case EAmmoAmount::Low:
-			lowMeshComp->ToggleVisibility(false);
+			LowMeshComp->ToggleVisibility(false);
+			UpdateAmmo = LowAmmoCount;
 			break;
 
 		case EAmmoAmount::Medium:
-			mediumMeshComp->ToggleVisibility(false);
+			MediumMeshComp->ToggleVisibility(false);
+			UpdateAmmo = MediumAmmoCount;
 			break;
 
 		case EAmmoAmount::High:
-			highMeshComp->ToggleVisibility(true);
+			HighMeshComp->ToggleVisibility(true);
+			UpdateAmmo = HighAmmoCount;
 			break;
 	}
 	
@@ -55,7 +61,30 @@ void ASAmmoPickup::BeginPlay()
 
 void ASAmmoPickup::Interact()
 {
-    
+    // Casting to the playercontroller (which stores all the ammunition and health variables)
+    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+
+    switch (AmmoType)
+    {
+    case ELocalAmmoType::Pistol:
+    	CharacterController->ammoMap[EAmmoType::Pistol] += UpdateAmmo;
+    	break;
+
+    case ELocalAmmoType::Rifle:
+    	CharacterController->ammoMap[EAmmoType::Rifle] += UpdateAmmo;
+    	break;
+
+    case ELocalAmmoType::Shotgun:
+    	CharacterController->ammoMap[EAmmoType::Shotgun] += UpdateAmmo;
+    	break;
+
+    case ELocalAmmoType::Special:
+    	CharacterController->ammoMap[EAmmoType::Special] += UpdateAmmo;
+    	break;
+    }
+
+	Destroy();
 }
 
 // Called every frame
