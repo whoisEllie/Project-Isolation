@@ -10,7 +10,7 @@
 
 class UStaticMeshComponent;
 class USceneComponent;
-class UStaticMesh;
+class USoundBase;
 
 
 UENUM()
@@ -57,6 +57,15 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	UStaticMeshComponent* HighMeshComp;
 
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMeshComponent* EmptyLowMeshComp;
+
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMeshComponent* EmptyMediumMeshComp;
+
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMeshComponent* EmptyHighMeshComp;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
 	int LowAmmoCount;
 
@@ -74,6 +83,12 @@ public:
 
 	int UpdateAmmo;
 
+	bool bCanInteract;
+	bool bDrawDebug;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
+	USoundBase* PickupSFX;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -82,4 +97,5 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void UpdateEmptyVisibility();
 };
