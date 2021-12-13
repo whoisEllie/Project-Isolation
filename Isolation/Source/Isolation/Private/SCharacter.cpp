@@ -24,33 +24,32 @@ ASCharacter::ASCharacter()
 	PrimaryActorTick.bCanEverTick = true;
     
     // Spawning the spring arm component
-    springArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("springArmComp"));
-    springArmComp->bUsePawnControlRotation = true;
-    springArmComp->SetupAttachment(RootComponent);
+    SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("springArmComp"));
+    SpringArmComp->bUsePawnControlRotation = true;
+    SpringArmComp->SetupAttachment(RootComponent);
     
     // Spawning the FPS hands mesh component and attaching it to the spring arm component
-    meshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("meshComp"));
-    meshComp->CastShadow = false;
-    meshComp->AttachToComponent(springArmComp, FAttachmentTransformRules::KeepRelativeTransform);
+    MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("meshComp"));
+    MeshComp->CastShadow = false;
+    MeshComp->AttachToComponent(SpringArmComp, FAttachmentTransformRules::KeepRelativeTransform);
     
     // Spawning the camera atop the FPS hands mesh
-    cameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
-    cameraComp->SetupAttachment(meshComp, "cameraSocket");
+    CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
+    CameraComp->SetupAttachment(MeshComp, "cameraSocket");
     
-    crouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
-    defaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
-    finalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
+    CrouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
+    DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
+    FinalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
 }
 
-void ASCharacter::TimelineProgress(float val)
+void ASCharacter::TimelineProgress(float value)
 {
-    FVector newActorLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), val);
+    FVector newActorLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), value);
     SetActorLocation(newActorLocation);
-    if (val == 1)
+    if (value == 1)
     {
         bIsVaulting = false;
     }
-    
 }
 
 // Called when the game starts or when spawned
@@ -58,16 +57,16 @@ void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
-    UpdateWeapon(primaryWeapon);
-    defaultFOV = cameraComp->FieldOfView;
-    speedFOV = defaultFOV + fovChangeAmount;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    UpdateWeapon(PrimaryWeapon);
+    DefaultFOV = CameraComp->FieldOfView;
+    SpeedFOV = DefaultFOV + FOVChangeAmount;
 
-    if (curveFloat)
+    if (CurveFloat)
     {
         FOnTimelineFloat TimelineProgress;
         TimelineProgress.BindUFunction(this, FName("TimelineProgress"));
-        vaultTimeline.AddInterpFloat(curveFloat, TimelineProgress);
+        VaultTimeline.AddInterpFloat(CurveFloat, TimelineProgress);
     }
 }
 
@@ -76,16 +75,16 @@ void ASCharacter::WorldInteract()
     FCollisionQueryParams TraceParams;
     TraceParams.bTraceComplex = true;
     TraceParams.AddIgnoredActor(this);
-    FVector cameraLocation = cameraComp->GetComponentLocation();
-    FRotator cameraRotation = cameraComp->GetComponentRotation();
-    FVector traceDirection = cameraRotation.Vector();
-    FVector traceEndLocation = cameraLocation + (traceDirection * 10000.0f);
+    const FVector CameraLocation = CameraComp->GetComponentLocation();
+    const FRotator CameraRotation = CameraComp->GetComponentRotation();
+    const FVector TraceDirection = CameraRotation.Vector();
+    const FVector TraceEndLocation = CameraLocation + (TraceDirection * 10000.0f);
 
-    if(GetWorld()->LineTraceSingleByChannel(interactionHit, cameraLocation, traceEndLocation, ECC_WorldStatic, TraceParams))
+    if(GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
     {
-        if(interactionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
+        if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
         {
-            Cast<ISInteractInterface>(interactionHit.GetActor())->Interact();
+            Cast<ISInteractInterface>(InteractionHit.GetActor())->Interact();
         }
     }
 }
@@ -121,18 +120,18 @@ void ASCharacter::StartCrouch()
     bHoldingCrouch = true;
     if (GetCharacterMovement()->IsMovingOnGround())
     {
-        if (movementState == VE_Crouch)
+        if (MovementState == VE_Crouch)
         {
             EndCrouch(false);
             //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
         }
-        else if (movementState == VE_Sprint && !bPerformedSlide)
+        else if (MovementState == VE_Sprint && !bPerformedSlide)
         {
             StartSlide();
         }
         else
         {
-            movementState = VE_Crouch;
+            MovementState = VE_Crouch;
             UpdateMovementSpeed();
         }
     }
@@ -140,22 +139,21 @@ void ASCharacter::StartCrouch()
     {
         bWantsToSlide = true;
     }
-    
 }
 
 void ASCharacter::StopCrouch()
 {
     bHoldingCrouch = false;    
-    if (movementState == VE_Slide)
+    if (MovementState == VE_Slide)
     {
         StopSlide();
         bPerformedSlide = false;
     }
 }
 
-void ASCharacter::EndCrouch(bool toSprint)
+void ASCharacter::EndCrouch(bool ToSprint)
 {
-    if (movementState == VE_Crouch || movementState == VE_Slide)
+    if (MovementState == VE_Crouch || MovementState == VE_Slide)
     {
         //FVector centerVector = GetActorLocation();
         //centerVector.Z += 46;
@@ -169,13 +167,13 @@ void ASCharacter::EndCrouch(bool toSprint)
         //    /* confetti or smth idk */
         //    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
         //}
-        if (toSprint)
+        if (ToSprint)
         {
-            movementState = VE_Sprint;
+            MovementState = VE_Sprint;
         }
         else
         {
-            movementState = VE_Walk;
+            MovementState = VE_Walk;
         }
         UpdateMovementSpeed();
     }
@@ -186,20 +184,20 @@ void ASCharacter::StartSprint()
 {
     bHoldingSprint = true;
     // Updates the sprint speed
-    movementState = VE_Sprint;
+    MovementState = VE_Sprint;
     UpdateMovementSpeed();
 }
 
 // Stopping to sprint (IE_Released)
 void ASCharacter::StopSprint()
 {
-    if (movementState == VE_Slide && bHoldingCrouch)
+    if (MovementState == VE_Slide && bHoldingCrouch)
     {
-        movementState = VE_Crouch;
+        MovementState = VE_Crouch;
     }
     else
     {
-        movementState = VE_Walk;
+        MovementState = VE_Walk;
     }
     
     bHoldingSprint = false;
@@ -208,15 +206,15 @@ void ASCharacter::StopSprint()
 
 void ASCharacter::StartSlide()
 {
-    movementState = VE_Slide;
+    MovementState = VE_Slide;
     bPerformedSlide = true;
     UpdateMovementSpeed();
-    GetWorldTimerManager().SetTimer(slideStop, this, &ASCharacter::StopSlide, slideTime, false, slideTime);
+    GetWorldTimerManager().SetTimer(SlideStop, this, &ASCharacter::StopSlide, SlideTime, false, SlideTime);
 }
 
 void ASCharacter::StopSlide()
 {
-    if (movementState == VE_Slide && floorAngle > -15.0f)
+    if (MovementState == VE_Slide && FloorAngle > -15.0f)
     {
         if (bHoldingSprint)
         {
@@ -224,19 +222,19 @@ void ASCharacter::StopSlide()
         }
         else if (bHoldingCrouch)
         {
-            movementState = VE_Crouch;
+            MovementState = VE_Crouch;
         }
         else
         {
-            movementState = VE_Walk;
+            MovementState = VE_Walk;
         }
         bPerformedSlide = false;
-        GetWorldTimerManager().ClearTimer(slideStop);
+        GetWorldTimerManager().ClearTimer(SlideStop);
         UpdateMovementSpeed();
     }
-    else if (floorAngle < -15.0f)
+    else if (FloorAngle < -15.0f)
     {
-        GetWorldTimerManager().SetTimer(slideStop, this, &ASCharacter::StopSlide, 0.1f, false, 0.1f);
+        GetWorldTimerManager().SetTimer(SlideStop, this, &ASCharacter::StopSlide, 0.1f, false, 0.1f);
     }
 }
 
@@ -253,12 +251,12 @@ void ASCharacter::CheckVault()
         TraceParams.bTraceComplex = true;
         TraceParams.AddIgnoredActor(this);
 
-        if (GetWorld()->SweepSingleByChannel(hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50), TraceParams))
+        if (GetWorld()->SweepSingleByChannel(Hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50), TraceParams))
         {
-            if (hit.bBlockingHit)
+            if (Hit.bBlockingHit)
             {
-                FVector forwardImpactPoint = hit.ImpactPoint;
-                FVector forwardImpactNormal = hit.ImpactNormal;
+                FVector forwardImpactPoint = Hit.ImpactPoint;
+                FVector forwardImpactNormal = Hit.ImpactNormal;
                 FVector capsuleLocation = forwardImpactPoint;
                 capsuleLocation.Z = (GetCapsuleComponent()->GetComponentLocation().Z);
                 capsuleLocation += (forwardImpactNormal * -15);
@@ -266,11 +264,11 @@ void ASCharacter::CheckVault()
                 startLocation.Z += 100;
                 endLocation = capsuleLocation;
                 //DrawDebugSphere(GetWorld(), startLocation, 1, 4, FColor::Blue);
-                if (GetWorld()->SweepSingleByChannel(hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams))
+                if (GetWorld()->SweepSingleByChannel(Hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams))
                 {
-                    if (GetCharacterMovement()->IsWalkable(hit))
+                    if (GetCharacterMovement()->IsWalkable(Hit))
                     {
-                        FVector secondaryVaultStartLocation = hit.ImpactPoint;
+                        FVector secondaryVaultStartLocation = Hit.ImpactPoint;
                         secondaryVaultStartLocation.Z += 5;
                         DrawDebugSphere(GetWorld(), secondaryVaultStartLocation, 10, 8, FColor::Orange);
                         FRotator cacheRotator = GetCapsuleComponent()->GetComponentRotation();
@@ -284,19 +282,19 @@ void ASCharacter::CheckVault()
                         bool vaultFailed = true;
                         
                         int i;
-                        for (i = 0; i <= vaultTraceAmount; i++)
+                        for (i = 0; i <= VaultTraceAmount; i++)
                         {
                             secondaryVaultStartLocation += (UKismetMathLibrary::GetForwardVector(cacheRotator) * 5);
                             secondaryVaultEndLocation += (UKismetMathLibrary::GetForwardVector(cacheRotator) * 5);
                             vaultFailed = true;
-                            if(GetWorld()->LineTraceSingleByChannel(vaultHit, secondaryVaultStartLocation, secondaryVaultEndLocation, ECC_WorldStatic, TraceParams))
+                            if(GetWorld()->LineTraceSingleByChannel(VaultHit, secondaryVaultStartLocation, secondaryVaultEndLocation, ECC_WorldStatic, TraceParams))
                             {
                                 if (bDrawDebug)
                                 {
-                                    DrawDebugLine(GetWorld(), secondaryVaultStartLocation, vaultHit.ImpactPoint, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                                    DrawDebugLine(GetWorld(), secondaryVaultStartLocation, VaultHit.ImpactPoint, FColor::Red, false, 10.0f, 0.0f, 2.0f);
                                 }
 
-                                float traceLength = (secondaryVaultStartLocation.Z - vaultHit.ImpactPoint.Z);
+                                float traceLength = (secondaryVaultStartLocation.Z - VaultHit.ImpactPoint.Z);
                                 if (!initialSwitch)
                                 {
                                     initialTraceHeight = traceLength;
@@ -304,12 +302,12 @@ void ASCharacter::CheckVault()
                                 }
                                 previousTraceHeight = currentTraceHeight;
                                 currentTraceHeight = traceLength;
-                                if (!(FMath::IsNearlyEqual(currentTraceHeight, initialTraceHeight, 20.0f)) && currentTraceHeight < maxVaultHeight)
+                                if (!(FMath::IsNearlyEqual(currentTraceHeight, initialTraceHeight, 20.0f)) && currentTraceHeight < MaxVaultHeight)
                                 {
                                     if (FMath::IsNearlyEqual(previousTraceHeight, currentTraceHeight, 3.0f))
                                     {
-                                        FVector downTracePoint = vaultHit.Location;
-                                        downTracePoint.Z = vaultHit.ImpactPoint.Z;
+                                        FVector downTracePoint = VaultHit.Location;
+                                        downTracePoint.Z = VaultHit.ImpactPoint.Z;
                                         //UPrimitiveComponent* hitComponent = hit.Component;
 
                                         FVector calculationVector = FVector::ZeroVector;
@@ -321,14 +319,14 @@ void ASCharacter::CheckVault()
                                         endLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
 
                                         //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
-                                        if (!GetWorld()->SweepSingleByChannel(vaultHit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams))
+                                        if (!GetWorld()->SweepSingleByChannel(VaultHit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams))
                                         {
                                             forwardImpactNormal.X -= 1;
                                             forwardImpactNormal.Y -= 1;
-                                            localTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(forwardImpactNormal), downTracePoint);
-                                            float height = (localTargetTransform.GetLocation() - GetActorLocation()).Z;
+                                            LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(forwardImpactNormal), downTracePoint);
+                                            float height = (LocalTargetTransform.GetLocation() - GetActorLocation()).Z;
                                             bIsVaulting = true;
-                                            Vault(height, localTargetTransform);
+                                            Vault(height, LocalTargetTransform);
                                             vaultFailed = false;
                                             break;
                                         }
@@ -338,8 +336,8 @@ void ASCharacter::CheckVault()
                         }
                         if (vaultFailed)
                         {
-                            FVector downTracePoint = hit.Location;
-                            downTracePoint.Z = hit.ImpactPoint.Z;
+                            FVector downTracePoint = Hit.Location;
+                            downTracePoint.Z = Hit.ImpactPoint.Z;
                             //UPrimitiveComponent* hitComponent = hit.Component;
 
                             FVector calculationVector = FVector::ZeroVector;
@@ -351,14 +349,14 @@ void ASCharacter::CheckVault()
                             endLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
 
                             //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
-                            if (!GetWorld()->SweepSingleByChannel(hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams))
+                            if (!GetWorld()->SweepSingleByChannel(Hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams))
                             {
                                 forwardImpactNormal.X -= 1;
                                 forwardImpactNormal.Y -= 1;
-                                localTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(forwardImpactNormal), downTracePoint);
-                                float height = (localTargetTransform.GetLocation() - GetActorLocation()).Z;
+                                LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(forwardImpactNormal), downTracePoint);
+                                float height = (LocalTargetTransform.GetLocation() - GetActorLocation()).Z;
                                 bIsVaulting = true;
-                                Vault(height, localTargetTransform);
+                                Vault(height, LocalTargetTransform);
                             }
                         }
                     }
@@ -380,126 +378,126 @@ void ASCharacter::CheckAngle()
     FVector angleStartTrace = capsuleHeight;
     FVector angleEndTrace = angleStartTrace;
     angleEndTrace.Z -= 50;
-    if (GetWorld()->LineTraceSingleByChannel(angleHit, angleStartTrace, angleEndTrace, ECC_WorldStatic, TraceParams))
+    if (GetWorld()->LineTraceSingleByChannel(AngleHit, angleStartTrace, angleEndTrace, ECC_WorldStatic, TraceParams))
     {
-        floorVector = angleHit.ImpactNormal;
-        finalRotation = UKismetMathLibrary::MakeRotFromZX(floorVector, GetActorForwardVector());
-        floorAngle = finalRotation.Pitch;
+        FloorVector = AngleHit.ImpactNormal;
+        finalRotation = UKismetMathLibrary::MakeRotFromZX(FloorVector, GetActorForwardVector());
+        FloorAngle = finalRotation.Pitch;
         if (bDrawDebug)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%f"),floorAngle), true);
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%f"),FloorAngle), true);
         }
     }
 }
 
-void ASCharacter::Vault(float height, FTransform targetTransform)
+void ASCharacter::Vault(float Height, FTransform TargetTransform)
 {
     VaultStartLocation = GetActorTransform();
-    VaultEndLocation = targetTransform;
-    movementState = VE_Vault;
+    VaultEndLocation = TargetTransform;
+    MovementState = VE_Vault;
     UpdateMovementSpeed();
-    meshComp->GetAnimInstance()->Montage_Play(vaultMontage, 1.0f);
-    vaultTimeline.PlayFromStart();
+    MeshComp->GetAnimInstance()->Montage_Play(VaultMontage, 1.0f);
+    VaultTimeline.PlayFromStart();
 }
 
 // Function that determines the player's maximum speed, based on whether they're crouching, sprinting or neither
 void ASCharacter::UpdateMovementSpeed()
 {
-    if (movementState == VE_Crouch)
+    if (MovementState == VE_Crouch)
     {
-        GetCharacterMovement()->MaxWalkSpeed = crouchMovementSpeed;
-        currentWeapon->bCanFire = true;
+        GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
+        CurrentWeapon->bCanFire = true;
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (movementState == VE_Sprint)
+    else if (MovementState == VE_Sprint)
     {
-        GetCharacterMovement()->MaxWalkSpeed = sprintSpeed;
-        currentWeapon->bCanFire = false;
+        GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+        CurrentWeapon->bCanFire = false;
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (movementState == VE_Walk)
+    else if (MovementState == VE_Walk)
     {
-        GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
-        currentWeapon->bCanFire = true;
+        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+        CurrentWeapon->bCanFire = true;
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (movementState == VE_Slide)
+    else if (MovementState == VE_Slide)
     {
-        GetCharacterMovement()->MaxWalkSpeed = slideSpeed;
-        currentWeapon->bCanFire = false;
+        GetCharacterMovement()->MaxWalkSpeed = SlideSpeed;
+        CurrentWeapon->bCanFire = false;
         GetCharacterMovement()->MaxAcceleration = 200.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
         GetCharacterMovement()->GroundFriction = 1.0f;
     }
-    else if (movementState == VE_Vault)
+    else if (MovementState == VE_Vault)
     {
-        currentWeapon->bCanFire = true;
+        CurrentWeapon->bCanFire = true;
 
     }
 }
 
 // Spawns a new weapon (either from weapon swap or picking up a new weapon)
-void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> newWeapon)
+void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon)
 {
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters spawnParams;
     spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    if (currentWeapon)
+    if (CurrentWeapon)
     {
         // Destroys the current weapon, if it exists
-        currentWeapon->K2_DestroyActor();
+        CurrentWeapon->K2_DestroyActor();
     }
     // Spawns the new weapon and sets the player as it's owner
-    currentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(newWeapon, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
-    if (currentWeapon)
+    CurrentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
+    if (CurrentWeapon)
     {
-        currentWeapon->SetOwner(this);
-        currentWeapon->AttachToComponent(meshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, currentWeapon->weaponAttachmentSocketName);
+        CurrentWeapon->SetOwner(this);
+        CurrentWeapon->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->weaponAttachmentSocketName);
     }   
 }
 
 // Lazy solution - read below
 void ASCharacter::SwapToPrimary()
 {
-    UpdateWeapon(primaryWeapon);
+    UpdateWeapon(PrimaryWeapon);
 }
 
 // Lazy solution - read below
 void ASCharacter::SwapToSecondary()
 {
-    UpdateWeapon(secondaryWeapon);
+    UpdateWeapon(SecondaryWeapon);
 }
 
 // Passing player inputs to SWeaponBase
 void ASCharacter::StartFire()
 {
-    if (currentWeapon)
+    if (CurrentWeapon)
     {
-        currentWeapon->StartFire();
+        CurrentWeapon->StartFire();
     }
 }
 
 // Passing player inputs to SWeaponBase
 void ASCharacter::StopFire()
 {
-    if (currentWeapon)
+    if (CurrentWeapon)
     {
-        currentWeapon->StopFire();
+        CurrentWeapon->StopFire();
     }
 }
 
 // Passing player inputs to SWeaponBase
 void ASCharacter::Reload()
 {
-    if (currentWeapon)
+    if (CurrentWeapon)
     {
-        currentWeapon->Reload();
+        CurrentWeapon->Reload();
     }
 }
 
@@ -520,20 +518,20 @@ void ASCharacter::Tick(float DeltaTime)
 
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
-	float targetHalfHeight = (movementState == VE_Crouch || movementState == VE_Slide)? finalCapsuleHalfHeight : defaultCapsuleHalfHeight;
+	float targetHalfHeight = (MovementState == VE_Crouch || MovementState == VE_Slide)? FinalCapsuleHalfHeight : DefaultCapsuleHalfHeight;
 	// Interpolates between the current height and the target height
-	float newHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), targetHalfHeight, DeltaTime, crouchSpeed);
+	float newHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), targetHalfHeight, DeltaTime, CrouchSpeed);
 	// Sets the half height of the capsule component to the new interpolated half height
 	GetCapsuleComponent()->SetCapsuleHalfHeight(newHalfHeight);
 
     // FOV adjustments
-    float targetFOV = (movementState == VE_Sprint || movementState == VE_Slide)? speedFOV : defaultFOV;
+    float targetFOV = (MovementState == VE_Sprint || MovementState == VE_Slide)? SpeedFOV : DefaultFOV;
     //Interpolates between current fov and target fov
-    float newFOV = FMath::FInterpTo(cameraComp->FieldOfView, targetFOV, DeltaTime, fovChangeSpeed);
+    float newFOV = FMath::FInterpTo(CameraComp->FieldOfView, targetFOV, DeltaTime, FOVChangeSpeed);
     // Sets the new camera FOV
-    cameraComp->SetFieldOfView(newFOV);
+    CameraComp->SetFieldOfView(newFOV);
 
-    if (bWantsToAim == true && movementState != VE_Sprint && movementState != VE_Slide)
+    if (bWantsToAim == true && MovementState != VE_Sprint && MovementState != VE_Slide)
     {
         bIsAiming = true;
     }
@@ -553,7 +551,7 @@ void ASCharacter::Tick(float DeltaTime)
 
     CheckVault();
 
-    vaultTimeline.TickTimeline(DeltaTime);
+    VaultTimeline.TickTimeline(DeltaTime);
 
     CheckAngle();
 }

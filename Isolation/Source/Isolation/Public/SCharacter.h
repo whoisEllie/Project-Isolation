@@ -36,25 +36,25 @@ public:
 	
     //Hands mesh, assignable through blueprints
     UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-    USkeletalMeshComponent* meshComp;
+    USkeletalMeshComponent* MeshComp;
 	//Camera Comp - component for the FPS camera
 	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-	UCameraComponent* cameraComp;
+	UCameraComponent* CameraComp;
 	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
 	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-	USpringArmComponent* springArmComp;
+	USpringArmComponent* SpringArmComp;
 
 	// Weapon classes
     
 	// A reference to the player's current primary weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
-	TSubclassOf<ASWeaponBase> primaryWeapon;
+	TSubclassOf<ASWeaponBase> PrimaryWeapon;
 	// A reference to the player's current secondary weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
-	TSubclassOf<ASWeaponBase> secondaryWeapon;
+	TSubclassOf<ASWeaponBase> SecondaryWeapon;
 	// The player's currently equipped weapon
 	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
-	ASWeaponBase* currentWeapon;
+	ASWeaponBase* CurrentWeapon;
 
 
 	// Booleans
@@ -82,12 +82,12 @@ public:
 
 	// Enumerator holding the 4 possible movement states defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement State")
-    TEnumAsByte<MovementState> movementState;
+    TEnumAsByte<MovementState> MovementState;
 
 	// Other
 	// Name of the socket we attach our camera to
 	UPROPERTY(EditDefaultsOnly, Category = "Other")
-	FName cameraSocketName;
+	FName CameraSocketName;
 
     
 protected:
@@ -115,7 +115,7 @@ protected:
 	void StopCrouch();
 
 	// We do this so that we can perform checks based on the height above the player (can they even stand up?) and to handle sliding
-	void EndCrouch(bool toSprint);
+	void EndCrouch(bool ToSprint);
 
 	// Starting to sprint
 	void StartSprint();
@@ -132,12 +132,12 @@ protected:
 	// Function that runs on tick and checks if we should execute the Vault() functions
 	void CheckVault();
 	// Function that actually executes the Vault
-	void Vault(float height, FTransform targetTransform);
+	void Vault(float Height, FTransform TargetTransform);
 	// Global system to update movement speed
 	void UpdateMovementSpeed();
 
 	// Switches to new weapon
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> newWeapon);
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon);
 
 	void SwapToPrimary();
 
@@ -159,89 +159,89 @@ protected:
 	void CheckAngle();
 
 	UFUNCTION()
-	void TimelineProgress(float val);
+	void TimelineProgress(float value);
 
 	void WorldInteract();
 
-	FTimeline vaultTimeline;
+	FTimeline VaultTimeline;
 
 	UPROPERTY(EditAnywhere, Category = "Timeline")
-	UCurveFloat* curveFloat;
+	UCurveFloat* CurveFloat;
 
-	FHitResult hit;
+	FHitResult Hit;
 
-	FHitResult vaultHit;
+	FHitResult VaultHit;
 
-	FHitResult angleHit;
+	FHitResult AngleHit;
 
-	FHitResult interactionHit;
+	FHitResult InteractionHit;
 
 	FTransform VaultStartLocation;
 
 	FTransform VaultEndLocation;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
-	UAnimMontage* vaultMontage;
+	UAnimMontage* VaultMontage;
 
 	// Floats
 	
 	// Variables for crouch system
 	// Sets the height of the player when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float finalCapsuleHalfHeight;
+	float FinalCapsuleHalfHeight;
 	// Set in the default values, the base height of the capsule
-	float defaultCapsuleHalfHeight;
+	float DefaultCapsuleHalfHeight;
 	// Determines the rate at which the character crouches
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float crouchSpeed;
+	float CrouchSpeed;
 	// Slide time
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float slideTime;
+	float SlideTime;
 	// Default FOV
-	float defaultFOV;
+	float DefaultFOV;
 	// target FOV
-	float speedFOV;
+	float SpeedFOV;
 	// change speed for the fov
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float fovChangeSpeed;
+	float FOVChangeSpeed;
 	// amount for FOV to increase
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float fovChangeAmount;
+	float FOVChangeAmount;
 	// current angle of floor
-	float floorAngle;
+	float FloorAngle;
 	// vector of floor
-	FVector floorVector;
+	FVector FloorVector;
 	//
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float maxVaultHeight;
+	float MaxVaultHeight;
 
 	// Integers
 
 	// amount of traces to draw for vault calculations, to get distance in unreal units, multiply by 5
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	int vaultTraceAmount;
+	int VaultTraceAmount;
 
 
 	// Variables for movement
 	// The maximum speed of the character when in the sprint state
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float sprintSpeed;
+	float SprintSpeed;
 	// The maximum speed of the character when in the walk state
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float walkSpeed;
+	float WalkSpeed;
 	// Determines the speed of the character when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float crouchMovementSpeed;
+	float CrouchMovementSpeed;
 	// Determines the speed of the character when sliding
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float slideSpeed;
+	float SlideSpeed;
 	//
-	FTransform localTargetTransform;
+	FTransform LocalTargetTransform;
 	
 
 
 	// Timer managers
-	FTimerHandle slideStop;
+	FTimerHandle SlideStop;
     
 public:	
 	// Called every frame
