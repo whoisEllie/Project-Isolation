@@ -38,7 +38,7 @@ public:
     UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
     USkeletalMeshComponent* MeshComp;
 	//Camera Comp - component for the FPS camera
-	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* CameraComp;
 	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
 	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
@@ -77,6 +77,12 @@ public:
 	// prints debug variables if enabled
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bDrawDebug;
+	// keeps track of whether we're sprinting (for animations)
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsSprinting;
+	// keeps track of whether we're crouching (for animations)
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsCrouching;
 
 	// Enumerators
 
@@ -115,7 +121,7 @@ protected:
 	void StopCrouch();
 
 	// We do this so that we can perform checks based on the height above the player (can they even stand up?) and to handle sliding
-	void EndCrouch(bool ToSprint);
+	void EndCrouch(bool bToSprint);
 
 	// Starting to sprint
 	void StartSprint();
@@ -211,9 +217,15 @@ protected:
 	float FloorAngle;
 	// vector of floor
 	FVector FloorVector;
-	//
+	// The height of the highest surface that the player can mantle up onto
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float MaxVaultHeight;
+	// The forward movement value (used for animations)
+	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	float ForwardMovement;
+	// The right movement value (used for animations)
+	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	float RightMovement;
 
 	// Integers
 

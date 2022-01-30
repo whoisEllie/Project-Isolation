@@ -3,14 +3,152 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "SWeaponBase.generated.h"
 
 class USkeletalMeshComponent;
+class USkeletalMesh;
 class UAnimMontage;
 class UNiagaraSystem;
 class USoundCue;
 class UPhysicalMaterial;
+class UDataTable;
+
+UENUM()
+enum class EAttachmentType : uint8
+{
+	Barrel		UMETA(DisplayName = "Barrel Attachment"),
+	Magazine	UMETA(DisplayName = "Magazine Attachment"),
+	Sights		UMETA(DisplayName = "Sights Attachment"),
+	Stock		UMETA(DispayName = "Stock Attachment"),
+};
+
+USTRUCT(BlueprintType)
+struct FAttachmentData : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	USkeletalMesh* AttachmentMesh;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	int AttachmentGroup;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	EAttachmentType AttachmentType;
+};
+
+USTRUCT(BlueprintType)
+struct FWeaponData : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	// Determines whether the weapon is automatic or not
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	bool bAutomaticFire;
+	// Rate of fire (in time between shots) for the weapon
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	float RateOfFire;
+	// Determines if the weapon can have a round in the chamber or not
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	bool bCanBeChambered;
+	// We wait for the animation to finish before the player is allowed to fire again (for weapons where the character has to perform an action before being able to fire again) Requires fireMontage to be set
+	UPROPERTY(EditDefaultsOnly, Category = "Animation Variables")
+	bool bWaitForAnim;
+	// Determines the socket or bone with which the weapon will be attached to the character's hand (typically the root bone or the grip bone)
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	FName WeaponAttachmentSocketName;
+	// Determines if the weapon should fire more than one 'pellet' every time it is fired. Enable if you'd like your weapon to act like a shotgun
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	bool bIsShotgun;
+	// Determines the amount of pellets a shotgun will fire
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	int ShotgunPelletCount;
+	// The name of the socket on the meshComp where the line trace is shot from (start point)
+	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	FName MuzzleSocketName;
+	// The name of the socket on the meshComp where the muzzle flash effect is played from
+	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	FName ParticleSocketName;
+	// The distance the shot will travel
+	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	float LengthMultiplier;
+	// The pitch variation applied to the bullet as it leaves the barrel
+	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	float WeaponPitchVariation;
+	// The yaw variation applied to the bullet as it leaves the barrel
+	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	float WeaponYawVariation;
+	// unmodified damage values of this weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	float BaseDamage;
+	// multiplier to be applied when the player hits an enemy's head bone
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	float HeadshotMultiplier;
+
+	// Damage surfaces
+
+	// surface (physical material) for areas which should spawn blood particles when hit and receive normal damage (equivalent to the baseDamage variable)
+	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
+	UPhysicalMaterial* NormalDamageSurface;
+	// surface (physical material) for areas which should spawn blood particles when hit and receive boosted damage (equivalent to the baseDamage variable multiplied by the headshotMultiplier)
+	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
+	UPhysicalMaterial* HeadshotDamageSurface;
+	// surface (physical material) for areas which should spawn ground particles when hit)
+	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
+	UPhysicalMaterial* GroundSurface;
+	// surface (physical material) for areas which should spawn rock particles when hit)
+	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
+	UPhysicalMaterial* RockSurface;
+
+	// VFX
+	
+	// particle effect (Niagara system) to be spawned when an enemy is hit
+	UPROPERTY(EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* EnemyHitEffect;
+	// particle effect (Niagara system) to be spawned when the ground is hit
+	UPROPERTY(EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* GroundHitEffect;
+	// particle effect (Niagara system) to be spawned when a rock is hit
+	UPROPERTY(EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* RockHitEffect;
+	// particle effect (Niagara system) to be spawned when no defined type is hit
+	UPROPERTY(EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* DefaultHitEffect;
+
+	// particle effect (Niagara system) to be spawned at the muzzle when a shot is fired
+	UPROPERTY(EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* MuzzleFlash;
+
+	// Animation Montages
+
+	// The animation montage played every time a bullet is fired
+	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
+	UAnimMontage* FireMontage;
+	// The animation montage played every time the character reloads with ammunition still present in the magazine
+	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
+	UAnimMontage* ReloadMontage;
+	// The animation montage played every time the character reloads with a completely empty clip
+	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
+	UAnimMontage* EmptyReloadMontage;
+
+	// Sound bases
+
+	// Firing sound
+	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
+	USoundBase* FireSound;
+	// Empty firing sound
+	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
+	USoundBase* EmptyFireSound;
+	
+	// Weapon Degradation
+	
+	// The amount of health taken away from the weapon every time the trigger is pulled
+	UPROPERTY(EditDefaultsOnly, Category = "Degradation")
+	float WeaponDegradationRate;
+	
+};
 
 UCLASS()
 class ISOLATION_API ASWeaponBase : public AActor
@@ -38,6 +176,17 @@ public:
 
 	// Allows the player to fire again
 	void EnableFire();
+
+	// Data table reference
+	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
+	UDataTable* WeaponDataTable;
+
+	FWeaponData* WeaponData;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
+	UDataTable* AttachmentsDataTable;
+
+	FAttachmentData* AttachmentData;
 	
 	// Debug boolean, toggle for debug strings and line traces to be shown
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
@@ -47,158 +196,75 @@ public:
 	
 	// The main skeletal mesh - holds the weapon model
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	USkeletalMeshComponent* meshComp;
+	USkeletalMeshComponent* MeshComp;
+
+	// The main skeletal mesh - holds the weapon model
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* BarrelAttachment;
+
+	// The main skeletal mesh - holds the weapon model
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* MagazineAttachment;
+
+	// The main skeletal mesh - holds the weapon model
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* SightsAttachment;
+
+	// The main skeletal mesh - holds the weapon model
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* StockAttachment;
 	
 	// General
 
 	// Determines if the player can fire
 	bool bCanFire;
-	// Determines whether the weapon is automatic or not
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	bool bAutomaticFire;
 	// Keeps track of whether the weapon is being reloaded
 	bool bIsReloading;
-	// Rate of fire (in time between shots) for the weapon
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	float rateOfFire;
-	// Determines if the weapon can have a round in the chamber or not
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	bool bCanBeChambered;
-	// Determines the socket or bone with which the weapon will be attached to the character's hand (typically the root bone or the grip bone)
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	FName weaponAttachmentSocketName;
-	// Determines if the weapon should fire more than one 'pellet' every time it is fired. Enable if you'd like your weapon to act like a shotgun
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	bool bIsShotgun;
-	// Determines the amount of pellets a shotgun will fire
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	int shotgunPelletCount;
 	// Stores a reference to the class of the current weapon so we can access it's relevant ammunition and health values in SCharacterController
-	TSubclassOf<ASWeaponBase> referenceWeapon;
+	TSubclassOf<ASWeaponBase> ReferenceWeapon;
 
 	// Line Trace
-
-	// The name of the socket on the meshComp where the line trace is shot from (start point)
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	FName muzzleSocketName;
-	// The name of the socket on the meshComp where the muzzle flash effect is played from
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	FName particleSocketName;
+	// 
 	// Keeps track of the starting position of the line trace
-	FVector traceStart;
+	FVector TraceStart;
 	// keeps track of the starting rotation of the line trace (required for calculating the trace end point)
-	FRotator traceStartRotation;
+	FRotator TraceStartRotation;
 	// keeps track of the vector direction of the line trace (derived from rotation)
-	FVector traceDirection;
+	FVector TraceDirection;
 	// end point of the line trace
-	FVector traceEnd;
+	FVector TraceEnd;
 	// The range of the weapon
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	float lengthMultiplier;
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	float weaponPitchVariation;
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	float weaponYawVariation;
+
 
 	// collision parameters for spawning the line trace
-	FCollisionQueryParams queryParams;
+	FCollisionQueryParams QueryParams;
 
 	// Damage
 
 	// hit result variable set when a line trace is spawned
 	UPROPERTY(BlueprintReadOnly, Category = "Damage")
-	FHitResult hit;
-	// unmodified damage values of this weapon
-	UPROPERTY(EditDefaultsOnly, Category = "Damage")
-	float baseDamage;
-	// multiplier to be applied when the player hits an enemy's head bone
-	UPROPERTY(EditDefaultsOnly, Category = "Damage")
-	float headshotMultiplier;
+	FHitResult Hit;
 	// internal variable used to keep track of the final damage value after modifications
-	float finalDamage;
+	float FinalDamage;
 	// damage type (set in blueprints)
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
-	TSubclassOf<UDamageType> damageType;
-
-	// Damage surfaces
-
-	// surface (physical material) for areas which should spawn blood particles when hit and receive normal damage (equivalent to the baseDamage variable)
-	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
-	UPhysicalMaterial* normalDamageSurface;
-	// surface (physical material) for areas which should spawn blood particles when hit and receive boosted damage (equivalent to the baseDamage variable multiplied by the headshotMultiplier)
-	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
-	UPhysicalMaterial* headshotDamageSurface;
-	// surface (physical material) for areas which should spawn ground particles when hit)
-	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
-	UPhysicalMaterial* groundSurface;
-	// surface (physical material) for areas which should spawn rock particles when hit)
-	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
-	UPhysicalMaterial* rockSurface;
-
-	// VFX
+	TSubclassOf<UDamageType> DamageType;
 	
-	// particle effect (Niagara system) to be spawned when an enemy is hit
-	UPROPERTY(EditDefaultsOnly, Category = "VFX")
-	UNiagaraSystem* enemyHitEffect;
-	// particle effect (Niagara system) to be spawned when the ground is hit
-	UPROPERTY(EditDefaultsOnly, Category = "VFX")
-	UNiagaraSystem* groundHitEffect;
-	// particle effect (Niagara system) to be spawned when a rock is hit
-	UPROPERTY(EditDefaultsOnly, Category = "VFX")
-	UNiagaraSystem* rockHitEffect;
-	// particle effect (Niagara system) to be spawned when no defined type is hit
-	UPROPERTY(EditDefaultsOnly, Category = "VFX")
-	UNiagaraSystem* defaultHitEffect;
-
-	// particle effect (Niagara system) to be spawned at the muzzle when a shot is fired
-	UPROPERTY(EditDefaultsOnly, Category = "VFX")
-	UNiagaraSystem* muzzleFlash;
 
 	// Animation Variables
 
 	// value used to keep track of the length of animations for timers
-	float animTime;
-	// We wait for the animation to finish before the player is allowed to fire again (for weapons where the character has to perform an action before being able to fire again) Requires fireMontage to be set
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Variables")
-	bool bWaitForAnim;
-	
-	// Animation Montages
+	float AnimTime;
 
-	// The animation montage played every time a bullet is fired
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
-	UAnimMontage* fireMontage;
-	// The animation montage played every time the character reloads with ammunition still present in the magazine
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
-	UAnimMontage* reloadMontage;
-	// The animation montage played every time the character reloads with a completely empty clip
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
-	UAnimMontage* emptyReloadMontage;
-
-	// Sound bases
-
-	// Firing sound
-	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
-	USoundBase* fireSound;
-	// Empty firing sound
-	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
-	USoundBase* emptyFireSound;
-
-
-
-	// Weapon Degradation
-	
-	// The amount of health taken away from the weapon every time the trigger is pulled
-	UPROPERTY(EditDefaultsOnly, Category = "Degradation")
-	float weaponDegredationRate;
 
 	// Timers
 	
 	// The timer that handles automatic fire
-	FTimerHandle shotDelay;
+	FTimerHandle ShotDelay;
 	// The timer that is used when we need to wait for an animation to finish before being able to fire again
-	FTimerHandle animationWaitDelay;
+	FTimerHandle AnimationWaitDelay;
 	// The timer used to keep track of how long a reloading animation takes and only assigning variables 
-	FTimerHandle reloadingDelay;
+	FTimerHandle ReloadingDelay;
 
 protected:
 	// Called when the game starts or when spawned

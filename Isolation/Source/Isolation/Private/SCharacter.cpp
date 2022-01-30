@@ -7,13 +7,11 @@
 #include "Components/TimelineComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Engine/SkeletalMesh.h"
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
 #include "SInteractInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "SWeaponBase.h"
 
@@ -35,7 +33,7 @@ ASCharacter::ASCharacter()
     
     // Spawning the camera atop the FPS hands mesh
     CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
-    CameraComp->SetupAttachment(MeshComp, "cameraSocket");
+    CameraComp->SetupAttachment(MeshComp, CameraSocketName);
     
     CrouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
@@ -44,8 +42,8 @@ ASCharacter::ASCharacter()
 
 void ASCharacter::TimelineProgress(float value)
 {
-    FVector newActorLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), value);
-    SetActorLocation(newActorLocation);
+    const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), value);
+    SetActorLocation(NewLocation);
     if (value == 1)
     {
         bIsVaulting = false;
@@ -93,12 +91,14 @@ void ASCharacter::WorldInteract()
 // Built in UE function for moving forward/back
 void ASCharacter::MoveForward(float value)
 {
+    ForwardMovement = value;
 	AddMovementInput(GetActorForwardVector() * value);
 }
 
 // Built in UE function for moving left/right
 void ASCharacter::MoveRight(float value)
 {
+    RightMovement = value;
 	AddMovementInput(GetActorRightVector() * value);
 }
 
@@ -151,7 +151,7 @@ void ASCharacter::StopCrouch()
     }
 }
 
-void ASCharacter::EndCrouch(bool ToSprint)
+void ASCharacter::EndCrouch(bool bToSprint)
 {
     if (MovementState == VE_Crouch || MovementState == VE_Slide)
     {
@@ -167,7 +167,7 @@ void ASCharacter::EndCrouch(bool ToSprint)
         //    /* confetti or smth idk */
         //    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
         //}
-        if (ToSprint)
+        if (bToSprint)
         {
             MovementState = VE_Sprint;
         }
@@ -240,8 +240,8 @@ void ASCharacter::StopSlide()
 
 void ASCharacter::CheckVault()
 {
-    float forwardVelocity = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
-    if (forwardVelocity > 0 && !bIsVaulting && GetCharacterMovement()->IsFalling())
+    float ForwardVelocity = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
+    if (ForwardVelocity > 0 && !bIsVaulting && GetCharacterMovement()->IsFalling())
     {
         FVector startLocation = GetCapsuleComponent()->GetComponentLocation();
         FVector endLocation = (GetCapsuleComponent()->GetComponentLocation() + (UKismetMathLibrary::GetForwardVector(GetCapsuleComponent()->GetComponentRotation()) * 75));
@@ -255,108 +255,108 @@ void ASCharacter::CheckVault()
         {
             if (Hit.bBlockingHit)
             {
-                FVector forwardImpactPoint = Hit.ImpactPoint;
-                FVector forwardImpactNormal = Hit.ImpactNormal;
-                FVector capsuleLocation = forwardImpactPoint;
-                capsuleLocation.Z = (GetCapsuleComponent()->GetComponentLocation().Z);
-                capsuleLocation += (forwardImpactNormal * -15);
-                startLocation = capsuleLocation;
+                FVector ForwardImpactPoint = Hit.ImpactPoint;
+                FVector ForwardImpactNormal = Hit.ImpactNormal;
+                FVector CapsuleLocation = ForwardImpactPoint;
+                CapsuleLocation.Z = (GetCapsuleComponent()->GetComponentLocation().Z);
+                CapsuleLocation += (ForwardImpactNormal * -15);
+                startLocation = CapsuleLocation;
                 startLocation.Z += 100;
-                endLocation = capsuleLocation;
+                endLocation = CapsuleLocation;
                 //DrawDebugSphere(GetWorld(), startLocation, 1, 4, FColor::Blue);
                 if (GetWorld()->SweepSingleByChannel(Hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams))
                 {
                     if (GetCharacterMovement()->IsWalkable(Hit))
                     {
-                        FVector secondaryVaultStartLocation = Hit.ImpactPoint;
-                        secondaryVaultStartLocation.Z += 5;
-                        DrawDebugSphere(GetWorld(), secondaryVaultStartLocation, 10, 8, FColor::Orange);
+                        FVector SecondaryVaultStartLocation = Hit.ImpactPoint;
+                        SecondaryVaultStartLocation.Z += 5;
+                        DrawDebugSphere(GetWorld(), SecondaryVaultStartLocation, 10, 8, FColor::Orange);
                         FRotator cacheRotator = GetCapsuleComponent()->GetComponentRotation();
-                        FVector secondaryVaultEndLocation = secondaryVaultStartLocation;
+                        FVector secondaryVaultEndLocation = SecondaryVaultStartLocation;
                         secondaryVaultEndLocation.Z = 0;
 
-                        float initialTraceHeight = 0;
-                        float previousTraceHeight = 0;
-                        float currentTraceHeight = 0;
-                        bool initialSwitch = false;
-                        bool vaultFailed = true;
+                        float InitialTraceHeight = 0;
+                        float PreviousTraceHeight = 0;
+                        float CurrentTraceHeight = 0;
+                        bool bInitialSwitch = false;
+                        bool bVaultFailed = true;
                         
                         int i;
                         for (i = 0; i <= VaultTraceAmount; i++)
                         {
-                            secondaryVaultStartLocation += (UKismetMathLibrary::GetForwardVector(cacheRotator) * 5);
+                            SecondaryVaultStartLocation += (UKismetMathLibrary::GetForwardVector(cacheRotator) * 5);
                             secondaryVaultEndLocation += (UKismetMathLibrary::GetForwardVector(cacheRotator) * 5);
-                            vaultFailed = true;
-                            if(GetWorld()->LineTraceSingleByChannel(VaultHit, secondaryVaultStartLocation, secondaryVaultEndLocation, ECC_WorldStatic, TraceParams))
+                            bVaultFailed = true;
+                            if(GetWorld()->LineTraceSingleByChannel(VaultHit, SecondaryVaultStartLocation, secondaryVaultEndLocation, ECC_WorldStatic, TraceParams))
                             {
                                 if (bDrawDebug)
                                 {
-                                    DrawDebugLine(GetWorld(), secondaryVaultStartLocation, VaultHit.ImpactPoint, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                                    DrawDebugLine(GetWorld(), SecondaryVaultStartLocation, VaultHit.ImpactPoint, FColor::Red, false, 10.0f, 0.0f, 2.0f);
                                 }
 
-                                float traceLength = (secondaryVaultStartLocation.Z - VaultHit.ImpactPoint.Z);
-                                if (!initialSwitch)
+                                float TraceLength = (SecondaryVaultStartLocation.Z - VaultHit.ImpactPoint.Z);
+                                if (!bInitialSwitch)
                                 {
-                                    initialTraceHeight = traceLength;
-                                    initialSwitch = true;
+                                    InitialTraceHeight = TraceLength;
+                                    bInitialSwitch = true;
                                 }
-                                previousTraceHeight = currentTraceHeight;
-                                currentTraceHeight = traceLength;
-                                if (!(FMath::IsNearlyEqual(currentTraceHeight, initialTraceHeight, 20.0f)) && currentTraceHeight < MaxVaultHeight)
+                                PreviousTraceHeight = CurrentTraceHeight;
+                                CurrentTraceHeight = TraceLength;
+                                if (!(FMath::IsNearlyEqual(CurrentTraceHeight, InitialTraceHeight, 20.0f)) && CurrentTraceHeight < MaxVaultHeight)
                                 {
-                                    if (FMath::IsNearlyEqual(previousTraceHeight, currentTraceHeight, 3.0f))
+                                    if (FMath::IsNearlyEqual(PreviousTraceHeight, CurrentTraceHeight, 3.0f))
                                     {
-                                        FVector downTracePoint = VaultHit.Location;
-                                        downTracePoint.Z = VaultHit.ImpactPoint.Z;
+                                        FVector DownTracePoint = VaultHit.Location;
+                                        DownTracePoint.Z = VaultHit.ImpactPoint.Z;
                                         //UPrimitiveComponent* hitComponent = hit.Component;
 
-                                        FVector calculationVector = FVector::ZeroVector;
-                                        calculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
-                                        downTracePoint += calculationVector;
-                                        startLocation = downTracePoint;
+                                        FVector CalculationVector = FVector::ZeroVector;
+                                        CalculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
+                                        DownTracePoint += CalculationVector;
+                                        startLocation = DownTracePoint;
                                         startLocation.Z += (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
-                                        endLocation = downTracePoint;
+                                        endLocation = DownTracePoint;
                                         endLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
 
                                         //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
                                         if (!GetWorld()->SweepSingleByChannel(VaultHit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams))
                                         {
-                                            forwardImpactNormal.X -= 1;
-                                            forwardImpactNormal.Y -= 1;
-                                            LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(forwardImpactNormal), downTracePoint);
-                                            float height = (LocalTargetTransform.GetLocation() - GetActorLocation()).Z;
+                                            ForwardImpactNormal.X -= 1;
+                                            ForwardImpactNormal.Y -= 1;
+                                            LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
+                                            float Height = (LocalTargetTransform.GetLocation() - GetActorLocation()).Z;
                                             bIsVaulting = true;
-                                            Vault(height, LocalTargetTransform);
-                                            vaultFailed = false;
+                                            Vault(Height, LocalTargetTransform);
+                                            bVaultFailed = false;
                                             break;
                                         }
                                     }
                                 }
                             }
                         }
-                        if (vaultFailed)
+                        if (bVaultFailed)
                         {
-                            FVector downTracePoint = Hit.Location;
-                            downTracePoint.Z = Hit.ImpactPoint.Z;
+                            FVector DownTracePoint = Hit.Location;
+                            DownTracePoint.Z = Hit.ImpactPoint.Z;
                             //UPrimitiveComponent* hitComponent = hit.Component;
 
                             FVector calculationVector = FVector::ZeroVector;
                             calculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
-                            downTracePoint += calculationVector;
-                            startLocation = downTracePoint;
+                            DownTracePoint += calculationVector;
+                            startLocation = DownTracePoint;
                             startLocation.Z += (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
-                            endLocation = downTracePoint;
+                            endLocation = DownTracePoint;
                             endLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
 
                             //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
                             if (!GetWorld()->SweepSingleByChannel(Hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams))
                             {
-                                forwardImpactNormal.X -= 1;
-                                forwardImpactNormal.Y -= 1;
-                                LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(forwardImpactNormal), downTracePoint);
-                                float height = (LocalTargetTransform.GetLocation() - GetActorLocation()).Z;
+                                ForwardImpactNormal.X -= 1;
+                                ForwardImpactNormal.Y -= 1;
+                                LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
+                                float Height = (LocalTargetTransform.GetLocation() - GetActorLocation()).Z;
                                 bIsVaulting = true;
-                                Vault(height, LocalTargetTransform);
+                                Vault(Height, LocalTargetTransform);
                             }
                         }
                     }
@@ -371,18 +371,17 @@ void ASCharacter::CheckAngle()
     FCollisionQueryParams TraceParams;
     TraceParams.bTraceComplex = true;
     TraceParams.AddIgnoredActor(this);
-    FRotator finalRotation = FRotator::ZeroRotator;
 
-    FVector capsuleHeight = GetCapsuleComponent()->GetComponentLocation();
-    capsuleHeight.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-    FVector angleStartTrace = capsuleHeight;
-    FVector angleEndTrace = angleStartTrace;
-    angleEndTrace.Z -= 50;
-    if (GetWorld()->LineTraceSingleByChannel(AngleHit, angleStartTrace, angleEndTrace, ECC_WorldStatic, TraceParams))
+    FVector CapsuleHeight = GetCapsuleComponent()->GetComponentLocation();
+    CapsuleHeight.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+    const FVector AngleStartTrace = CapsuleHeight;
+    FVector AngleEndTrace = AngleStartTrace;
+    AngleEndTrace.Z -= 50;
+    if (GetWorld()->LineTraceSingleByChannel(AngleHit, AngleStartTrace, AngleEndTrace, ECC_WorldStatic, TraceParams))
     {
         FloorVector = AngleHit.ImpactNormal;
-        finalRotation = UKismetMathLibrary::MakeRotFromZX(FloorVector, GetActorForwardVector());
-        FloorAngle = finalRotation.Pitch;
+        const FRotator FinalRotation = UKismetMathLibrary::MakeRotFromZX(FloorVector, GetActorForwardVector());
+        FloorAngle = FinalRotation.Pitch;
         if (bDrawDebug)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%f"),FloorAngle), true);
@@ -403,8 +402,12 @@ void ASCharacter::Vault(float Height, FTransform TargetTransform)
 // Function that determines the player's maximum speed, based on whether they're crouching, sprinting or neither
 void ASCharacter::UpdateMovementSpeed()
 {
+    bIsSprinting = false;
+    bIsCrouching = false;
+    
     if (MovementState == VE_Crouch)
     {
+        bIsCrouching = true;
         GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
         CurrentWeapon->bCanFire = true;
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
@@ -413,6 +416,7 @@ void ASCharacter::UpdateMovementSpeed()
     }
     else if (MovementState == VE_Sprint)
     {
+        bIsSprinting = true;
         GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
         CurrentWeapon->bCanFire = false;
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
@@ -455,10 +459,10 @@ void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon)
     }
     // Spawns the new weapon and sets the player as it's owner
     CurrentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
-    if (CurrentWeapon)
+    if (CurrentWeapon->WeaponData)
     {
         CurrentWeapon->SetOwner(this);
-        CurrentWeapon->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->weaponAttachmentSocketName);
+        CurrentWeapon->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->WeaponData->WeaponAttachmentSocketName);
     }   
 }
 
@@ -518,18 +522,18 @@ void ASCharacter::Tick(float DeltaTime)
 
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
-	float targetHalfHeight = (MovementState == VE_Crouch || MovementState == VE_Slide)? FinalCapsuleHalfHeight : DefaultCapsuleHalfHeight;
+	const float TargetHalfHeight = (MovementState == VE_Crouch || MovementState == VE_Slide)? FinalCapsuleHalfHeight : DefaultCapsuleHalfHeight;
 	// Interpolates between the current height and the target height
-	float newHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), targetHalfHeight, DeltaTime, CrouchSpeed);
+	const float NewHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHalfHeight, DeltaTime, CrouchSpeed);
 	// Sets the half height of the capsule component to the new interpolated half height
-	GetCapsuleComponent()->SetCapsuleHalfHeight(newHalfHeight);
+	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    float targetFOV = (MovementState == VE_Sprint || MovementState == VE_Slide)? SpeedFOV : DefaultFOV;
+    const float TargetFOV = (MovementState == VE_Sprint || MovementState == VE_Slide)? SpeedFOV : DefaultFOV;
     //Interpolates between current fov and target fov
-    float newFOV = FMath::FInterpTo(CameraComp->FieldOfView, targetFOV, DeltaTime, FOVChangeSpeed);
+    const float InFieldOfView = FMath::FInterpTo(CameraComp->FieldOfView, TargetFOV, DeltaTime, FOVChangeSpeed);
     // Sets the new camera FOV
-    CameraComp->SetFieldOfView(newFOV);
+    CameraComp->SetFieldOfView(InFieldOfView);
 
     if (bWantsToAim == true && MovementState != VE_Sprint && MovementState != VE_Slide)
     {
