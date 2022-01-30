@@ -36,6 +36,10 @@ ASWeaponBase::ASWeaponBase()
     StockAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("StockAttachment"));
     StockAttachment->CastShadow = false;
     StockAttachment->SetupAttachment(RootComponent);
+
+    GripAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GripAttachment"));
+    GripAttachment->CastShadow = false;
+    GripAttachment->SetupAttachment(RootComponent);
     
     // Default value allowing the weapon to be fired
     bCanFire = true;
@@ -55,19 +59,35 @@ void ASWeaponBase::BeginPlay()
 	QueryParams.bReturnPhysicalMaterial = true;
 
     WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName("Sten"), FString("Sten Gun"), true);
+    bSilenced = WeaponData->bIsSilenced;
+    SpawnAttachments(AttachmentNameArray);
+}
 
-    TArray<FName> RowNames =  AttachmentsDataTable->GetRowNames();
-    for (FName RowName : RowNames)
+void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
+{
+    for (FName RowName : AttachmentsArray)
     {
         AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
-        
+
+        DamageModifier += AttachmentData->BaseDamageImpact;
+        WeaponPitchModifier += AttachmentData->WeaponPitchVariationImpact;
+        WeaponYawModifier += AttachmentData->WeaponYawVariationImpact;
+
         if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
         {
             BarrelAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+            SocketOverride = AttachmentData->MuzzleLocationOverride;
+            ParticleSocketOverride = AttachmentData->ParticleSpawnLocationOverride;
+            if (AttachmentData->bSilenced)
+            {
+                bSilenced = true;
+            }
+            
         }
         else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
         {
             MagazineAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+            SoundOverride = AttachmentData->FiringSoundOverride;
         }
         else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
         {
@@ -77,8 +97,11 @@ void ASWeaponBase::BeginPlay()
         {
             StockAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
         }
+        else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
+        {
+            GripAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+        }
     }
-    
 }
 
 void ASWeaponBase::StartFire()
@@ -131,9 +154,14 @@ void ASWeaponBase::Fire()
 
             // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
             TraceStart = MeshComp->GetSocketLocation(WeaponData->MuzzleSocketName);
-	        TraceStartRotation = MeshComp->GetSocketRotation(WeaponData->MuzzleSocketName);
-            TraceStartRotation.Pitch += FMath::FRandRange(-(WeaponData->WeaponPitchVariation), WeaponData->WeaponPitchVariation);
-            TraceStartRotation.Yaw += FMath::FRandRange(-(WeaponData->WeaponYawVariation), WeaponData->WeaponYawVariation);
+            TraceStartRotation = MeshComp->GetSocketRotation(WeaponData->MuzzleSocketName);
+            if (SocketOverride != "")
+            {
+                TraceStart = BarrelAttachment->GetSocketLocation(SocketOverride);
+                TraceStartRotation = BarrelAttachment->GetSocketRotation(SocketOverride);
+            }
+            TraceStartRotation.Pitch += FMath::FRandRange(-(WeaponData->WeaponPitchVariation + WeaponPitchModifier), WeaponData->WeaponPitchVariation + WeaponPitchModifier);
+            TraceStartRotation.Yaw += FMath::FRandRange(-(WeaponData->WeaponYawVariation + WeaponYawModifier), WeaponData->WeaponYawVariation + WeaponYawModifier);
 		    TraceDirection = TraceStartRotation.Vector();
 		    TraceEnd = TraceStart + (TraceDirection * WeaponData->LengthMultiplier);
 
@@ -152,11 +180,11 @@ void ASWeaponBase::Fire()
                 // Setting finalDamage based on the type of surface hit
                 if (Hit.PhysMaterial.Get() == WeaponData->NormalDamageSurface)
                 {
-                   FinalDamage = WeaponData->BaseDamage;
+                   FinalDamage = (WeaponData->BaseDamage + DamageModifier);
                 }
                 if (Hit.PhysMaterial.Get() == WeaponData->HeadshotDamageSurface)
                 {
-                   FinalDamage = WeaponData->BaseDamage * WeaponData->HeadshotMultiplier;
+                   FinalDamage = (WeaponData->BaseDamage + DamageModifier) * WeaponData->HeadshotMultiplier;
                 }
 
                 AActor* hitActor = Hit.GetActor();
@@ -167,11 +195,25 @@ void ASWeaponBase::Fire()
 
             // Spawning the firing sound
 
-            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->FireSound, TraceStart);
+            if(bSilenced)
+            {
+                UGameplayStatics::PlaySoundAtLocation(GetWorld(), SilencedOverride? SilencedOverride : WeaponData->SilencedSound, TraceStart);
+            }
+            else
+            {
+                UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundOverride? SoundOverride : WeaponData->FireSound, TraceStart);
+            }
 
             // Spawning the firing particle effect
-            UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
-
+            if (ParticleSocketOverride != "")
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, BarrelAttachment, ParticleSocketOverride, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
+            }
+            else
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
+            }
+                
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 
             if (Hit.PhysMaterial.Get() == WeaponData->NormalDamageSurface || Hit.PhysMaterial.Get() == WeaponData->HeadshotDamageSurface)
@@ -194,7 +236,9 @@ void ASWeaponBase::Fire()
     }
     else if (bCanFire && !bIsReloading)
     {
-    UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->EmptyFireSound, MeshComp->GetSocketLocation(WeaponData->MuzzleSocketName));
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->EmptyFireSound, MeshComp->GetSocketLocation(WeaponData->MuzzleSocketName));
+        // Clearing the ShotDelay timer so that we don't have a constant ticking when the player has no ammo, just a single click
+        GetWorldTimerManager().ClearTimer(ShotDelay);
     }
     
 }

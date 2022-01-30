@@ -22,6 +22,7 @@ enum class EAttachmentType : uint8
 	Magazine	UMETA(DisplayName = "Magazine Attachment"),
 	Sights		UMETA(DisplayName = "Sights Attachment"),
 	Stock		UMETA(DispayName = "Stock Attachment"),
+	Grip		UMETA(DispayName = "Grip Attachment"),
 };
 
 USTRUCT(BlueprintType)
@@ -33,11 +34,33 @@ struct FAttachmentData : public FTableRowBase
 	USkeletalMesh* AttachmentMesh;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
-	int AttachmentGroup;
+	EAttachmentType AttachmentType;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
-	EAttachmentType AttachmentType;
+	FName MuzzleLocationOverride;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	FName ParticleSpawnLocationOverride;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	bool bSilenced;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	USoundBase* FiringSoundOverride;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	USoundBase* SilencedFiringSoundOverride;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float BaseDamageImpact;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float WeaponPitchVariationImpact;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float WeaponYawVariationImpact;	
 };
+
 
 USTRUCT(BlueprintType)
 struct FWeaponData : public FTableRowBase
@@ -62,6 +85,9 @@ struct FWeaponData : public FTableRowBase
 	// Determines if the weapon should fire more than one 'pellet' every time it is fired. Enable if you'd like your weapon to act like a shotgun
 	UPROPERTY(EditDefaultsOnly, Category = "General")
 	bool bIsShotgun;
+	// Determines if the weapon should use a silenced sound effect
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	bool bIsSilenced;
 	// Determines the amount of pellets a shotgun will fire
 	UPROPERTY(EditDefaultsOnly, Category = "General")
 	int ShotgunPelletCount;
@@ -138,6 +164,9 @@ struct FWeaponData : public FTableRowBase
 	// Firing sound
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
 	USoundBase* FireSound;
+	// Silenced firing sound
+	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
+	USoundBase* SilencedSound;
 	// Empty firing sound
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
 	USoundBase* EmptyFireSound;
@@ -177,6 +206,8 @@ public:
 	// Allows the player to fire again
 	void EnableFire();
 
+	void SpawnAttachments(TArray<FName> AttachmentsArray);
+
 	// Data table reference
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
 	UDataTable* WeaponDataTable;
@@ -187,10 +218,16 @@ public:
 	UDataTable* AttachmentsDataTable;
 
 	FAttachmentData* AttachmentData;
+
+	// Attachments
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	TArray<FName> AttachmentNameArray;
 	
 	// Debug boolean, toggle for debug strings and line traces to be shown
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bShowDebug;
+
+	
 
 	// Components
 	
@@ -198,21 +235,25 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* MeshComp;
 
-	// The main skeletal mesh - holds the weapon model
+	// The skeletal mesh used to hold the current barrel attachment
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* BarrelAttachment;
 
-	// The main skeletal mesh - holds the weapon model
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	// The skeletal mesh used to hold the current magazine attachment
+	UPROPERTY(BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* MagazineAttachment;
 
-	// The main skeletal mesh - holds the weapon model
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	// The skeletal mesh used to hold the current sights attachment
+	UPROPERTY(BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* SightsAttachment;
 
-	// The main skeletal mesh - holds the weapon model
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	// The skeletal mesh used to hold the current stock attachment
+	UPROPERTY(BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* StockAttachment;
+
+	// The skeletal mesh used to hold the current grip attachment
+	UPROPERTY(BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* GripAttachment;
 	
 	// General
 
@@ -220,11 +261,30 @@ public:
 	bool bCanFire;
 	// Keeps track of whether the weapon is being reloaded
 	bool bIsReloading;
+	// Is the weapon silenced or not (determines sounds)
+	bool bSilenced;
 	// Stores a reference to the class of the current weapon so we can access it's relevant ammunition and health values in SCharacterController
 	TSubclassOf<ASWeaponBase> ReferenceWeapon;
 
+	float DamageModifier;
+
+	float WeaponPitchModifier;
+
+	float WeaponYawModifier;
+
+	// Sound Cues
+	UPROPERTY(BlueprintReadOnly, Category = "Sounds")
+	USoundBase* SoundOverride;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Sounds")
+	USoundBase* SilencedOverride;
+
 	// Line Trace
-	// 
+
+	// The override for the weapon socket, in the case that we have a barrel attachment
+	FName SocketOverride;
+	// The override for the particle system socket, in the case that we have a barrel attachment
+	FName ParticleSocketOverride;
 	// Keeps track of the starting position of the line trace
 	FVector TraceStart;
 	// keeps track of the starting rotation of the line trace (required for calculating the trace end point)
