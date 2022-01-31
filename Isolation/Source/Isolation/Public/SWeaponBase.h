@@ -10,6 +10,7 @@
 class USkeletalMeshComponent;
 class USkeletalMesh;
 class UAnimMontage;
+class UBlendSpace;
 class UNiagaraSystem;
 class USoundCue;
 class UPhysicalMaterial;
@@ -58,7 +59,22 @@ struct FAttachmentData : public FTableRowBase
 	float WeaponPitchVariationImpact;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
-	float WeaponYawVariationImpact;	
+	float WeaponYawVariationImpact;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UBlendSpace* BS_Walk;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UBlendSpace* BS_ADS_Walk;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UAnimSequence* Anim_Idle;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UAnimSequence* Anim_ADS_Idle;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UAnimSequence* Anim_Sprint;
 };
 
 
@@ -311,10 +327,25 @@ public:
 	TSubclassOf<UDamageType> DamageType;
 	
 
-	// Animation Variables
+	// Animation
 
 	// value used to keep track of the length of animations for timers
 	float AnimTime;
+	// Blendspace
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animations")
+	UBlendSpace* WalkBlendSpace;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
+	UBlendSpace* ADSWalkBlendSpace;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
+	UAnimSequence* Anim_Idle;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
+	UAnimSequence* Anim_Sprint;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
+	UAnimSequence* Anim_ADS_Idle;
 
 
 	// Timers

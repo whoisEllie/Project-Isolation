@@ -67,39 +67,62 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
 {
     for (FName RowName : AttachmentsArray)
     {
+        
         AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
 
-        DamageModifier += AttachmentData->BaseDamageImpact;
-        WeaponPitchModifier += AttachmentData->WeaponPitchVariationImpact;
-        WeaponYawModifier += AttachmentData->WeaponYawVariationImpact;
+        if (AttachmentData)
+        {
+            DamageModifier += AttachmentData->BaseDamageImpact;
+            WeaponPitchModifier += AttachmentData->WeaponPitchVariationImpact;
+            WeaponYawModifier += AttachmentData->WeaponYawVariationImpact;
 
-        if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
-        {
-            BarrelAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-            SocketOverride = AttachmentData->MuzzleLocationOverride;
-            ParticleSocketOverride = AttachmentData->ParticleSpawnLocationOverride;
-            if (AttachmentData->bSilenced)
+            if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
             {
-                bSilenced = true;
+                BarrelAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                SocketOverride = AttachmentData->MuzzleLocationOverride;
+                ParticleSocketOverride = AttachmentData->ParticleSpawnLocationOverride;
+                if (AttachmentData->bSilenced)
+                {
+                    bSilenced = true;
+                }
             }
-            
-        }
-        else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
-        {
-            MagazineAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-            SoundOverride = AttachmentData->FiringSoundOverride;
-        }
-        else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
-        {
-            SightsAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-        }
-        else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
-        {
-            StockAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-        }
-        else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
-        {
-            GripAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+            else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
+            {
+                MagazineAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                SoundOverride = AttachmentData->FiringSoundOverride;
+            }
+            else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
+            {
+                SightsAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+            }
+            else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
+            {
+                StockAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+            }
+            else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
+            {
+                GripAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                if (AttachmentData->BS_Walk)
+                {
+                    WalkBlendSpace = AttachmentData->BS_Walk;
+                }
+                if (AttachmentData->BS_ADS_Walk)
+                {
+                    ADSWalkBlendSpace = AttachmentData->BS_ADS_Walk;
+                }
+                if (AttachmentData->Anim_Idle)
+                {
+                    Anim_Idle = AttachmentData->Anim_Idle;
+                }
+                if (AttachmentData->Anim_Sprint)
+                {
+                    Anim_Sprint = AttachmentData->Anim_Sprint;
+                }
+                if (AttachmentData->Anim_ADS_Idle)
+                {
+                    Anim_ADS_Idle = AttachmentData->Anim_ADS_Idle;
+                }
+            }
         }
     }
 }
