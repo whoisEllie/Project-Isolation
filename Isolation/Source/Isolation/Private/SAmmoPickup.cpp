@@ -82,34 +82,34 @@ void ASAmmoPickup::Interact()
 		switch (AmmoType)
 		{
 		case ELocalAmmoType::Pistol:
-			CharacterController->ammoMap[EAmmoType::Pistol] += UpdateAmmo;
+			CharacterController->AmmoMap[EAmmoType::Pistol] += UpdateAmmo;
 			if (bDrawDebug)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->ammoMap[EAmmoType::Pistol]));
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[EAmmoType::Pistol]));
 			}
 			break;
 
 		case ELocalAmmoType::Rifle:
-			CharacterController->ammoMap[EAmmoType::Rifle] += UpdateAmmo;
+			CharacterController->AmmoMap[EAmmoType::Rifle] += UpdateAmmo;
 			if (bDrawDebug)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->ammoMap[EAmmoType::Rifle]));
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[EAmmoType::Rifle]));
 			}
 			break;
 
 		case ELocalAmmoType::Shotgun:
-			CharacterController->ammoMap[EAmmoType::Shotgun] += UpdateAmmo;
+			CharacterController->AmmoMap[EAmmoType::Shotgun] += UpdateAmmo;
 			if (bDrawDebug)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->ammoMap[EAmmoType::Shotgun]));
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[EAmmoType::Shotgun]));
 			}
 			break;
 
 		case ELocalAmmoType::Special:
-			CharacterController->ammoMap[EAmmoType::Special] += UpdateAmmo;
+			CharacterController->AmmoMap[EAmmoType::Special] += UpdateAmmo;
 			if (bDrawDebug)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->ammoMap[EAmmoType::Special]));
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[EAmmoType::Special]));
 			}
 			break;
 		}

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SCharacterController.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "SWeaponBase.generated.h"
@@ -75,6 +76,24 @@ struct FAttachmentData : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	UAnimSequence* Anim_Sprint;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	EAmmoType AmmoToUse;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	int ClipCapacity;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	int ClipSize;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float WeaponHealth;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float FireRate;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	bool AutomaticFire;
 };
 
 

@@ -21,7 +21,7 @@ enum class EAmmoType : uint8
 
 // Struct holding the information for spawning a new enemy AI (spawn Location, target locations, weapon)
 USTRUCT(BlueprintType)
-struct FsingleWeaponParams
+struct FSingleWeaponParams
 {
     GENERATED_BODY()
     	
@@ -29,21 +29,21 @@ struct FsingleWeaponParams
     
     // The maximum size of the player's magazine
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    int clipCapacity; 
+    int ClipCapacity; 
 
     // The amount of ammunition currently in the magazine
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    int clipSize;
+    int ClipSize;
     
     // Enumerator holding the 4 possible ammo types defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
-    EAmmoType ammoType;
+    EAmmoType AmmoType;
 	
     // Weapon Health
     	
-    // The current health of the weapon (degredation values are in the weapon class)
+    // The current health of the weapon (degradation values are in the weapon class)
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    float weaponHealth;
+    float WeaponHealth;
 };
 
 UCLASS()
@@ -54,8 +54,8 @@ class ISOLATION_API ASCharacterController : public APlayerController
 	public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    TMap<TSubclassOf<ASWeaponBase>, FsingleWeaponParams> weaponParameters;
+    TMap<TSubclassOf<ASWeaponBase>, FSingleWeaponParams> WeaponParameters;
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    TMap<EAmmoType, int32> ammoMap;
+    TMap<EAmmoType, int32> AmmoMap;
 };
