@@ -33,7 +33,7 @@ ASCharacter::ASCharacter()
     
     // Spawning the camera atop the FPS hands mesh
     CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
-    CameraComp->SetupAttachment(MeshComp, CameraSocketName);
+    CameraComp->AttachToComponent(MeshComp, FAttachmentTransformRules::KeepRelativeTransform, "cameraSocket");
     
     CrouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
@@ -271,9 +271,9 @@ void ASCharacter::CheckVault()
                         FVector SecondaryVaultStartLocation = Hit.ImpactPoint;
                         SecondaryVaultStartLocation.Z += 5;
                         DrawDebugSphere(GetWorld(), SecondaryVaultStartLocation, 10, 8, FColor::Orange);
-                        FRotator cacheRotator = GetCapsuleComponent()->GetComponentRotation();
-                        FVector secondaryVaultEndLocation = SecondaryVaultStartLocation;
-                        secondaryVaultEndLocation.Z = 0;
+                        FRotator CacheRotator = GetCapsuleComponent()->GetComponentRotation();
+                        FVector SecondaryVaultEndLocation = SecondaryVaultStartLocation;
+                        SecondaryVaultEndLocation.Z = 0;
 
                         float InitialTraceHeight = 0;
                         float PreviousTraceHeight = 0;
@@ -284,10 +284,10 @@ void ASCharacter::CheckVault()
                         int i;
                         for (i = 0; i <= VaultTraceAmount; i++)
                         {
-                            SecondaryVaultStartLocation += (UKismetMathLibrary::GetForwardVector(cacheRotator) * 5);
-                            secondaryVaultEndLocation += (UKismetMathLibrary::GetForwardVector(cacheRotator) * 5);
+                            SecondaryVaultStartLocation += (UKismetMathLibrary::GetForwardVector(CacheRotator) * 5);
+                            SecondaryVaultEndLocation += (UKismetMathLibrary::GetForwardVector(CacheRotator) * 5);
                             bVaultFailed = true;
-                            if(GetWorld()->LineTraceSingleByChannel(VaultHit, SecondaryVaultStartLocation, secondaryVaultEndLocation, ECC_WorldStatic, TraceParams))
+                            if(GetWorld()->LineTraceSingleByChannel(VaultHit, SecondaryVaultStartLocation, SecondaryVaultEndLocation, ECC_WorldStatic, TraceParams))
                             {
                                 if (bDrawDebug)
                                 {
@@ -450,15 +450,15 @@ void ASCharacter::UpdateMovementSpeed()
 void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon)
 {
     // Determining spawn parameters (forcing the weapon to spawn at all times)
-    FActorSpawnParameters spawnParams;
-    spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    FActorSpawnParameters SpawnParameters;
+    SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     if (CurrentWeapon)
     {
         // Destroys the current weapon, if it exists
         CurrentWeapon->K2_DestroyActor();
     }
     // Spawns the new weapon and sets the player as it's owner
-    CurrentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
+    CurrentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
     if (CurrentWeapon->WeaponData)
     {
         CurrentWeapon->SetOwner(this);

@@ -104,6 +104,7 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
             else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
             {
                 SightsAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                VerticalCameraOffset = AttachmentData->VerticalCameraOffset;
             }
             else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
             {
@@ -181,8 +182,8 @@ void ASWeaponBase::Fire()
         // Subtracting from the ammunition count of the weapon
         CharacterController->WeaponParameters[ReferenceWeapon].ClipSize -= 1;
 
-        int numberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPelletCount : 1;
-        for (int i = 0; i < numberOfShots; i++)
+        int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPelletCount : 1;
+        for (int i = 0; i < NumberOfShots; i++)
         {
 
             // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
@@ -220,10 +221,10 @@ void ASWeaponBase::Fire()
                    FinalDamage = (WeaponData->BaseDamage + DamageModifier) * WeaponData->HeadshotMultiplier;
                 }
 
-                AActor* hitActor = Hit.GetActor();
+                AActor* HitActor = Hit.GetActor();
 
                 // Applying the previously set damage to the hit actor
-                UGameplayStatics::ApplyPointDamage(hitActor, FinalDamage, TraceDirection, Hit, GetInstigatorController(), this, DamageType);
+                UGameplayStatics::ApplyPointDamage(HitActor, FinalDamage, TraceDirection, Hit, GetInstigatorController(), this, DamageType);
             }
 
             // Spawning the firing sound
@@ -285,14 +286,14 @@ void ASWeaponBase::Reload()
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     // Changing the maximum ammunition based on if the weapon can hold a bullet in the chamber
-    int value = 0;
+    int Value = 0;
     if(WeaponData->bCanBeChambered)
     {
-        value = 1;
+        Value = 1;
     }
 
     // Checking if we are not reloading, if a reloading montage exists, and if there is any point in reloading (current ammunition does not match maximum magazine capacity and there is spare ammunition to load into the gun)
-    if(!bIsReloading && CharacterController->AmmoMap[CharacterController->WeaponParameters[ReferenceWeapon].AmmoType] > 0 && CharacterController->WeaponParameters[ReferenceWeapon].ClipSize != CharacterController->WeaponParameters[ReferenceWeapon].ClipCapacity + value)
+    if(!bIsReloading && CharacterController->AmmoMap[CharacterController->WeaponParameters[ReferenceWeapon].AmmoType] > 0 && CharacterController->WeaponParameters[ReferenceWeapon].ClipSize != CharacterController->WeaponParameters[ReferenceWeapon].ClipCapacity + Value)
     {
          // Differentiating between having no ammunition in the magazine (having to chamber a round after reloading) or not, and playing an animation relevant to that
         if (CharacterController->WeaponParameters[ReferenceWeapon].ClipSize <= 0 && WeaponData->EmptyReloadMontage)
@@ -349,15 +350,15 @@ void ASWeaponBase::UpdateAmmo()
         }
     }
     
-    // First, we set temp, which keeps track of the difference between the maximum ammunition and the amount that there is currently loaded (i.e. how much ammunition we need to reload into the gun)
-    int temp = CharacterController->WeaponParameters[ReferenceWeapon].ClipCapacity - CharacterController->WeaponParameters[ReferenceWeapon].ClipSize;
+    // First, we set Temp, which keeps track of the difference between the maximum ammunition and the amount that there is currently loaded (i.e. how much ammunition we need to reload into the gun)
+    int Temp = CharacterController->WeaponParameters[ReferenceWeapon].ClipCapacity - CharacterController->WeaponParameters[ReferenceWeapon].ClipSize;
     // Making sure we have enough ammunition to reload
-    if (CharacterController->AmmoMap[CharacterController->WeaponParameters[ReferenceWeapon].AmmoType] >= temp + value)
+    if (CharacterController->AmmoMap[CharacterController->WeaponParameters[ReferenceWeapon].AmmoType] >= Temp + value)
     {
         // Then, we update the weapon to have full ammunition, plus the value (1 if there is a bullet in the chamber, 0 if not)
         CharacterController->WeaponParameters[ReferenceWeapon].ClipSize = CharacterController->WeaponParameters[ReferenceWeapon].ClipCapacity + value;
         // Finally, we remove temp (and an extra bullet, if one is chambered) from the player's ammunition store
-        CharacterController->AmmoMap[CharacterController->WeaponParameters[ReferenceWeapon].AmmoType] -= (temp + value);
+        CharacterController->AmmoMap[CharacterController->WeaponParameters[ReferenceWeapon].AmmoType] -= (Temp + value);
     }
     // If we don't, add the remaining ammunition to the clip, and set the remaining ammunition to 0
     else

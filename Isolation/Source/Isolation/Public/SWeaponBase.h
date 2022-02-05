@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SCharacterController.h"
+#include "Curves/CurveVector.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "SWeaponBase.generated.h"
@@ -94,6 +95,9 @@ struct FAttachmentData : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	bool AutomaticFire;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float VerticalCameraOffset;
 };
 
 
@@ -366,6 +370,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
 	UAnimSequence* Anim_ADS_Idle;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
+	float VerticalCameraOffset;
+
 
 	// Timers
 	
@@ -375,6 +382,10 @@ public:
 	FTimerHandle AnimationWaitDelay;
 	// The timer used to keep track of how long a reloading animation takes and only assigning variables 
 	FTimerHandle ReloadingDelay;
+
+	// Recoil
+	UPROPERTY(EditDefaultsOnly, Category = "Recoil")
+	UCurveVector* RecoilCurve;
 
 protected:
 	// Called when the game starts or when spawned

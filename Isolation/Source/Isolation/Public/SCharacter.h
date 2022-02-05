@@ -249,11 +249,11 @@ protected:
 	float SlideSpeed;
 	//
 	FTransform LocalTargetTransform;
-	
-
 
 	// Timer managers
 	FTimerHandle SlideStop;
+
+
     
 public:	
 	// Called every frame
