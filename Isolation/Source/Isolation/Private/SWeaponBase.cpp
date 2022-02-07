@@ -128,6 +128,7 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                 WeaponData->bAutomaticFire = AttachmentData->AutomaticFire;
                 VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
                 HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
+                RecoilCameraShake = AttachmentData->RecoilCameraShake;
                 
             }
             else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
@@ -353,6 +354,8 @@ void ASWeaponBase::Recoil()
         CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(0));
         CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(0));
     }
+
+    GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(RecoilCameraShake);  
 
 }
 

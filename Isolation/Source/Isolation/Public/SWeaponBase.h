@@ -104,6 +104,9 @@ struct FAttachmentData : public FTableRowBase
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	UCurveFloat* HorizontalRecoilCurve;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	TSubclassOf<UCameraShakeBase> RecoilCameraShake;
 };
 
 
@@ -419,6 +422,11 @@ public:
 
 	void RecoilRecovery();
 	bool bShouldRecover;
+
+	UPROPERTY()
+	TSubclassOf<UCameraShakeBase> RecoilCameraShake;
+
+
 	
 protected:
 	// Called when the game starts or when spawned
