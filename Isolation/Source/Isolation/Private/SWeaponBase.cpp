@@ -2,6 +2,9 @@
 
 
 #include "SWeaponBase.h"
+
+#include <string>
+
 #include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
@@ -46,6 +49,7 @@ ASWeaponBase::ASWeaponBase()
     bIsReloading = false;
 }
 
+
 // Called when the game starts or when spawned
 void ASWeaponBase::BeginPlay()
 {
@@ -58,10 +62,33 @@ void ASWeaponBase::BeginPlay()
 	QueryParams.bTraceComplex = true;
 	QueryParams.bReturnPhysicalMaterial = true;
 
-    WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName("Sten"), FString("Sten Gun"), true);
+    WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName("Sten"), FString("Sten Gun"), true); // Make sure to modularize this!!
     bSilenced = WeaponData->bIsSilenced;
     SpawnAttachments(AttachmentNameArray);
+
+    if (VerticalRecoilCurve)
+    {
+        FOnTimelineFloat VerticalRecoilProgressFunction;
+        VerticalRecoilProgressFunction.BindUFunction(this, FName("HandleVerticalRecoilProgress"));
+        VerticalRecoilTimeline.AddInterpFloat(VerticalRecoilCurve, VerticalRecoilProgressFunction);
+    }
+
+    if (HorizontalRecoilCurve)
+    {
+        FOnTimelineFloat HorizontalRecoilProgressFunction;
+        HorizontalRecoilProgressFunction.BindUFunction(this, FName("HandleHorizontalRecoilProgress"));
+        HorizontalRecoilTimeline.AddInterpFloat(HorizontalRecoilCurve, HorizontalRecoilProgressFunction);
+    }
+
+    if (RecoveryCurve)
+    {
+        FOnTimelineFloat RecoveryProgressFunction;
+        RecoveryProgressFunction.BindUFunction(this, FName("HandleRecoveryProgress"));
+        RecoilRecoveryTimeline.AddInterpFloat(RecoveryCurve, RecoveryProgressFunction);
+    }
 }
+
+
 
 void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
 {
@@ -99,6 +126,8 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                 CharacterController->WeaponParameters[ReferenceWeapon].WeaponHealth = AttachmentData->WeaponHealth;
                 WeaponData->RateOfFire = AttachmentData->FireRate;
                 WeaponData->bAutomaticFire = AttachmentData->AutomaticFire;
+                VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
+                HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
                 
             }
             else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
@@ -145,8 +174,24 @@ void ASWeaponBase::StartFire()
     {
         // sets a timer for firing the weapon - if bAutomaticFire is true then this timer will repeat until cleared by StopFire(), leading to fully automatic fire
         GetWorldTimerManager().SetTimer(ShotDelay, this, &ASWeaponBase::Fire, WeaponData->RateOfFire, WeaponData->bAutomaticFire, 0.0f);
+
+        StartRecoil();
     }
     
+}
+
+void ASWeaponBase::StartRecoil()
+{
+    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+
+    if (bCanFire && CharacterController->WeaponParameters[ReferenceWeapon].ClipSize > 0 && !bIsReloading)
+    {
+        VerticalRecoilTimeline.PlayFromStart();
+        HorizontalRecoilTimeline.PlayFromStart();
+        ControlRotation = CharacterController->GetControlRotation();
+        bShouldRecover = true;
+    }
 }
 
 void ASWeaponBase::EnableFire()
@@ -157,8 +202,12 @@ void ASWeaponBase::EnableFire()
 
 void ASWeaponBase::StopFire()
 {
+    
     // Stops the gun firing (for automatic fire)
     GetWorldTimerManager().ClearTimer(ShotDelay);
+    VerticalRecoilTimeline.Stop();
+    HorizontalRecoilTimeline.Stop();
+    RecoilRecovery();
 }
 
 void ASWeaponBase::Fire()
@@ -199,15 +248,19 @@ void ASWeaponBase::Fire()
 		    TraceDirection = TraceStartRotation.Vector();
 		    TraceEnd = TraceStart + (TraceDirection * WeaponData->LengthMultiplier);
 
-            // Drawing debug line trace
-            if (bShowDebug)
-            {
-                DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
-            }
+            // Applying Recoil to the weapon
+            Recoil();
 
              // Drawing a line trace based on the parameters calculated previously 
             if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel1, QueryParams))
             {
+
+                // Drawing debug line trace
+                if (bShowDebug)
+                {
+                    DrawDebugLine(GetWorld(), TraceStart, Hit.Location, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                }
+                
                 // Resetting finalDamage
                 FinalDamage = 0.0f;
 
@@ -266,6 +319,13 @@ void ASWeaponBase::Fire()
             {
                 UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData->DefaultHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
             }
+
+            if (!WeaponData->bAutomaticFire)
+            {
+                VerticalRecoilTimeline.Stop();
+                HorizontalRecoilTimeline.Stop();
+                RecoilRecovery();
+            }
         }
     }
     else if (bCanFire && !bIsReloading)
@@ -273,8 +333,41 @@ void ASWeaponBase::Fire()
         UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->EmptyFireSound, MeshComp->GetSocketLocation(WeaponData->MuzzleSocketName));
         // Clearing the ShotDelay timer so that we don't have a constant ticking when the player has no ammo, just a single click
         GetWorldTimerManager().ClearTimer(ShotDelay);
+
+        RecoilRecovery();
     }
     
+}
+
+void ASWeaponBase::Recoil()
+{
+    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+    if (WeaponData->bAutomaticFire)
+    {
+        CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()));
+        CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()));
+    }
+    else
+    {
+        CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(0));
+        CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(0));
+    }
+
+}
+
+void ASWeaponBase::RecoilRecovery()
+{
+    if (bShouldRecover && WeaponData->bAutomaticFire)
+    {
+        // Recoil recovery
+        RecoilRecoveryTimeline.PlayFromStart();
+    }
+    else if (!WeaponData->bAutomaticFire)
+    {
+        // Recoil recovery
+        RecoilRecoveryTimeline.PlayFromStart();
+    }
 }
 
 
@@ -385,5 +478,35 @@ void ASWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+    VerticalRecoilTimeline.TickTimeline(DeltaTime);
+    HorizontalRecoilTimeline.TickTimeline(DeltaTime);
+    RecoilRecoveryTimeline.TickTimeline(DeltaTime);
 }
 
+
+void ASWeaponBase::HandleVerticalRecoilProgress(float value)
+{
+    if (bShowDebug)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::SanitizeFloat(value));
+    }
+}
+
+void ASWeaponBase::HandleHorizontalRecoilProgress(float value)
+{
+    if (bShowDebug)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::SanitizeFloat(value));
+    }
+}
+
+
+void ASWeaponBase::HandleRecoveryProgress(float value)
+{
+    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+    
+    FRotator NewControlRotation = FMath::Lerp(CharacterController->GetControlRotation(), ControlRotation, value);
+    
+    CharacterController->SetControlRotation(NewControlRotation);
+}

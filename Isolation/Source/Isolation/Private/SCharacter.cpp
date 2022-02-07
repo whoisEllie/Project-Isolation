@@ -106,12 +106,24 @@ void ASCharacter::MoveRight(float value)
 void ASCharacter::LookUp(float value)
 {
 	AddControllerPitchInput(value);
+    // checking mouse movement for recoil compensation logic
+    if (value != 0.0f)
+    {
+        CurrentWeapon->bShouldRecover = false;
+        CurrentWeapon->RecoilRecoveryTimeline.Stop();
+    }
 }
 
 // Built in UE function for looking left/right
 void ASCharacter::LookRight(float value)
 {
 	AddControllerYawInput(value);
+    // checking mouse movement for recoil compensation logic
+    if (value != 0.0f)
+    {
+        CurrentWeapon->bShouldRecover = false;
+        CurrentWeapon->RecoilRecoveryTimeline.Stop();
+    }
 }
 
 // Custom crouch function
@@ -245,9 +257,11 @@ void ASCharacter::CheckVault()
     {
         FVector startLocation = GetCapsuleComponent()->GetComponentLocation();
         FVector endLocation = (GetCapsuleComponent()->GetComponentLocation() + (UKismetMathLibrary::GetForwardVector(GetCapsuleComponent()->GetComponentRotation()) * 75));
-        //DrawDebugCapsule(GetWorld(), startLocation, 50, 30, FQuat::Identity, FColor::Red);
-
-        FCollisionQueryParams TraceParams;
+        if (bDrawDebug)
+        {
+            DrawDebugCapsule(GetWorld(), startLocation, 50, 30, FQuat::Identity, FColor::Red);
+        }
+                FCollisionQueryParams TraceParams;
         TraceParams.bTraceComplex = true;
         TraceParams.AddIgnoredActor(this);
 
@@ -263,14 +277,21 @@ void ASCharacter::CheckVault()
                 startLocation = CapsuleLocation;
                 startLocation.Z += 100;
                 endLocation = CapsuleLocation;
-                //DrawDebugSphere(GetWorld(), startLocation, 1, 4, FColor::Blue);
+                if (bDrawDebug)
+                {
+                    DrawDebugSphere(GetWorld(), startLocation, 1, 4, FColor::Blue);
+                }
+                
                 if (GetWorld()->SweepSingleByChannel(Hit, startLocation, endLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams))
                 {
                     if (GetCharacterMovement()->IsWalkable(Hit))
                     {
                         FVector SecondaryVaultStartLocation = Hit.ImpactPoint;
                         SecondaryVaultStartLocation.Z += 5;
-                        DrawDebugSphere(GetWorld(), SecondaryVaultStartLocation, 10, 8, FColor::Orange);
+                        if (bDrawDebug)
+                        {
+                            DrawDebugSphere(GetWorld(), SecondaryVaultStartLocation, 10, 8, FColor::Orange);
+                        }
                         FRotator CacheRotator = GetCapsuleComponent()->GetComponentRotation();
                         FVector SecondaryVaultEndLocation = SecondaryVaultStartLocation;
                         SecondaryVaultEndLocation.Z = 0;

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SCharacterController.h"
-#include "Curves/CurveVector.h"
+#include "Components/TimelineComponent.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "SWeaponBase.generated.h"
@@ -98,6 +98,12 @@ struct FAttachmentData : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	float VerticalCameraOffset;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UCurveFloat* VerticalRecoilCurve;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UCurveFloat* HorizontalRecoilCurve;
 };
 
 
@@ -226,6 +232,8 @@ class ISOLATION_API ASWeaponBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ASWeaponBase();
+
+	void TimelineProgress(float value);
 	
 	// Starts firing the gun (sets the timer for automatic fire)
 	void StartFire();
@@ -235,6 +243,9 @@ public:
 	
 	// Spawns the line trace that deals damage and applies sound/visual effects
 	void Fire();
+
+	// Applies recoil to the player controller
+	void Recoil();
 	
 	// Plays the reload animation and sets a timer based on the length of the reload montage
 	void Reload();
@@ -384,9 +395,31 @@ public:
 	FTimerHandle ReloadingDelay;
 
 	// Recoil
-	UPROPERTY(EditDefaultsOnly, Category = "Recoil")
-	UCurveVector* RecoilCurve;
 
+	void StartRecoil();
+	
+	FTimeline VerticalRecoilTimeline;
+	UFUNCTION()
+	void HandleVerticalRecoilProgress(float value);
+	UPROPERTY(EditDefaultsOnly, Category = "Curves")
+	UCurveFloat* VerticalRecoilCurve;
+
+	FTimeline HorizontalRecoilTimeline;
+	UFUNCTION()
+	void HandleHorizontalRecoilProgress(float value);
+	UPROPERTY(EditDefaultsOnly, Category = "Curves")
+	UCurveFloat* HorizontalRecoilCurve;
+
+	FTimeline RecoilRecoveryTimeline;
+	UFUNCTION()
+	void HandleRecoveryProgress(float value);
+	UPROPERTY(EditDefaultsOnly, Category = "Curves")
+	UCurveFloat* RecoveryCurve;
+	FRotator ControlRotation;
+
+	void RecoilRecovery();
+	bool bShouldRecover;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

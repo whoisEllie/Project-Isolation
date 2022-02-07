@@ -137,8 +137,10 @@ protected:
 
 	// Function that runs on tick and checks if we should execute the Vault() functions
 	void CheckVault();
+	
 	// Function that actually executes the Vault
 	void Vault(float Height, FTransform TargetTransform);
+	
 	// Global system to update movement speed
 	void UpdateMovementSpeed();
 
@@ -220,10 +222,10 @@ protected:
 	// The height of the highest surface that the player can mantle up onto
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float MaxVaultHeight;
-	// The forward movement value (used for animations)
+	// The forward movement value (used to drive animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	float ForwardMovement;
-	// The right movement value (used for animations)
+	// The right movement value (used to drive animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	float RightMovement;
 
