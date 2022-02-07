@@ -107,6 +107,12 @@ struct FAttachmentData : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	TSubclassOf<UCameraShakeBase> RecoilCameraShake;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float VerticalRecoilMultiplier;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float HorizontalRecoilMultiplier;
 };
 
 
@@ -425,6 +431,9 @@ public:
 
 	UPROPERTY()
 	TSubclassOf<UCameraShakeBase> RecoilCameraShake;
+
+	float VerticalRecoilModifier;
+	float HorizontalRecoilModifier;
 
 
 	

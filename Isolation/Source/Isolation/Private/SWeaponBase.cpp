@@ -2,9 +2,6 @@
 
 
 #include "SWeaponBase.h"
-
-#include <string>
-
 #include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
@@ -47,6 +44,10 @@ ASWeaponBase::ASWeaponBase()
     // Default value allowing the weapon to be fired
     bCanFire = true;
     bIsReloading = false;
+
+    // Making our recoil modifiers equal to one, since we are multiplying
+    HorizontalRecoilModifier = 1.0f;
+    VerticalRecoilModifier = 1.0f;
 }
 
 
@@ -105,6 +106,8 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
             DamageModifier += AttachmentData->BaseDamageImpact;
             WeaponPitchModifier += AttachmentData->WeaponPitchVariationImpact;
             WeaponYawModifier += AttachmentData->WeaponYawVariationImpact;
+            HorizontalRecoilModifier += AttachmentData->HorizontalRecoilMultiplier;
+            VerticalRecoilModifier += AttachmentData->VerticalRecoilMultiplier;
 
             if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
             {
@@ -346,13 +349,13 @@ void ASWeaponBase::Recoil()
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     if (WeaponData->bAutomaticFire)
     {
-        CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()));
-        CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()));
+        CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()) * VerticalRecoilModifier);
+        CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()) * HorizontalRecoilModifier);
     }
     else
     {
-        CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(0));
-        CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(0));
+        CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(0) * VerticalRecoilModifier);
+        CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(0) * HorizontalRecoilModifier);
     }
 
     GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(RecoilCameraShake);  
