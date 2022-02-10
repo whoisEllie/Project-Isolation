@@ -75,8 +75,8 @@ void ASAmmoPickup::Interact()
 {
 	if (bCanInteract)
 	{
-		// Casting to the playercontroller (which stores all the ammunition and health variables)
-		ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+		// Casting to the player controller (which stores all the ammunition and health variables)
+		const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 		ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
 		switch (AmmoType)

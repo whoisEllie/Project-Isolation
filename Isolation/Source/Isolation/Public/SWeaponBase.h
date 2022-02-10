@@ -241,8 +241,6 @@ class ISOLATION_API ASWeaponBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ASWeaponBase();
-
-	void TimelineProgress(float value);
 	
 	// Starts firing the gun (sets the timer for automatic fire)
 	void StartFire();
@@ -254,7 +252,7 @@ public:
 	void Fire();
 
 	// Applies recoil to the player controller
-	void Recoil();
+	void Recoil() const;
 	
 	// Plays the reload animation and sets a timer based on the length of the reload montage
 	void Reload();
@@ -291,27 +289,27 @@ public:
 	// Components
 	
 	// The main skeletal mesh - holds the weapon model
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USkeletalMeshComponent* MeshComp;
 
 	// The skeletal mesh used to hold the current barrel attachment
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USkeletalMeshComponent* BarrelAttachment;
 
 	// The skeletal mesh used to hold the current magazine attachment
-	UPROPERTY(BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USkeletalMeshComponent* MagazineAttachment;
 
 	// The skeletal mesh used to hold the current sights attachment
-	UPROPERTY(BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USkeletalMeshComponent* SightsAttachment;
 
 	// The skeletal mesh used to hold the current stock attachment
-	UPROPERTY(BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USkeletalMeshComponent* StockAttachment;
 
 	// The skeletal mesh used to hold the current grip attachment
-	UPROPERTY(BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USkeletalMeshComponent* GripAttachment;
 	
 	// General
@@ -374,7 +372,7 @@ public:
 
 	// value used to keep track of the length of animations for timers
 	float AnimTime;
-	// Blendspace
+	// Blend space
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animations")
 	UBlendSpace* WalkBlendSpace;
 	
@@ -409,19 +407,19 @@ public:
 	
 	FTimeline VerticalRecoilTimeline;
 	UFUNCTION()
-	void HandleVerticalRecoilProgress(float value);
+	void HandleVerticalRecoilProgress(float value) const;
 	UPROPERTY(EditDefaultsOnly, Category = "Curves")
 	UCurveFloat* VerticalRecoilCurve;
 
 	FTimeline HorizontalRecoilTimeline;
 	UFUNCTION()
-	void HandleHorizontalRecoilProgress(float value);
+	void HandleHorizontalRecoilProgress(float value) const;
 	UPROPERTY(EditDefaultsOnly, Category = "Curves")
 	UCurveFloat* HorizontalRecoilCurve;
 
 	FTimeline RecoilRecoveryTimeline;
 	UFUNCTION()
-	void HandleRecoveryProgress(float value);
+	void HandleRecoveryProgress(float value) const;
 	UPROPERTY(EditDefaultsOnly, Category = "Curves")
 	UCurveFloat* RecoveryCurve;
 	FRotator ControlRotation;
@@ -435,6 +433,8 @@ public:
 	float VerticalRecoilModifier;
 	float HorizontalRecoilModifier;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Particles")
+	UNiagaraSystem* EjectedCasing;
 
 	
 protected:

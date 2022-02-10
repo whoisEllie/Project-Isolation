@@ -34,7 +34,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
 	
 	// Called for every item interacted with
 	UFUNCTION(BlueprintImplementableEvent)

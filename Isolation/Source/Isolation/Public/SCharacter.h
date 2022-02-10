@@ -15,14 +15,28 @@ class ASWeaponBase;
 class UAnimMontage;
 class UCurveFloat;
 
-UENUM(BlueprintType)
-enum MovementState
+USTRUCT(BlueprintType)
+struct FPrimaryWeaponStruct
 {
-	VE_Walk         UMETA(DisplayName = "Walking"),
-	VE_Sprint       UMETA(DisplayName = "Sprinting"),
-	VE_Crouch       UMETA(DisplayName = "Crouching"),
-	VE_Slide		UMETA(DisplayName = "Sliding"),
-	VE_Vault	    UMETA(DisplayName = "Vaulting")
+	GENERATED_BODY()
+
+	// A reference to the player's current primary weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
+	TSubclassOf<ASWeaponBase> WeaponReference;
+
+	
+};
+
+
+
+UENUM(BlueprintType)
+enum EMovementState
+{
+	State_Walk         UMETA(DisplayName = "Walking"),
+	State_Sprint       UMETA(DisplayName = "Sprinting"),
+	State_Crouch       UMETA(DisplayName = "Crouching"),
+	State_Slide		UMETA(DisplayName = "Sliding"),
+	State_Vault	    UMETA(DisplayName = "Vaulting")
 };
 
 UCLASS()
@@ -33,19 +47,21 @@ class ISOLATION_API ASCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	ASCharacter();
+
+	// Switches to new weapon
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon);
 	
     //Hands mesh, assignable through blueprints
-    UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
-    USkeletalMeshComponent* MeshComp;
+    UPROPERTY(EditDefaultsOnly, Category = "Components")
+    USkeletalMeshComponent* HandsMeshComp;
 	//Camera Comp - component for the FPS camera
-	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadWrite, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	UCameraComponent* CameraComp;
 	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
-	UPROPERTY(VisibleAnywhere, SaveGame, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USpringArmComponent* SpringArmComp;
 
 	// Weapon classes
-    
 	// A reference to the player's current primary weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASWeaponBase> PrimaryWeapon;
@@ -88,7 +104,7 @@ public:
 
 	// Enumerator holding the 4 possible movement states defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement State")
-    TEnumAsByte<MovementState> MovementState;
+    TEnumAsByte<EMovementState> MovementState;
 
 	// Other
 	// Name of the socket we attach our camera to
@@ -143,9 +159,6 @@ protected:
 	
 	// Global system to update movement speed
 	void UpdateMovementSpeed();
-
-	// Switches to new weapon
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon);
 
 	void SwapToPrimary();
 
@@ -255,6 +268,8 @@ protected:
 	// Timer managers
 	FTimerHandle SlideStop;
 
+	UPROPERTY()
+	FPrimaryWeaponStruct PrimaryWeaponStruct;
 
     
 public:	

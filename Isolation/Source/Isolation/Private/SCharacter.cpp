@@ -27,13 +27,13 @@ ASCharacter::ASCharacter()
     SpringArmComp->SetupAttachment(RootComponent);
     
     // Spawning the FPS hands mesh component and attaching it to the spring arm component
-    MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("meshComp"));
-    MeshComp->CastShadow = false;
-    MeshComp->AttachToComponent(SpringArmComp, FAttachmentTransformRules::KeepRelativeTransform);
+    HandsMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("meshComp"));
+    HandsMeshComp->CastShadow = false;
+    HandsMeshComp->AttachToComponent(SpringArmComp, FAttachmentTransformRules::KeepRelativeTransform);
     
     // Spawning the camera atop the FPS hands mesh
     CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
-    CameraComp->AttachToComponent(MeshComp, FAttachmentTransformRules::KeepRelativeTransform, "cameraSocket");
+    CameraComp->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::KeepRelativeTransform, "cameraSocket");
     
     CrouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
@@ -54,6 +54,8 @@ void ASCharacter::TimelineProgress(float value)
 void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+    PrimaryWeaponStruct.WeaponReference = PrimaryWeapon;
 	
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     UpdateWeapon(PrimaryWeapon);
@@ -132,18 +134,18 @@ void ASCharacter::StartCrouch()
     bHoldingCrouch = true;
     if (GetCharacterMovement()->IsMovingOnGround())
     {
-        if (MovementState == VE_Crouch)
+        if (MovementState == State_Crouch)
         {
             EndCrouch(false);
             //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
         }
-        else if (MovementState == VE_Sprint && !bPerformedSlide)
+        else if (MovementState == State_Sprint && !bPerformedSlide)
         {
             StartSlide();
         }
         else
         {
-            MovementState = VE_Crouch;
+            MovementState = State_Crouch;
             UpdateMovementSpeed();
         }
     }
@@ -156,7 +158,7 @@ void ASCharacter::StartCrouch()
 void ASCharacter::StopCrouch()
 {
     bHoldingCrouch = false;    
-    if (MovementState == VE_Slide)
+    if (MovementState == State_Slide)
     {
         StopSlide();
         bPerformedSlide = false;
@@ -165,7 +167,7 @@ void ASCharacter::StopCrouch()
 
 void ASCharacter::EndCrouch(bool bToSprint)
 {
-    if (MovementState == VE_Crouch || MovementState == VE_Slide)
+    if (MovementState == State_Crouch || MovementState == State_Slide)
     {
         //FVector centerVector = GetActorLocation();
         //centerVector.Z += 46;
@@ -181,11 +183,11 @@ void ASCharacter::EndCrouch(bool bToSprint)
         //}
         if (bToSprint)
         {
-            MovementState = VE_Sprint;
+            MovementState = State_Sprint;
         }
         else
         {
-            MovementState = VE_Walk;
+            MovementState = State_Walk;
         }
         UpdateMovementSpeed();
     }
@@ -196,20 +198,20 @@ void ASCharacter::StartSprint()
 {
     bHoldingSprint = true;
     // Updates the sprint speed
-    MovementState = VE_Sprint;
+    MovementState = State_Sprint;
     UpdateMovementSpeed();
 }
 
 // Stopping to sprint (IE_Released)
 void ASCharacter::StopSprint()
 {
-    if (MovementState == VE_Slide && bHoldingCrouch)
+    if (MovementState == State_Slide && bHoldingCrouch)
     {
-        MovementState = VE_Crouch;
+        MovementState = State_Crouch;
     }
     else
     {
-        MovementState = VE_Walk;
+        MovementState = State_Walk;
     }
     
     bHoldingSprint = false;
@@ -218,7 +220,7 @@ void ASCharacter::StopSprint()
 
 void ASCharacter::StartSlide()
 {
-    MovementState = VE_Slide;
+    MovementState = State_Slide;
     bPerformedSlide = true;
     UpdateMovementSpeed();
     GetWorldTimerManager().SetTimer(SlideStop, this, &ASCharacter::StopSlide, SlideTime, false, SlideTime);
@@ -226,7 +228,7 @@ void ASCharacter::StartSlide()
 
 void ASCharacter::StopSlide()
 {
-    if (MovementState == VE_Slide && FloorAngle > -15.0f)
+    if (MovementState == State_Slide && FloorAngle > -15.0f)
     {
         if (bHoldingSprint)
         {
@@ -234,11 +236,11 @@ void ASCharacter::StopSlide()
         }
         else if (bHoldingCrouch)
         {
-            MovementState = VE_Crouch;
+            MovementState = State_Crouch;
         }
         else
         {
-            MovementState = VE_Walk;
+            MovementState = State_Walk;
         }
         bPerformedSlide = false;
         GetWorldTimerManager().ClearTimer(SlideStop);
@@ -414,9 +416,9 @@ void ASCharacter::Vault(float Height, FTransform TargetTransform)
 {
     VaultStartLocation = GetActorTransform();
     VaultEndLocation = TargetTransform;
-    MovementState = VE_Vault;
+    MovementState = State_Vault;
     UpdateMovementSpeed();
-    MeshComp->GetAnimInstance()->Montage_Play(VaultMontage, 1.0f);
+    HandsMeshComp->GetAnimInstance()->Montage_Play(VaultMontage, 1.0f);
     VaultTimeline.PlayFromStart();
 }
 
@@ -426,7 +428,7 @@ void ASCharacter::UpdateMovementSpeed()
     bIsSprinting = false;
     bIsCrouching = false;
     
-    if (MovementState == VE_Crouch)
+    if (MovementState == State_Crouch)
     {
         bIsCrouching = true;
         GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
@@ -435,7 +437,7 @@ void ASCharacter::UpdateMovementSpeed()
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (MovementState == VE_Sprint)
+    else if (MovementState == State_Sprint)
     {
         bIsSprinting = true;
         GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
@@ -444,7 +446,7 @@ void ASCharacter::UpdateMovementSpeed()
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (MovementState == VE_Walk)
+    else if (MovementState == State_Walk)
     {
         GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
         CurrentWeapon->bCanFire = true;
@@ -452,7 +454,7 @@ void ASCharacter::UpdateMovementSpeed()
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (MovementState == VE_Slide)
+    else if (MovementState == State_Slide)
     {
         GetCharacterMovement()->MaxWalkSpeed = SlideSpeed;
         CurrentWeapon->bCanFire = false;
@@ -460,7 +462,7 @@ void ASCharacter::UpdateMovementSpeed()
         GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
         GetCharacterMovement()->GroundFriction = 1.0f;
     }
-    else if (MovementState == VE_Vault)
+    else if (MovementState == State_Vault)
     {
         CurrentWeapon->bCanFire = true;
 
@@ -483,14 +485,14 @@ void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon)
     if (CurrentWeapon->WeaponData)
     {
         CurrentWeapon->SetOwner(this);
-        CurrentWeapon->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->WeaponData->WeaponAttachmentSocketName);
+        CurrentWeapon->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->WeaponData->WeaponAttachmentSocketName);
     }   
 }
 
 // Lazy solution - read below
 void ASCharacter::SwapToPrimary()
 {
-    UpdateWeapon(PrimaryWeapon);
+    UpdateWeapon(PrimaryWeaponStruct.WeaponReference);
 }
 
 // Lazy solution - read below
@@ -537,26 +539,26 @@ void ASCharacter::StopADS()
 }
 
 // Called every frame
-void ASCharacter::Tick(float DeltaTime)
+void ASCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
-	const float TargetHalfHeight = (MovementState == VE_Crouch || MovementState == VE_Slide)? FinalCapsuleHalfHeight : DefaultCapsuleHalfHeight;
+	const float TargetHalfHeight = (MovementState == State_Crouch || MovementState == State_Slide)? FinalCapsuleHalfHeight : DefaultCapsuleHalfHeight;
 	// Interpolates between the current height and the target height
 	const float NewHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHalfHeight, DeltaTime, CrouchSpeed);
 	// Sets the half height of the capsule component to the new interpolated half height
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    const float TargetFOV = (MovementState == VE_Sprint || MovementState == VE_Slide)? SpeedFOV : DefaultFOV;
+    const float TargetFOV = (MovementState == State_Sprint || MovementState == State_Slide)? SpeedFOV : DefaultFOV;
     //Interpolates between current fov and target fov
     const float InFieldOfView = FMath::FInterpTo(CameraComp->FieldOfView, TargetFOV, DeltaTime, FOVChangeSpeed);
     // Sets the new camera FOV
     CameraComp->SetFieldOfView(InFieldOfView);
 
-    if (bWantsToAim == true && MovementState != VE_Sprint && MovementState != VE_Slide)
+    if (bWantsToAim == true && MovementState != State_Sprint && MovementState != State_Slide)
     {
         bIsAiming = true;
     }

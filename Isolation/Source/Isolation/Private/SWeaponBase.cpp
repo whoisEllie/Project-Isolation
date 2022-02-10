@@ -93,7 +93,7 @@ void ASWeaponBase::BeginPlay()
 
 void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
 {
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     
     for (FName RowName : AttachmentsArray)
@@ -186,7 +186,7 @@ void ASWeaponBase::StartFire()
 
 void ASWeaponBase::StartRecoil()
 {
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     if (bCanFire && CharacterController->WeaponParameters[ReferenceWeapon].ClipSize > 0 && !bIsReloading)
@@ -217,7 +217,7 @@ void ASWeaponBase::StopFire()
 void ASWeaponBase::Fire()
 { 
     // Casting to the game instance (which stores all the ammunition and health variables)
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     
     // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
@@ -235,7 +235,7 @@ void ASWeaponBase::Fire()
         // Subtracting from the ammunition count of the weapon
         CharacterController->WeaponParameters[ReferenceWeapon].ClipSize -= 1;
 
-        int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPelletCount : 1;
+        const int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPelletCount : 1;
         for (int i = 0; i < NumberOfShots; i++)
         {
 
@@ -259,6 +259,8 @@ void ASWeaponBase::Fire()
             if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel1, QueryParams))
             {
 
+                GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, Hit.Actor->GetName());
+                
                 // Drawing debug line trace
                 if (bShowDebug)
                 {
@@ -304,6 +306,11 @@ void ASWeaponBase::Fire()
             {
                 UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
             }
+
+
+            FRotator EjectionSpawnVector = FRotator::ZeroRotator;
+            EjectionSpawnVector.Yaw = 270.0f;
+            UNiagaraFunctionLibrary::SpawnSystemAttached(EjectedCasing, MagazineAttachment, FName("ejection_port"), FVector::ZeroVector, EjectionSpawnVector, EAttachLocation::SnapToTarget, true, true);
                 
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 
@@ -343,9 +350,9 @@ void ASWeaponBase::Fire()
     
 }
 
-void ASWeaponBase::Recoil()
+void ASWeaponBase::Recoil() const
 {
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     if (WeaponData->bAutomaticFire)
     {
@@ -364,12 +371,7 @@ void ASWeaponBase::Recoil()
 
 void ASWeaponBase::RecoilRecovery()
 {
-    if (bShouldRecover && WeaponData->bAutomaticFire)
-    {
-        // Recoil recovery
-        RecoilRecoveryTimeline.PlayFromStart();
-    }
-    else if (!WeaponData->bAutomaticFire)
+    if (bShouldRecover)
     {
         // Recoil recovery
         RecoilRecoveryTimeline.PlayFromStart();
@@ -381,7 +383,7 @@ void ASWeaponBase::Reload()
 {
     
     // Casting to the game instance (which stores all the ammunition and health variables)
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     // Changing the maximum ammunition based on if the weapon can hold a bullet in the chamber
@@ -432,7 +434,7 @@ void ASWeaponBase::UpdateAmmo()
     }
 
     // Casting to the game instance (which stores all the ammunition and health variables)
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     
     // value system to reload the correct amount of bullets if the weapon is using a chambered reloading system
@@ -450,7 +452,7 @@ void ASWeaponBase::UpdateAmmo()
     }
     
     // First, we set Temp, which keeps track of the difference between the maximum ammunition and the amount that there is currently loaded (i.e. how much ammunition we need to reload into the gun)
-    int Temp = CharacterController->WeaponParameters[ReferenceWeapon].ClipCapacity - CharacterController->WeaponParameters[ReferenceWeapon].ClipSize;
+    const int Temp = CharacterController->WeaponParameters[ReferenceWeapon].ClipCapacity - CharacterController->WeaponParameters[ReferenceWeapon].ClipSize;
     // Making sure we have enough ammunition to reload
     if (CharacterController->AmmoMap[CharacterController->WeaponParameters[ReferenceWeapon].AmmoType] >= Temp + value)
     {
@@ -490,7 +492,7 @@ void ASWeaponBase::Tick(float DeltaTime)
 }
 
 
-void ASWeaponBase::HandleVerticalRecoilProgress(float value)
+void ASWeaponBase::HandleVerticalRecoilProgress(float value) const
 {
     if (bShowDebug)
     {
@@ -498,7 +500,7 @@ void ASWeaponBase::HandleVerticalRecoilProgress(float value)
     }
 }
 
-void ASWeaponBase::HandleHorizontalRecoilProgress(float value)
+void ASWeaponBase::HandleHorizontalRecoilProgress(float value) const
 {
     if (bShowDebug)
     {
@@ -507,12 +509,12 @@ void ASWeaponBase::HandleHorizontalRecoilProgress(float value)
 }
 
 
-void ASWeaponBase::HandleRecoveryProgress(float value)
+void ASWeaponBase::HandleRecoveryProgress(float value) const
 {
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
-    
-    FRotator NewControlRotation = FMath::Lerp(CharacterController->GetControlRotation(), ControlRotation, value);
+
+    const FRotator NewControlRotation = FMath::Lerp(CharacterController->GetControlRotation(), ControlRotation, value);
     
     CharacterController->SetControlRotation(NewControlRotation);
 }
