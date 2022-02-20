@@ -15,28 +15,50 @@ class ASWeaponBase;
 class UAnimMontage;
 class UCurveFloat;
 
-USTRUCT(BlueprintType)
-struct FPrimaryWeaponStruct
+// Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FsingleWeaponParams struct)
+// and to keep track of the total ammo the player has (ammoMap)
+UENUM(BlueprintType)
+enum class EAmmoType : uint8
 {
-	GENERATED_BODY()
-
-	// A reference to the player's current primary weapon
-	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
-	TSubclassOf<ASWeaponBase> WeaponReference;
-
-	
+	Pistol       UMETA(DisplayName = "Pistol Ammo"),
+	Rifle        UMETA(DisplayName = "Rifle Ammo"),
+	Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
+	Special		 UMETA(DisplayName = "Special Ammo"),
 };
-
-
 
 UENUM(BlueprintType)
 enum EMovementState
 {
-	State_Walk         UMETA(DisplayName = "Walking"),
-	State_Sprint       UMETA(DisplayName = "Sprinting"),
-	State_Crouch       UMETA(DisplayName = "Crouching"),
+	State_Walk      UMETA(DisplayName = "Walking"),
+	State_Sprint    UMETA(DisplayName = "Sprinting"),
+	State_Crouch    UMETA(DisplayName = "Crouching"),
 	State_Slide		UMETA(DisplayName = "Sliding"),
 	State_Vault	    UMETA(DisplayName = "Vaulting")
+};
+
+USTRUCT(BlueprintType)
+struct FWeaponDataStruct
+{
+	GENERATED_BODY()
+
+	// The maximum size of the player's magazine
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
+	int ClipCapacity; 
+
+	// The amount of ammunition currently in the magazine
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
+	int ClipSize;
+
+	// Enumerator holding the 4 possible ammo types defined above
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
+	EAmmoType AmmoType;
+
+	// The current health of the weapon (degradation values are in the weapon class)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
+	float WeaponHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
+	TArray<FName> WeaponAttachments;
 };
 
 UCLASS()
@@ -50,6 +72,11 @@ public:
 
 	// Switches to new weapon
 	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon);
+
+	bool bIsPrimary;
+
+	bool bNewPrimarySpawn;
+	bool bNewSecondarySpawn;
 	
     //Hands mesh, assignable through blueprints
     UPROPERTY(EditDefaultsOnly, Category = "Components")
@@ -111,6 +138,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Other")
 	FName CameraSocketName;
 
+	// Weapon variables
+
+	UPROPERTY(EditDefaultsOnly)
+	FWeaponDataStruct PrimaryWeaponCacheMap;
+
+	UPROPERTY(EditDefaultsOnly)
+	FWeaponDataStruct SecondaryWeaponCacheMap;
+	
     
 protected:
 
@@ -267,10 +302,6 @@ protected:
 
 	// Timer managers
 	FTimerHandle SlideStop;
-
-	UPROPERTY()
-	FPrimaryWeaponStruct PrimaryWeaponStruct;
-
     
 public:	
 	// Called every frame
@@ -278,5 +309,4 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 };

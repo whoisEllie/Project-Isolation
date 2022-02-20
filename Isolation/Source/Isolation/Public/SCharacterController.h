@@ -3,48 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SCharacter.h"
 #include "GameFramework/PlayerController.h"
 #include "SCharacterController.generated.h"
 
 class ASWeaponBase; 
 
-// Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FsingleWeaponParams struct)
-// and to keep track of the total ammo the player has (ammoMap)
-UENUM(BlueprintType)
-enum class EAmmoType : uint8
-{
-	Pistol       UMETA(DisplayName = "Pistol Ammo"),
-	Rifle        UMETA(DisplayName = "Rifle Ammo"),
-	Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
-	Special		 UMETA(DisplayName = "Special Ammo"),
-};
 
-// Struct holding the information for spawning a new enemy AI (spawn Location, target locations, weapon)
-USTRUCT(BlueprintType)
-struct FSingleWeaponParams
-{
-    GENERATED_BODY()
-    	
-    // Ammunition
-    
-    // The maximum size of the player's magazine
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    int ClipCapacity; 
-
-    // The amount of ammunition currently in the magazine
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    int ClipSize;
-    
-    // Enumerator holding the 4 possible ammo types defined above
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
-    EAmmoType AmmoType;
-	
-    // Weapon Health
-    	
-    // The current health of the weapon (degradation values are in the weapon class)
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    float WeaponHealth;
-};
 
 UCLASS()
 class ISOLATION_API ASCharacterController : public APlayerController
@@ -52,9 +17,6 @@ class ISOLATION_API ASCharacterController : public APlayerController
 	GENERATED_BODY()
 
 	public:
-
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
-    TMap<TSubclassOf<ASWeaponBase>, FSingleWeaponParams> WeaponParameters;
 
     UPROPERTY(EditDefaultsOnly, Category = "Variables")
     TMap<EAmmoType, int32> AmmoMap;

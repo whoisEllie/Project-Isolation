@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SCharacter.h"
 #include "SCharacterController.h"
 #include "Components/TimelineComponent.h"
 #include "Engine/DataTable.h"
@@ -262,7 +263,7 @@ public:
 
 	// Allows the player to fire again
 	void EnableFire();
-
+	
 	void SpawnAttachments(TArray<FName> AttachmentsArray);
 
 	// Data table reference
@@ -275,7 +276,7 @@ public:
 	UDataTable* AttachmentsDataTable;
 
 	FAttachmentData* AttachmentData;
-
+	
 	// Attachments
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	TArray<FName> AttachmentNameArray;
@@ -320,8 +321,6 @@ public:
 	bool bIsReloading;
 	// Is the weapon silenced or not (determines sounds)
 	bool bSilenced;
-	// Stores a reference to the class of the current weapon so we can access it's relevant ammunition and health values in SCharacterController
-	TSubclassOf<ASWeaponBase> ReferenceWeapon;
 
 	float DamageModifier;
 

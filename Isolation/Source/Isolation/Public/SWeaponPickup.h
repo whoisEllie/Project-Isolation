@@ -45,4 +45,13 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASWeaponBase> WeaponReference;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	FWeaponDataStruct DataStruct;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	TArray<FName> AttachmentArray;
+
+	UPROPERTY()
+	bool bIsNewPrimary;
 };

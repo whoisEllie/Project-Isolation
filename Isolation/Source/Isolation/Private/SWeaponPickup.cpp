@@ -16,27 +16,90 @@ ASWeaponPickup::ASWeaponPickup()
 	MainMesh->SetupAttachment(RootComponent);
 
 	BarrelAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BarrelAttachment"));
-	BarrelAttachment->AttachToComponent(MainMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	MainMesh->SetupAttachment(RootComponent);
 
 	MagazineAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MagazineAttachment"));
-	MagazineAttachment->AttachToComponent(MainMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	MainMesh->SetupAttachment(RootComponent);
 	
 	SightsAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SightsAttachment"));
-	SightsAttachment->AttachToComponent(MainMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	MainMesh->SetupAttachment(RootComponent);
 	
 	StockAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("StockAttachment"));
-	StockAttachment->AttachToComponent(MainMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	MainMesh->SetupAttachment(RootComponent);
 	
 	GripAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GripAttachment"));
-	GripAttachment->AttachToComponent(MainMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	MainMesh->SetupAttachment(RootComponent);
+
+	
 }
 
 void ASWeaponPickup::Interact()
 {
 	Super::Interact();
 
+	DataStruct.WeaponAttachments = AttachmentArray;
+
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Picked up weapon"));
 
 	ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	PlayerCharacter->UpdateWeapon(WeaponReference);
+	
+	if ((PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon == nullptr) || (PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon != nullptr))
+	{
+		PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
+		PlayerCharacter->bNewPrimarySpawn = true;
+
+		
+		PlayerCharacter->UpdateWeapon(WeaponReference);
+		if (PlayerCharacter->CurrentWeapon)
+		{
+			PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->PrimaryWeaponCacheMap.WeaponAttachments);
+		}
+		PlayerCharacter->PrimaryWeapon = WeaponReference;
+		PlayerCharacter->bIsPrimary = true;
+
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, TEXT("New Primary"));
+	}
+	else if (PlayerCharacter->SecondaryWeapon == nullptr && PlayerCharacter->PrimaryWeapon != nullptr)
+	{
+		PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
+		PlayerCharacter->bNewSecondarySpawn = true;
+		
+		PlayerCharacter->UpdateWeapon(WeaponReference);
+		if (PlayerCharacter->CurrentWeapon)
+		{
+			PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->SecondaryWeaponCacheMap.WeaponAttachments);
+		}
+		PlayerCharacter->SecondaryWeapon = WeaponReference;
+		PlayerCharacter->bIsPrimary = false;
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, TEXT("New Secondary"));
+	}
+	else
+	{
+		if (PlayerCharacter->bIsPrimary)
+		{
+			PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
+			PlayerCharacter->bNewPrimarySpawn = true;
+			
+			PlayerCharacter->UpdateWeapon(WeaponReference);
+			if (PlayerCharacter->CurrentWeapon)
+			{
+				PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->PrimaryWeaponCacheMap.WeaponAttachments);
+			}
+			PlayerCharacter->PrimaryWeapon = WeaponReference;
+			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, TEXT("New Primary"));
+		}
+		else
+		{
+			PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
+			PlayerCharacter->bNewSecondarySpawn = true;
+			
+			PlayerCharacter->UpdateWeapon(WeaponReference);
+			if (PlayerCharacter->CurrentWeapon)
+			{
+				PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->SecondaryWeaponCacheMap.WeaponAttachments);
+			}
+			PlayerCharacter->SecondaryWeapon = WeaponReference;
+			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, TEXT("New Secondary"));
+		}
+	}
 }

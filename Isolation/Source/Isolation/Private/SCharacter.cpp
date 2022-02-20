@@ -38,6 +38,9 @@ ASCharacter::ASCharacter()
     CrouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
     FinalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
+    bIsPrimary = true;
+    bNewPrimarySpawn = true;
+    bNewSecondarySpawn = true;
 }
 
 void ASCharacter::TimelineProgress(float value)
@@ -54,11 +57,8 @@ void ASCharacter::TimelineProgress(float value)
 void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-    PrimaryWeaponStruct.WeaponReference = PrimaryWeapon;
 	
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-    UpdateWeapon(PrimaryWeapon);
     DefaultFOV = CameraComp->FieldOfView;
     SpeedFOV = DefaultFOV + FOVChangeAmount;
 
@@ -109,7 +109,7 @@ void ASCharacter::LookUp(float value)
 {
 	AddControllerPitchInput(value);
     // checking mouse movement for recoil compensation logic
-    if (value != 0.0f)
+    if (value != 0.0f && CurrentWeapon)
     {
         CurrentWeapon->bShouldRecover = false;
         CurrentWeapon->RecoilRecoveryTimeline.Stop();
@@ -121,7 +121,7 @@ void ASCharacter::LookRight(float value)
 {
 	AddControllerYawInput(value);
     // checking mouse movement for recoil compensation logic
-    if (value != 0.0f)
+    if (value != 0.0f && CurrentWeapon)
     {
         CurrentWeapon->bShouldRecover = false;
         CurrentWeapon->RecoilRecoveryTimeline.Stop();
@@ -405,10 +405,10 @@ void ASCharacter::CheckAngle()
         FloorVector = AngleHit.ImpactNormal;
         const FRotator FinalRotation = UKismetMathLibrary::MakeRotFromZX(FloorVector, GetActorForwardVector());
         FloorAngle = FinalRotation.Pitch;
-        if (bDrawDebug)
+        /*if (bDrawDebug)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%f"),FloorAngle), true);
-        }
+        }*/
     }
 }
 
@@ -432,7 +432,10 @@ void ASCharacter::UpdateMovementSpeed()
     {
         bIsCrouching = true;
         GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
-        CurrentWeapon->bCanFire = true;
+        if (CurrentWeapon)
+        {
+            CurrentWeapon->bCanFire = true;
+        }
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
@@ -441,7 +444,10 @@ void ASCharacter::UpdateMovementSpeed()
     {
         bIsSprinting = true;
         GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
-        CurrentWeapon->bCanFire = false;
+        if (CurrentWeapon)
+        {
+            CurrentWeapon->bCanFire = false;
+        }
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
@@ -449,7 +455,10 @@ void ASCharacter::UpdateMovementSpeed()
     else if (MovementState == State_Walk)
     {
         GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-        CurrentWeapon->bCanFire = true;
+        if (CurrentWeapon)
+        {
+            CurrentWeapon->bCanFire = true;
+        }
         GetCharacterMovement()->MaxAcceleration = 2048.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
@@ -457,15 +466,20 @@ void ASCharacter::UpdateMovementSpeed()
     else if (MovementState == State_Slide)
     {
         GetCharacterMovement()->MaxWalkSpeed = SlideSpeed;
-        CurrentWeapon->bCanFire = false;
+        if (CurrentWeapon)
+        {
+            CurrentWeapon->bCanFire = false;
+        }
         GetCharacterMovement()->MaxAcceleration = 200.0f;
         GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
         GetCharacterMovement()->GroundFriction = 1.0f;
     }
     else if (MovementState == State_Vault)
     {
-        CurrentWeapon->bCanFire = true;
-
+        if (CurrentWeapon)
+        {
+            CurrentWeapon->bCanFire = true;
+        }
     }
 }
 
@@ -482,23 +496,51 @@ void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon)
     }
     // Spawns the new weapon and sets the player as it's owner
     CurrentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
-    if (CurrentWeapon->WeaponData)
+    if (CurrentWeapon)
     {
         CurrentWeapon->SetOwner(this);
         CurrentWeapon->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->WeaponData->WeaponAttachmentSocketName);
-    }   
+    }
 }
 
 // Lazy solution - read below
 void ASCharacter::SwapToPrimary()
 {
-    UpdateWeapon(PrimaryWeaponStruct.WeaponReference);
+    if (PrimaryWeapon && !bIsPrimary)
+    {
+        UpdateWeapon(PrimaryWeapon);
+        
+        CurrentWeapon->SpawnAttachments(PrimaryWeaponCacheMap.WeaponAttachments);
+
+        if (bDrawDebug)
+        {
+            for (const FName Attachment: PrimaryWeaponCacheMap.WeaponAttachments)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, Attachment.ToString());
+            }
+        }
+        bIsPrimary = true;
+    }
 }
 
 // Lazy solution - read below
 void ASCharacter::SwapToSecondary()
 {
-    UpdateWeapon(SecondaryWeapon);
+    if (SecondaryWeapon && bIsPrimary)
+    {        
+        UpdateWeapon(SecondaryWeapon);
+        
+        CurrentWeapon->SpawnAttachments(SecondaryWeaponCacheMap.WeaponAttachments);
+
+        if (bDrawDebug)
+        {
+            for (const FName Attachment: SecondaryWeaponCacheMap.WeaponAttachments)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, Attachment.ToString());
+            }
+        }
+        bIsPrimary = false;
+    }
 }
 
 // Passing player inputs to SWeaponBase
@@ -581,6 +623,16 @@ void ASCharacter::Tick(const float DeltaTime)
     VaultTimeline.TickTimeline(DeltaTime);
 
     CheckAngle();
+    
+    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.ClipSize));
+    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.ClipCapacity));
+    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.WeaponHealth));
+    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Secondary"));
+
+    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.ClipSize));
+    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.ClipCapacity));
+    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.WeaponHealth));
+    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Primary"));
 }
 
 // Called to bind functionality to input
