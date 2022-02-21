@@ -14,6 +14,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "SWeaponBase.h"
+#include "SWeaponPickup.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -78,7 +79,7 @@ void ASCharacter::WorldInteract()
     const FVector CameraLocation = CameraComp->GetComponentLocation();
     const FRotator CameraRotation = CameraComp->GetComponentRotation();
     const FVector TraceDirection = CameraRotation.Vector();
-    const FVector TraceEndLocation = CameraLocation + (TraceDirection * 10000.0f);
+    const FVector TraceEndLocation = CameraLocation + (TraceDirection * 1000.0f);
 
     if(GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
     {
@@ -484,13 +485,28 @@ void ASCharacter::UpdateMovementSpeed()
 }
 
 // Spawns a new weapon (either from weapon swap or picking up a new weapon)
-void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon)
+void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct)
 {
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
     SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     if (CurrentWeapon)
     {
+        if (bSpawnPickup)
+        {
+            // Spawns the new weapon pickup in front of the player
+            const FVector TraceStart = CameraComp->GetComponentLocation();
+            const FRotator TraceStartRotation = CameraComp->GetComponentRotation();
+            const FVector TraceDirection = TraceStartRotation.Vector();
+            const FVector TraceEnd = TraceStart + (TraceDirection * 100.0f);
+        
+            /*ASWeaponPickup* NewPickup = GetWorld()->SpawnActor<ASWeaponPickup>(CurrentWeapon->WeaponData->PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
+            NewPickup->WeaponReference = CurrentWeapon->GetClass();
+            NewPickup->DataStruct = OldDataStruct;
+            NewPickup->bStatic = false;
+            NewPickup->AttachmentArray = OldDataStruct.WeaponAttachments;*/
+        }
+        
         // Destroys the current weapon, if it exists
         CurrentWeapon->K2_DestroyActor();
     }
@@ -508,7 +524,7 @@ void ASCharacter::SwapToPrimary()
 {
     if (PrimaryWeapon && !bIsPrimary)
     {
-        UpdateWeapon(PrimaryWeapon);
+        UpdateWeapon(PrimaryWeapon, false, SecondaryWeaponCacheMap);
         
         CurrentWeapon->SpawnAttachments(PrimaryWeaponCacheMap.WeaponAttachments);
 
@@ -528,7 +544,7 @@ void ASCharacter::SwapToSecondary()
 {
     if (SecondaryWeapon && bIsPrimary)
     {        
-        UpdateWeapon(SecondaryWeapon);
+        UpdateWeapon(SecondaryWeapon, false, PrimaryWeaponCacheMap);
         
         CurrentWeapon->SpawnAttachments(SecondaryWeaponCacheMap.WeaponAttachments);
 

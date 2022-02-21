@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SCharacter.h"
-#include "SCharacterController.h"
+#include "SWeaponPickup.h"
 #include "Components/TimelineComponent.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
@@ -12,12 +12,14 @@
 
 class USkeletalMeshComponent;
 class USkeletalMesh;
+class UStaticMesh;
 class UAnimMontage;
 class UBlendSpace;
 class UNiagaraSystem;
 class USoundCue;
 class UPhysicalMaterial;
 class UDataTable;
+class ASWeaponPickup;
 
 UENUM()
 enum class EAttachmentType : uint8
@@ -36,6 +38,9 @@ struct FAttachmentData : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	USkeletalMesh* AttachmentMesh;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UStaticMesh* PickupMesh;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	EAttachmentType AttachmentType;
@@ -121,6 +126,10 @@ USTRUCT(BlueprintType)
 struct FWeaponData : public FTableRowBase
 {
 	GENERATED_BODY()
+
+	//Pickup reference
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	TSubclassOf<ASWeaponPickup> PickupReference;
 
 	// Determines whether the weapon is automatic or not
 	UPROPERTY(EditDefaultsOnly, Category = "General")

@@ -71,7 +71,7 @@ public:
 	ASCharacter();
 
 	// Switches to new weapon
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon);
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct);
 
 	bool bIsPrimary;
 

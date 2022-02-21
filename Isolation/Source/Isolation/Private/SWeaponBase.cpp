@@ -112,10 +112,7 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                 BarrelAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
                 SocketOverride = AttachmentData->MuzzleLocationOverride;
                 ParticleSocketOverride = AttachmentData->ParticleSpawnLocationOverride;
-                if (AttachmentData->bSilenced)
-                {
-                    bSilenced = true;
-                }
+                bSilenced = AttachmentData->bSilenced;
             }
             else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
             {
@@ -126,7 +123,7 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                 VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
                 HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
                 RecoilCameraShake = AttachmentData->RecoilCameraShake;
-                if (PlayerCharacter->bNewPrimarySpawn)
+                /*if (PlayerCharacter->bNewPrimarySpawn)
                 {
                     PlayerCharacter->PrimaryWeaponCacheMap.AmmoType = AttachmentData->AmmoToUse;
                     PlayerCharacter->PrimaryWeaponCacheMap.ClipCapacity = AttachmentData->ClipCapacity;
@@ -141,7 +138,7 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                     PlayerCharacter->SecondaryWeaponCacheMap.ClipSize = AttachmentData->ClipSize;
                     PlayerCharacter->SecondaryWeaponCacheMap.WeaponHealth = AttachmentData->WeaponHealth;
                     PlayerCharacter->bNewSecondarySpawn = false;
-                }
+                }*/
                 
             }
             else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
@@ -244,8 +241,6 @@ void ASWeaponBase::Fire()
 
         // Subtracting from the ammunition count of the weapon
         (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) -= 1;
-        (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.WeaponHealth : PlayerCharacter->SecondaryWeaponCacheMap.WeaponHealth) -= 10;
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::SanitizeFloat((PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.WeaponHealth : PlayerCharacter->SecondaryWeaponCacheMap.WeaponHealth)));
 
         const int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPelletCount : 1;
         for (int i = 0; i < NumberOfShots; i++)
@@ -269,10 +264,7 @@ void ASWeaponBase::Fire()
 
              // Drawing a line trace based on the parameters calculated previously 
             if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel1, QueryParams))
-            {
-
-                GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, Hit.Actor->GetName());
-                
+            {                
                 // Drawing debug line trace
                 if (bShowDebug)
                 {

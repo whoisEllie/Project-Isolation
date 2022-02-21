@@ -7,41 +7,40 @@
 #include "SWeaponBase.h"
 #include "SWeaponPickup.generated.h"
 
-class USkeletalMeshComponent;
+class UStaticMeshComponent;
+class UDataTable;
+class ASWeaponBase;
 
-/**
- * 
- */
 UCLASS()
-class ISOLATION_API ASWeaponPickup : public ASInteractionActor
+class ISOLATION_API ASWeaponPickup : public AActor, public ISInteractInterface
 {
 	GENERATED_BODY()
-
-	ASWeaponPickup();
 	
+public:	
+	// Sets default values for this actor's properties
+	ASWeaponPickup();
+
 	virtual void Interact() override;
 
-	virtual void BeginPlay() override;
+	void SpawnAttachmentMesh();
 
-public:
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UStaticMeshComponent* MainMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
-	USkeletalMeshComponent* MainMesh;
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UStaticMeshComponent* BarrelAttachment;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
-	USkeletalMeshComponent* BarrelAttachment;
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UStaticMeshComponent* MagazineAttachment;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
-	USkeletalMeshComponent* MagazineAttachment;
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UStaticMeshComponent* SightsAttachment;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UStaticMeshComponent* StockAttachment;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
-	USkeletalMeshComponent* SightsAttachment;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
-	USkeletalMeshComponent* StockAttachment;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
-	USkeletalMeshComponent* GripAttachment;
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
+	UStaticMeshComponent* GripAttachment;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASWeaponBase> WeaponReference;
@@ -49,9 +48,36 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FWeaponDataStruct DataStruct;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
+	UDataTable* AttachmentsDataTable;
+
+	FAttachmentData* AttachmentData;
+	
+	bool bRuntimeSpawned;
+
+	UPROPERTY(EditInstanceOnly, Category = "Weapon")
+	bool bStatic;
+	
+	UPROPERTY(EditInstanceOnly, Category = "Data")
 	TArray<FName> AttachmentArray;
 
 	UPROPERTY()
 	bool bIsNewPrimary;
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+	
+	// Called for every item interacted with
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnInteraction(AActor* ImplementedActor);
+
+	// Called when the interaction is completed
+	UFUNCTION()
+	void InteractionCompleted();
+
 };
