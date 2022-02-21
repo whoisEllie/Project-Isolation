@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SCharacter.h"
 #include "SInteractionActor.h"
-#include "SWeaponBase.h"
 #include "SWeaponPickup.generated.h"
 
 class UStaticMeshComponent;
@@ -45,13 +45,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASWeaponBase> WeaponReference;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	UPROPERTY()
 	FWeaponDataStruct DataStruct;
+	
 
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
 	UDataTable* AttachmentsDataTable;
 
-	FAttachmentData* AttachmentData;
+	
 	
 	bool bRuntimeSpawned;
 

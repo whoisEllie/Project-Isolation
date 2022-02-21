@@ -2,6 +2,7 @@
 
 
 #include "SWeaponPickup.h"
+#include "SWeaponBase.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -27,8 +28,6 @@ ASWeaponPickup::ASWeaponPickup()
 	
 	GripAttachment = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GripAttachment"));
 	GripAttachment->SetupAttachment(MainMesh);
-
-	bRuntimeSpawned = false;
 }
 
 // Called when the game starts or when spawned
@@ -36,7 +35,7 @@ void ASWeaponPickup::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnAttachmentMesh();
-
+	
 	if (!bStatic)
 	{
 		MainMesh->SetSimulatePhysics(true);
@@ -49,7 +48,7 @@ void ASWeaponPickup::SpawnAttachmentMesh()
 	{
 		for (FName RowName : AttachmentArray)
 		{
-			AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
+			const FAttachmentData* AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
 			
 			if (AttachmentData)
 			{
@@ -99,7 +98,7 @@ void ASWeaponPickup::Interact()
 		PlayerCharacter->bNewPrimarySpawn = true;
 
 		
-		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct);
+		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct, bStatic, FTransform::Identity);
 		if (PlayerCharacter->CurrentWeapon)
 		{
 			PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->PrimaryWeaponCacheMap.WeaponAttachments);
@@ -114,7 +113,7 @@ void ASWeaponPickup::Interact()
 		PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
 		PlayerCharacter->bNewSecondarySpawn = true;
 		
-		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct);
+		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct, bStatic, FTransform::Identity);
 		if (PlayerCharacter->CurrentWeapon)
 		{
 			PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->SecondaryWeaponCacheMap.WeaponAttachments);
@@ -127,10 +126,10 @@ void ASWeaponPickup::Interact()
 	{
 		if (PlayerCharacter->bIsPrimary)
 		{
+			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->PrimaryWeaponCacheMap, bStatic, GetTransform());
 			PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
 			PlayerCharacter->bNewPrimarySpawn = true;
 			
-			PlayerCharacter->UpdateWeapon(WeaponReference, true, DataStruct);
 			if (PlayerCharacter->CurrentWeapon)
 			{
 				PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->PrimaryWeaponCacheMap.WeaponAttachments);
@@ -140,10 +139,10 @@ void ASWeaponPickup::Interact()
 		}
 		else
 		{
+			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->SecondaryWeaponCacheMap, bStatic, GetTransform());
 			PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
 			PlayerCharacter->bNewSecondarySpawn = true;
 			
-			PlayerCharacter->UpdateWeapon(WeaponReference, true, DataStruct);
 			if (PlayerCharacter->CurrentWeapon)
 			{
 				PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->SecondaryWeaponCacheMap.WeaponAttachments);

@@ -71,7 +71,7 @@ public:
 	ASCharacter();
 
 	// Switches to new weapon
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct);
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct, bool bStatic, FTransform PickupTransform);
 
 	bool bIsPrimary;
 
@@ -276,6 +276,8 @@ protected:
 	// The right movement value (used to drive animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	float RightMovement;
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float WeaponSpawnDistance;
 
 	// Integers
 

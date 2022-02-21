@@ -485,7 +485,7 @@ void ASCharacter::UpdateMovementSpeed()
 }
 
 // Spawns a new weapon (either from weapon swap or picking up a new weapon)
-void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct)
+void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct, bool bStatic, FTransform PickupTransform)
 {
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
@@ -494,17 +494,26 @@ void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnP
     {
         if (bSpawnPickup)
         {
-            // Spawns the new weapon pickup in front of the player
+            // Calculating the location where to spawn the new weapon in front of the player
             const FVector TraceStart = CameraComp->GetComponentLocation();
             const FRotator TraceStartRotation = CameraComp->GetComponentRotation();
             const FVector TraceDirection = TraceStartRotation.Vector();
-            const FVector TraceEnd = TraceStart + (TraceDirection * 100.0f);
-        
-            /*ASWeaponPickup* NewPickup = GetWorld()->SpawnActor<ASWeaponPickup>(CurrentWeapon->WeaponData->PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
+            const FVector TraceEnd = TraceStart + (TraceDirection * WeaponSpawnDistance);
+
+            // Spawning the new pickup
+            ASWeaponPickup* NewPickup = GetWorld()->SpawnActor<ASWeaponPickup>(CurrentWeapon->WeaponData->PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
+            if (bStatic)
+            {
+                NewPickup->MainMesh->SetSimulatePhysics(false);
+                NewPickup->SetActorTransform(PickupTransform);
+            }
+            // Applying the current weapon data to the pickup
+            NewPickup->bStatic = bStatic;
+            NewPickup->bRuntimeSpawned = true;
             NewPickup->WeaponReference = CurrentWeapon->GetClass();
             NewPickup->DataStruct = OldDataStruct;
-            NewPickup->bStatic = false;
-            NewPickup->AttachmentArray = OldDataStruct.WeaponAttachments;*/
+            NewPickup->AttachmentArray = OldDataStruct.WeaponAttachments;
+            NewPickup->SpawnAttachmentMesh();
         }
         
         // Destroys the current weapon, if it exists
@@ -524,7 +533,7 @@ void ASCharacter::SwapToPrimary()
 {
     if (PrimaryWeapon && !bIsPrimary)
     {
-        UpdateWeapon(PrimaryWeapon, false, SecondaryWeaponCacheMap);
+        UpdateWeapon(PrimaryWeapon, false, SecondaryWeaponCacheMap, false, FTransform::Identity);
         
         CurrentWeapon->SpawnAttachments(PrimaryWeaponCacheMap.WeaponAttachments);
 
@@ -544,7 +553,7 @@ void ASCharacter::SwapToSecondary()
 {
     if (SecondaryWeapon && bIsPrimary)
     {        
-        UpdateWeapon(SecondaryWeapon, false, PrimaryWeaponCacheMap);
+        UpdateWeapon(SecondaryWeapon, false, PrimaryWeaponCacheMap, false, FTransform::Identity);
         
         CurrentWeapon->SpawnAttachments(SecondaryWeaponCacheMap.WeaponAttachments);
 
@@ -639,16 +648,20 @@ void ASCharacter::Tick(const float DeltaTime)
     VaultTimeline.TickTimeline(DeltaTime);
 
     CheckAngle();
-    
-    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.ClipSize));
-    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.ClipCapacity));
-    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.WeaponHealth));
-    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Secondary"));
 
-    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.ClipSize));
-    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.ClipCapacity));
-    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.WeaponHealth));
-    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Primary"));
+
+    if (bDrawDebug)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.ClipSize));
+        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.ClipCapacity));
+        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.WeaponHealth));
+        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Secondary"));
+
+        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.ClipSize));
+        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.ClipCapacity));
+        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.WeaponHealth));
+        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Primary"));
+    }
 }
 
 // Called to bind functionality to input
