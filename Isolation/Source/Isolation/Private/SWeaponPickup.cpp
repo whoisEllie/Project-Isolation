@@ -88,8 +88,6 @@ void ASWeaponPickup::Interact()
 {
 	DataStruct.WeaponAttachments = AttachmentArray;
 
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Picked up weapon"));
-
 	ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	
 	if ((PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon == nullptr) || (PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon != nullptr))
@@ -105,8 +103,6 @@ void ASWeaponPickup::Interact()
 		}
 		PlayerCharacter->PrimaryWeapon = WeaponReference;
 		PlayerCharacter->bIsPrimary = true;
-
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, TEXT("New Primary"));
 	}
 	else if (PlayerCharacter->SecondaryWeapon == nullptr && PlayerCharacter->PrimaryWeapon != nullptr)
 	{
@@ -120,7 +116,6 @@ void ASWeaponPickup::Interact()
 		}
 		PlayerCharacter->SecondaryWeapon = WeaponReference;
 		PlayerCharacter->bIsPrimary = false;
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, TEXT("New Secondary"));
 	}
 	else
 	{
@@ -135,7 +130,6 @@ void ASWeaponPickup::Interact()
 				PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->PrimaryWeaponCacheMap.WeaponAttachments);
 			}
 			PlayerCharacter->PrimaryWeapon = WeaponReference;
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, TEXT("New Primary"));
 		}
 		else
 		{
@@ -148,7 +142,6 @@ void ASWeaponPickup::Interact()
 				PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->SecondaryWeaponCacheMap.WeaponAttachments);
 			}
 			PlayerCharacter->SecondaryWeapon = WeaponReference;
-			GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Orange, TEXT("New Secondary"));
 		}
 	}
 	

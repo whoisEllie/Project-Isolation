@@ -55,8 +55,6 @@ ASWeaponBase::ASWeaponBase()
 void ASWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
-
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, this->GetName());
     
     //Sets the default values for our trace query
 	QueryParams.AddIgnoredActor(this);

@@ -126,12 +126,15 @@ public:
 	// keeps track of whether we're crouching (for animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsCrouching;
+	// keeps track of whether the object we are looking at is one we are able to interact with (used for UI)
+	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	bool bCanInteract;
 
 	// Enumerators
 
 	// Enumerator holding the 4 possible movement states defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement State")
-    TEnumAsByte<EMovementState> MovementState;
+    TEnumAsByte<EMovementState> MovementState; // DONT USE TENUMASBYTE
 
 	// Other
 	// Name of the socket we attach our camera to
@@ -219,6 +222,10 @@ protected:
 
 	void WorldInteract();
 
+	void InteractionIndicator();
+
+	void ScrollWeapon();
+
 	FTimeline VaultTimeline;
 
 	UPROPERTY(EditAnywhere, Category = "Timeline")
@@ -278,6 +285,8 @@ protected:
 	float RightMovement;
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float WeaponSpawnDistance;
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float InteractDistance;
 
 	// Integers
 

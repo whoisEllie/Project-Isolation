@@ -79,14 +79,48 @@ void ASCharacter::WorldInteract()
     const FVector CameraLocation = CameraComp->GetComponentLocation();
     const FRotator CameraRotation = CameraComp->GetComponentRotation();
     const FVector TraceDirection = CameraRotation.Vector();
-    const FVector TraceEndLocation = CameraLocation + (TraceDirection * 1000.0f);
+    const FVector TraceEndLocation = CameraLocation + (TraceDirection * InteractDistance);
 
-    if(GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
+    if (GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
     {
         if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
         {
             Cast<ISInteractInterface>(InteractionHit.GetActor())->Interact();
         }
+    }
+}
+
+void ASCharacter::InteractionIndicator()
+{
+    bCanInteract = false;
+    
+    FCollisionQueryParams TraceParams;
+    TraceParams.bTraceComplex = true;
+    TraceParams.AddIgnoredActor(this);
+    
+    const FVector CameraLocation = CameraComp->GetComponentLocation();
+    const FRotator CameraRotation = CameraComp->GetComponentRotation();
+    const FVector TraceDirection = CameraRotation.Vector();
+    const FVector TraceEndLocation = CameraLocation + (TraceDirection * InteractDistance);
+
+    if (GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
+    {        
+        if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
+        {
+            bCanInteract = true;
+        }
+    }
+}
+
+void ASCharacter::ScrollWeapon()
+{
+    if (bIsPrimary)
+    {
+        SwapToSecondary();
+    }
+    else
+    {
+        SwapToPrimary();
     }
 }
 
@@ -662,6 +696,8 @@ void ASCharacter::Tick(const float DeltaTime)
         GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.WeaponHealth));
         GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Primary"));
     }
+
+    InteractionIndicator();
 }
 
 // Called to bind functionality to input
@@ -709,4 +745,6 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
     PlayerInputComponent->BindAction("ADS", IE_Released, this, &ASCharacter::StopADS);
 
     PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASCharacter::WorldInteract);
+
+    PlayerInputComponent->BindAction("ScrollUp", IE_Pressed, this, &ASCharacter::ScrollWeapon);
 }
