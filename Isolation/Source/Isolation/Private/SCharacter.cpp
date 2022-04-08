@@ -108,6 +108,11 @@ void ASCharacter::InteractionIndicator()
         if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
         {
             bCanInteract = true;
+            
+            if (IsValid(Cast<ASWeaponPickup>(InteractionHit.GetActor())))
+            {
+               //TODO: Link up with widget BP via variables and pass through data for weapon stats
+            }
         }
     }
 }
@@ -192,11 +197,11 @@ void ASCharacter::StartCrouch()
 
 void ASCharacter::StopCrouch()
 {
-    bHoldingCrouch = false;    
+    bHoldingCrouch = false;
+    bPerformedSlide = false;
     if (MovementState == State_Slide)
     {
         StopSlide();
-        bPerformedSlide = false;
     }
 }
 
@@ -232,6 +237,7 @@ void ASCharacter::EndCrouch(bool bToSprint)
 void ASCharacter::StartSprint()
 {
     bHoldingSprint = true;
+    bPerformedSlide = false;
     // Updates the sprint speed
     MovementState = State_Sprint;
     UpdateMovementSpeed();
@@ -440,10 +446,10 @@ void ASCharacter::CheckAngle()
         FloorVector = AngleHit.ImpactNormal;
         const FRotator FinalRotation = UKismetMathLibrary::MakeRotFromZX(FloorVector, GetActorForwardVector());
         FloorAngle = FinalRotation.Pitch;
-        /*if (bDrawDebug)
+        if (bDrawDebug)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%f"),FloorAngle), true);
-        }*/
+        }
     }
 }
 

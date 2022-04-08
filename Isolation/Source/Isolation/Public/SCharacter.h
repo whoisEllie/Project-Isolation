@@ -14,6 +14,7 @@ class USkeletalMeshComponent;
 class ASWeaponBase;
 class UAnimMontage;
 class UCurveFloat;
+class UBlendSpace;
 
 // Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FsingleWeaponParams struct)
 // and to keep track of the total ammo the player has (ammoMap)
@@ -148,7 +149,21 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	FWeaponDataStruct SecondaryWeaponCacheMap;
-	
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UBlendSpace* BS_Walk;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UBlendSpace* BS_ADS_Walk;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UAnimSequence* Anim_Idle;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UAnimSequence* Anim_ADS_Idle;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UAnimSequence* Anim_Sprint;
     
 protected:
 

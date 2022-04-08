@@ -8,6 +8,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Math/UnrealMathUtility.h"
 #include "SCharacterController.h"
+#include "func_lib/SWeaponStatsCalculator.h"
 #include "SCharacter.h"
 
 // Sets default values
@@ -64,6 +65,8 @@ void ASWeaponBase::BeginPlay()
     WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName("Sten"), FString("Sten Gun"), true); // Make sure to modularize this!!
     bSilenced = WeaponData->bIsSilenced;
 
+
+    // Setting our recoil & recovery curves
     if (VerticalRecoilCurve)
     {
         FOnTimelineFloat VerticalRecoilProgressFunction;
@@ -89,9 +92,7 @@ void ASWeaponBase::BeginPlay()
 
 
 void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
-{
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-    
+{    
     for (FName RowName : AttachmentsArray)
     {
         
@@ -121,23 +122,13 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                 VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
                 HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
                 RecoilCameraShake = AttachmentData->RecoilCameraShake;
-                /*if (PlayerCharacter->bNewPrimarySpawn)
-                {
-                    PlayerCharacter->PrimaryWeaponCacheMap.AmmoType = AttachmentData->AmmoToUse;
-                    PlayerCharacter->PrimaryWeaponCacheMap.ClipCapacity = AttachmentData->ClipCapacity;
-                    PlayerCharacter->PrimaryWeaponCacheMap.ClipSize = AttachmentData->ClipSize;
-                    PlayerCharacter->PrimaryWeaponCacheMap.WeaponHealth = AttachmentData->WeaponHealth;
-                    PlayerCharacter->bNewPrimarySpawn = false;
-                }
-                else if (PlayerCharacter->bNewSecondarySpawn)
-                {
-                    PlayerCharacter->SecondaryWeaponCacheMap.AmmoType = AttachmentData->AmmoToUse;
-                    PlayerCharacter->SecondaryWeaponCacheMap.ClipCapacity = AttachmentData->ClipCapacity;
-                    PlayerCharacter->SecondaryWeaponCacheMap.ClipSize = AttachmentData->ClipSize;
-                    PlayerCharacter->SecondaryWeaponCacheMap.WeaponHealth = AttachmentData->WeaponHealth;
-                    PlayerCharacter->bNewSecondarySpawn = false;
-                }*/
-                
+                bIsShotgun = AttachmentData->bIsShotgun;
+                ShotgunLength = AttachmentData->ShotgunRange;
+                ShotgunPellets = AttachmentData->ShotgunPellets;
+                EmptyWeaponReload = AttachmentData->EmptyWeaponReload;
+                WeaponReload = AttachmentData->WeaponReload;
+                EmptyPlayerReload = AttachmentData->EmptyPlayerReload;
+                PlayerReload = AttachmentData->PlayerReload;
             }
             else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
             {
@@ -221,7 +212,10 @@ void ASWeaponBase::StopFire()
 }
 
 void ASWeaponBase::Fire()
-{ 
+{
+    const float test_var = USWeaponStatsCalculator::GetAccuracyRating(WeaponPitchModifier, WeaponData->WeaponPitchVariation, WeaponYawModifier, WeaponData->WeaponYawVariation);
+
+    
     // Casting to the game instance (which stores all the ammunition and health variables)
     ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     
@@ -240,10 +234,9 @@ void ASWeaponBase::Fire()
         // Subtracting from the ammunition count of the weapon
         (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) -= 1;
 
-        const int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPelletCount : 1;
+        const int NumberOfShots = bIsShotgun? ShotgunPellets : 1;
         for (int i = 0; i < NumberOfShots; i++)
         {
-
             // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
             TraceStart = MeshComp->GetSocketLocation(WeaponData->MuzzleSocketName);
             TraceStartRotation = MeshComp->GetSocketRotation(WeaponData->MuzzleSocketName);
@@ -254,13 +247,13 @@ void ASWeaponBase::Fire()
             }
             TraceStartRotation.Pitch += FMath::FRandRange(-(WeaponData->WeaponPitchVariation + WeaponPitchModifier), WeaponData->WeaponPitchVariation + WeaponPitchModifier);
             TraceStartRotation.Yaw += FMath::FRandRange(-(WeaponData->WeaponYawVariation + WeaponYawModifier), WeaponData->WeaponYawVariation + WeaponYawModifier);
-		    TraceDirection = TraceStartRotation.Vector();
-		    TraceEnd = TraceStart + (TraceDirection * WeaponData->LengthMultiplier);
+            TraceDirection = TraceStartRotation.Vector();
+            TraceEnd = TraceStart + (TraceDirection * (bIsShotgun? ShotgunLength : WeaponData->LengthMultiplier));
 
             // Applying Recoil to the weapon
             Recoil();
 
-             // Drawing a line trace based on the parameters calculated previously 
+            // Drawing a line trace based on the parameters calculated previously 
             if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel1, QueryParams))
             {                
                 // Drawing debug line trace
@@ -273,13 +266,11 @@ void ASWeaponBase::Fire()
                 FinalDamage = 0.0f;
 
                 // Setting finalDamage based on the type of surface hit
-                if (Hit.PhysMaterial.Get() == WeaponData->NormalDamageSurface)
-                {
-                   FinalDamage = (WeaponData->BaseDamage + DamageModifier);
-                }
+                FinalDamage = (WeaponData->BaseDamage + DamageModifier);
+                
                 if (Hit.PhysMaterial.Get() == WeaponData->HeadshotDamageSurface)
                 {
-                   FinalDamage = (WeaponData->BaseDamage + DamageModifier) * WeaponData->HeadshotMultiplier;
+                    FinalDamage = (WeaponData->BaseDamage + DamageModifier) * WeaponData->HeadshotMultiplier;
                 }
 
                 AActor* HitActor = Hit.GetActor();
@@ -288,32 +279,6 @@ void ASWeaponBase::Fire()
                 UGameplayStatics::ApplyPointDamage(HitActor, FinalDamage, TraceDirection, Hit, GetInstigatorController(), this, DamageType);
             }
 
-            // Spawning the firing sound
-
-            if(bSilenced)
-            {
-                UGameplayStatics::PlaySoundAtLocation(GetWorld(), SilencedOverride? SilencedOverride : WeaponData->SilencedSound, TraceStart);
-            }
-            else
-            {
-                UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundOverride? SoundOverride : WeaponData->FireSound, TraceStart);
-            }
-
-            // Spawning the firing particle effect
-            if (ParticleSocketOverride != "")
-            {
-                UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, BarrelAttachment, ParticleSocketOverride, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
-            }
-            else
-            {
-                UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
-            }
-
-
-            FRotator EjectionSpawnVector = FRotator::ZeroRotator;
-            EjectionSpawnVector.Yaw = 270.0f;
-            UNiagaraFunctionLibrary::SpawnSystemAttached(EjectedCasing, MagazineAttachment, FName("ejection_port"), FVector::ZeroVector, EjectionSpawnVector, EAttachLocation::SnapToTarget, true, true);
-                
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 
             if (Hit.PhysMaterial.Get() == WeaponData->NormalDamageSurface || Hit.PhysMaterial.Get() == WeaponData->HeadshotDamageSurface)
@@ -332,13 +297,39 @@ void ASWeaponBase::Fire()
             {
                 UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData->DefaultHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
             }
+        }
 
-            if (!WeaponData->bAutomaticFire)
-            {
-                VerticalRecoilTimeline.Stop();
-                HorizontalRecoilTimeline.Stop();
-                RecoilRecovery();
-            }
+        // Spawning the firing sound
+
+        if(bSilenced)
+        {
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), SilencedOverride? SilencedOverride : WeaponData->SilencedSound, TraceStart);
+        }
+        else
+        {
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundOverride? SoundOverride : WeaponData->FireSound, TraceStart);
+        }
+
+        // Spawning the firing particle effect
+        if (ParticleSocketOverride != "")
+        {
+            UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, BarrelAttachment, ParticleSocketOverride, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
+        }
+        else
+        {
+            UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
+        }
+
+
+        FRotator EjectionSpawnVector = FRotator::ZeroRotator;
+        EjectionSpawnVector.Yaw = 270.0f;
+        UNiagaraFunctionLibrary::SpawnSystemAttached(EjectedCasing, MagazineAttachment, FName("ejection_port"), FVector::ZeroVector, EjectionSpawnVector, EAttachLocation::SnapToTarget, true, true);
+
+        if (!WeaponData->bAutomaticFire)
+        {
+            VerticalRecoilTimeline.Stop();
+            HorizontalRecoilTimeline.Stop();
+            RecoilRecovery();
         }
     }
     else if (bCanFire && !bIsReloading)
@@ -356,7 +347,7 @@ void ASWeaponBase::Recoil() const
 {
     const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
-    if (WeaponData->bAutomaticFire)
+    if (WeaponData->bAutomaticFire && CharacterController)
     {
         CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()) * VerticalRecoilModifier);
         CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()) * HorizontalRecoilModifier);
@@ -399,13 +390,17 @@ void ASWeaponBase::Reload()
     if(!bIsReloading && CharacterController->AmmoMap[(PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.AmmoType : PlayerCharacter->SecondaryWeaponCacheMap.AmmoType)] > 0 && (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) != (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipCapacity : PlayerCharacter->SecondaryWeaponCacheMap.ClipCapacity) + Value)
     {
          // Differentiating between having no ammunition in the magazine (having to chamber a round after reloading) or not, and playing an animation relevant to that
-        if ((PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) <= 0 && WeaponData->EmptyReloadMontage)
+        if ((PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) <= 0 && EmptyPlayerReload)
         {
-            AnimTime = MeshComp->GetAnimInstance()->Montage_Play(WeaponData->EmptyReloadMontage, 1.0f);
+            // TODO: Figure out magazine reload animations 
+            //MagazineAttachment->PlayAnimation(EmptyWeaponReload, false);
+            AnimTime = PlayerCharacter->HandsMeshComp->GetAnimInstance()->Montage_Play(EmptyPlayerReload, 1.0f);
         }
-        else if (WeaponData->ReloadMontage)
+        else if (PlayerReload)
         {
-            AnimTime = MeshComp->GetAnimInstance()->Montage_Play(WeaponData->ReloadMontage, 1.0f);
+            // TODO: Figure out magazine reload animations
+            //MagazineAttachment->PlayAnimation(WeaponReload, false);
+            AnimTime = PlayerCharacter->HandsMeshComp->GetAnimInstance()->Montage_Play(PlayerReload, 1.0f);
         }
         else
         {

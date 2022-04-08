@@ -21,7 +21,7 @@ public:
 
 	virtual void Interact() override;
 
-	UPROPERTY(EditAnywhere, Category = "Interacted Actor")
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Interacted Actor")
 	TArray<ASInteractedActor*> InteractedActors;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Mesh")

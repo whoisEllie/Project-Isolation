@@ -22,6 +22,7 @@ public:
 
 	virtual void Interact() override;
 
+	UFUNCTION(BlueprintCallable)
 	void SpawnAttachmentMesh();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
@@ -49,7 +50,7 @@ public:
 	FWeaponDataStruct DataStruct;
 	
 
-	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Data Table")
 	UDataTable* AttachmentsDataTable;
 
 	
@@ -59,7 +60,7 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "Weapon")
 	bool bStatic;
 	
-	UPROPERTY(EditInstanceOnly, Category = "Data")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Data")
 	TArray<FName> AttachmentArray;
 
 	UPROPERTY()

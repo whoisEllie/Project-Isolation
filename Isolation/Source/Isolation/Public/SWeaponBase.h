@@ -42,7 +42,7 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	UStaticMesh* PickupMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attachments")
 	EAttachmentType AttachmentType;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
@@ -119,6 +119,27 @@ struct FAttachmentData : public FTableRowBase
 
 	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	float HorizontalRecoilMultiplier;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	bool bIsShotgun;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	float ShotgunRange;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	int ShotgunPellets;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UAnimationAsset* EmptyWeaponReload;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UAnimationAsset* WeaponReload;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UAnimMontage* EmptyPlayerReload;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UAnimMontage* PlayerReload;
 };
 
 
@@ -211,18 +232,6 @@ struct FWeaponData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
 	UNiagaraSystem* MuzzleFlash;
 
-	// Animation Montages
-
-	// The animation montage played every time a bullet is fired
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
-	UAnimMontage* FireMontage;
-	// The animation montage played every time the character reloads with ammunition still present in the magazine
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
-	UAnimMontage* ReloadMontage;
-	// The animation montage played every time the character reloads with a completely empty clip
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
-	UAnimMontage* EmptyReloadMontage;
-
 	// Sound bases
 
 	// Firing sound
@@ -293,7 +302,6 @@ public:
 	// Debug boolean, toggle for debug strings and line traces to be shown
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bShowDebug;
-
 	
 
 	// Components
@@ -443,6 +451,22 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Particles")
 	UNiagaraSystem* EjectedCasing;
+
+	
+	bool bIsShotgun;
+
+	float ShotgunLength;
+
+	int ShotgunPellets;
+
+	UPROPERTY()
+	UAnimationAsset* EmptyWeaponReload;
+	UPROPERTY()
+	UAnimationAsset* WeaponReload;
+	UPROPERTY()
+	UAnimMontage* EmptyPlayerReload;
+	UPROPERTY()
+	UAnimMontage* PlayerReload;
 
 	
 protected:
