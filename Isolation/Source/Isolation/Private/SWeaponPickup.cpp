@@ -44,42 +44,59 @@ void ASWeaponPickup::BeginPlay()
 
 void ASWeaponPickup::SpawnAttachmentMesh()
 {
-	if (AttachmentsDataTable)
+	ASWeaponBase* WeaponVariables =  WeaponReference.GetDefaultObject();
+	const FWeaponData* WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName(WeaponVariables->DataTableNameRef), FString(WeaponVariables->DataTableNameRef), true);
+
+	if (WeaponData->bHasAttachments)
 	{
-		for (FName RowName : AttachmentArray)
+		if (AttachmentsDataTable)
 		{
-			const FAttachmentData* AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
-			
-			if (AttachmentData)
+			for (FName RowName : AttachmentArray)
 			{
-				if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
+				const FAttachmentData* AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
+				
+				if (AttachmentData)
 				{
-					BarrelAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-				}
-				else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
-				{
-					MagazineAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-					if (!bRuntimeSpawned)
+					if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
 					{
-						DataStruct.AmmoType = AttachmentData->AmmoToUse;
-						DataStruct.ClipCapacity = AttachmentData->ClipCapacity;
-						DataStruct.ClipSize = AttachmentData->ClipSize;
-						DataStruct.WeaponHealth = 100.0f;
+						BarrelAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+					}
+					else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
+					{
+						MagazineAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+						if (!bRuntimeSpawned)
+						{
+							DataStruct.AmmoType = AttachmentData->AmmoToUse;
+							DataStruct.ClipCapacity = AttachmentData->ClipCapacity;
+							DataStruct.ClipSize = AttachmentData->ClipSize;
+							DataStruct.WeaponHealth = 100.0f;
+						}
+					}
+					else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
+					{
+						SightsAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+					}
+					else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
+					{
+						StockAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+					}
+					else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
+					{
+						GripAttachment->SetStaticMesh(AttachmentData->PickupMesh);
 					}
 				}
-				else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
-				{
-					SightsAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-				}
-				else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
-				{
-					StockAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-				}
-				else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
-				{
-					GripAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-				}
 			}
+		}
+	}
+	else
+	{
+		if (!bRuntimeSpawned)
+		{
+			DataStruct.AmmoType = WeaponData->AmmoToUse;
+			DataStruct.ClipCapacity = WeaponData->ClipCapacity;
+			DataStruct.ClipSize = WeaponData->ClipSize;
+			DataStruct.WeaponHealth = 100.0f;
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::FromInt(DataStruct.ClipCapacity));
 		}
 	}
 }

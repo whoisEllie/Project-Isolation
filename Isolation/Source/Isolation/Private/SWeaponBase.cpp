@@ -10,6 +10,7 @@
 #include "SCharacterController.h"
 #include "func_lib/SWeaponStatsCalculator.h"
 #include "SCharacter.h"
+#include "Interfaces/ITargetDevice.h"
 
 // Sets default values
 ASWeaponBase::ASWeaponBase()
@@ -62,8 +63,35 @@ void ASWeaponBase::BeginPlay()
 	QueryParams.bTraceComplex = true;
 	QueryParams.bReturnPhysicalMaterial = true;
 
-    WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName("Sten"), FString("Sten Gun"), true); // Make sure to modularize this!!
-    bSilenced = WeaponData->bIsSilenced;
+    WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName(DataTableNameRef), FString(DataTableNameRef), true);
+
+    if (WeaponData)
+    {
+        if (WeaponData->BS_Walk)
+        {
+            WalkBlendSpace = WeaponData->BS_Walk;
+        }
+        if (WeaponData->BS_Ads_Walk)
+        {
+            ADSWalkBlendSpace = WeaponData->BS_Ads_Walk;
+        }
+        if (WeaponData->Anim_Idle)
+        {
+            Anim_Idle = WeaponData->Anim_Idle;
+        }
+        if (WeaponData->Anim_Sprint)
+        {
+            Anim_Sprint = WeaponData->Anim_Sprint;
+        }
+        if (WeaponData->Anim_Ads_Idle)
+        {
+            Anim_ADS_Idle = WeaponData->Anim_Ads_Idle;
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Could not find the weapon's Weapon Data in the DataTable, check to make sure you've set a DataTableNameRef value in your Weapon Blueprint"));
+    }
 
 
     // Setting our recoil & recovery curves
@@ -92,75 +120,78 @@ void ASWeaponBase::BeginPlay()
 
 
 void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
-{    
-    for (FName RowName : AttachmentsArray)
+{
+    if (WeaponData->bHasAttachments)
     {
-        
-        AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
-
-        if (AttachmentData)
+        for (FName RowName : AttachmentsArray)
         {
-            DamageModifier += AttachmentData->BaseDamageImpact;
-            WeaponPitchModifier += AttachmentData->WeaponPitchVariationImpact;
-            WeaponYawModifier += AttachmentData->WeaponYawVariationImpact;
-            HorizontalRecoilModifier += AttachmentData->HorizontalRecoilMultiplier;
-            VerticalRecoilModifier += AttachmentData->VerticalRecoilMultiplier;
+            AttachmentData = WeaponData->AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
 
-            if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
+            if (AttachmentData)
             {
-                BarrelAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-                SocketOverride = AttachmentData->MuzzleLocationOverride;
-                ParticleSocketOverride = AttachmentData->ParticleSpawnLocationOverride;
-                bSilenced = AttachmentData->bSilenced;
-            }
-            else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
-            {
-                MagazineAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-                SoundOverride = AttachmentData->FiringSoundOverride;
-                WeaponData->RateOfFire = AttachmentData->FireRate;
-                WeaponData->bAutomaticFire = AttachmentData->AutomaticFire;
-                VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
-                HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
-                RecoilCameraShake = AttachmentData->RecoilCameraShake;
-                bIsShotgun = AttachmentData->bIsShotgun;
-                ShotgunLength = AttachmentData->ShotgunRange;
-                ShotgunPellets = AttachmentData->ShotgunPellets;
-                EmptyWeaponReload = AttachmentData->EmptyWeaponReload;
-                WeaponReload = AttachmentData->WeaponReload;
-                EmptyPlayerReload = AttachmentData->EmptyPlayerReload;
-                PlayerReload = AttachmentData->PlayerReload;
-            }
-            else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
-            {
-                SightsAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-                VerticalCameraOffset = AttachmentData->VerticalCameraOffset;
-            }
-            else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
-            {
-                StockAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-            }
-            else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
-            {
-                GripAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-                if (AttachmentData->BS_Walk)
+                DamageModifier += AttachmentData->BaseDamageImpact;
+                WeaponPitchModifier += AttachmentData->WeaponPitchVariationImpact;
+                WeaponYawModifier += AttachmentData->WeaponYawVariationImpact;
+                HorizontalRecoilModifier += AttachmentData->HorizontalRecoilMultiplier;
+                VerticalRecoilModifier += AttachmentData->VerticalRecoilMultiplier;
+
+                if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
                 {
-                    WalkBlendSpace = AttachmentData->BS_Walk;
+                    BarrelAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                    WeaponData->MuzzleLocation = AttachmentData->MuzzleLocationOverride;
+                    WeaponData->ParticleSpawnLocation = AttachmentData->ParticleSpawnLocationOverride;
+                    WeaponData->bSilenced = AttachmentData->bSilenced;
                 }
-                if (AttachmentData->BS_ADS_Walk)
+                else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
                 {
-                    ADSWalkBlendSpace = AttachmentData->BS_ADS_Walk;
+                    MagazineAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                    WeaponData->FireSound = AttachmentData->FiringSoundOverride;
+                    WeaponData->SilencedSound = AttachmentData->SilencedFiringSoundOverride;
+                    WeaponData->RateOfFire = AttachmentData->FireRate;
+                    WeaponData->bAutomaticFire = AttachmentData->AutomaticFire;
+                    WeaponData->VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
+                    WeaponData->HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
+                    WeaponData->RecoilCameraShake = AttachmentData->RecoilCameraShake;
+                    WeaponData->bIsShotgun = AttachmentData->bIsShotgun;
+                    WeaponData->ShotgunRange = AttachmentData->ShotgunRange;
+                    WeaponData->ShotgunPellets = AttachmentData->ShotgunPellets;
+                    WeaponData->EmptyWeaponReload = AttachmentData->EmptyWeaponReload;
+                    WeaponData->WeaponReload = AttachmentData->WeaponReload;
+                    WeaponData->EmptyPlayerReload = AttachmentData->EmptyPlayerReload;
+                    WeaponData->PlayerReload = AttachmentData->PlayerReload;
                 }
-                if (AttachmentData->Anim_Idle)
+                else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
                 {
-                    Anim_Idle = AttachmentData->Anim_Idle;
+                    SightsAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                    VerticalCameraOffset = AttachmentData->VerticalCameraOffset;
                 }
-                if (AttachmentData->Anim_Sprint)
+                else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
                 {
-                    Anim_Sprint = AttachmentData->Anim_Sprint;
+                    StockAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
                 }
-                if (AttachmentData->Anim_ADS_Idle)
+                else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
                 {
-                    Anim_ADS_Idle = AttachmentData->Anim_ADS_Idle;
+                    GripAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                    if (AttachmentData->BS_Walk)
+                    {
+                        WalkBlendSpace = AttachmentData->BS_Walk;
+                    }
+                    if (AttachmentData->BS_Ads_Walk)
+                    {
+                        ADSWalkBlendSpace = AttachmentData->BS_Ads_Walk;
+                    }
+                    if (AttachmentData->Anim_Idle)
+                    {
+                        Anim_Idle = AttachmentData->Anim_Idle;
+                    }
+                    if (AttachmentData->Anim_Sprint)
+                    {
+                        Anim_Sprint = AttachmentData->Anim_Sprint;
+                    }
+                    if (AttachmentData->Anim_Ads_Idle)
+                    {
+                        Anim_ADS_Idle = AttachmentData->Anim_Ads_Idle;
+                    }
                 }
             }
         }
@@ -175,6 +206,11 @@ void ASWeaponBase::StartFire()
         // sets a timer for firing the weapon - if bAutomaticFire is true then this timer will repeat until cleared by StopFire(), leading to fully automatic fire
         GetWorldTimerManager().SetTimer(ShotDelay, this, &ASWeaponBase::Fire, WeaponData->RateOfFire, WeaponData->bAutomaticFire, 0.0f);
 
+        if (bShowDebug)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Started firing timer"));
+        }
+        
         StartRecoil();
     }
     
@@ -183,7 +219,7 @@ void ASWeaponBase::StartFire()
 void ASWeaponBase::StartRecoil()
 {
     const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-    ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+    const ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     
 
     if (bCanFire && (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) > 0 && !bIsReloading && CharacterController)
@@ -212,17 +248,13 @@ void ASWeaponBase::StopFire()
 }
 
 void ASWeaponBase::Fire()
-{
-    const float test_var = USWeaponStatsCalculator::GetAccuracyRating(WeaponPitchModifier, WeaponData->WeaponPitchVariation, WeaponYawModifier, WeaponData->WeaponYawVariation);
-
-    
+{    
     // Casting to the game instance (which stores all the ammunition and health variables)
     ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     
     // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
     if(bCanFire && (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) > 0 && !bIsReloading)
     {
-
         // Printing debug strings
         if(bShowDebug)
         {
@@ -234,21 +266,24 @@ void ASWeaponBase::Fire()
         // Subtracting from the ammunition count of the weapon
         (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) -= 1;
 
-        const int NumberOfShots = bIsShotgun? ShotgunPellets : 1;
+        const int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPellets : 1;
         for (int i = 0; i < NumberOfShots; i++)
         {
             // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
-            TraceStart = MeshComp->GetSocketLocation(WeaponData->MuzzleSocketName);
-            TraceStartRotation = MeshComp->GetSocketRotation(WeaponData->MuzzleSocketName);
-            if (SocketOverride != "")
+            if (WeaponData->bHasAttachments && BarrelAttachment)
             {
                 TraceStart = BarrelAttachment->GetSocketLocation(SocketOverride);
                 TraceStartRotation = BarrelAttachment->GetSocketRotation(SocketOverride);
             }
+            else
+            {
+                TraceStart = MeshComp->GetSocketLocation(WeaponData->MuzzleLocation);
+                TraceStartRotation = MeshComp->GetSocketRotation(WeaponData->MuzzleLocation);
+            }
             TraceStartRotation.Pitch += FMath::FRandRange(-(WeaponData->WeaponPitchVariation + WeaponPitchModifier), WeaponData->WeaponPitchVariation + WeaponPitchModifier);
             TraceStartRotation.Yaw += FMath::FRandRange(-(WeaponData->WeaponYawVariation + WeaponYawModifier), WeaponData->WeaponYawVariation + WeaponYawModifier);
             TraceDirection = TraceStartRotation.Vector();
-            TraceEnd = TraceStart + (TraceDirection * (bIsShotgun? ShotgunLength : WeaponData->LengthMultiplier));
+            TraceEnd = TraceStart + (TraceDirection * (WeaponData->bIsShotgun? WeaponData->ShotgunRange : WeaponData->LengthMultiplier));
 
             // Applying Recoil to the weapon
             Recoil();
@@ -300,14 +335,13 @@ void ASWeaponBase::Fire()
         }
 
         // Spawning the firing sound
-
-        if(bSilenced)
+        if(WeaponData->bSilenced)
         {
-            UGameplayStatics::PlaySoundAtLocation(GetWorld(), SilencedOverride? SilencedOverride : WeaponData->SilencedSound, TraceStart);
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->SilencedSound, TraceStart);
         }
         else
         {
-            UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundOverride? SoundOverride : WeaponData->FireSound, TraceStart);
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->FireSound, TraceStart);
         }
 
         // Spawning the firing particle effect
@@ -317,7 +351,7 @@ void ASWeaponBase::Fire()
         }
         else
         {
-            UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
+            UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSpawnLocation, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
         }
 
 
@@ -334,7 +368,7 @@ void ASWeaponBase::Fire()
     }
     else if (bCanFire && !bIsReloading)
     {
-        UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->EmptyFireSound, MeshComp->GetSocketLocation(WeaponData->MuzzleSocketName));
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->EmptyFireSound, MeshComp->GetSocketLocation(WeaponData->MuzzleLocation));
         // Clearing the ShotDelay timer so that we don't have a constant ticking when the player has no ammo, just a single click
         GetWorldTimerManager().ClearTimer(ShotDelay);
 
@@ -347,15 +381,17 @@ void ASWeaponBase::Recoil() const
 {
     const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+
+    // Apply recoil
     if (WeaponData->bAutomaticFire && CharacterController)
     {
-        CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()) * VerticalRecoilModifier);
-        CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()) * HorizontalRecoilModifier);
+        CharacterController->AddPitchInput(WeaponData->VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()) * VerticalRecoilModifier);
+        CharacterController->AddYawInput(WeaponData->HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()) * HorizontalRecoilModifier);
     }
     else
     {
-        CharacterController->AddPitchInput(VerticalRecoilCurve->GetFloatValue(0) * VerticalRecoilModifier);
-        CharacterController->AddYawInput(HorizontalRecoilCurve->GetFloatValue(0) * HorizontalRecoilModifier);
+        CharacterController->AddPitchInput(WeaponData->VerticalRecoilCurve->GetFloatValue(0) * VerticalRecoilModifier);
+        CharacterController->AddYawInput(WeaponData->HorizontalRecoilCurve->GetFloatValue(0) * HorizontalRecoilModifier);
     }
 
     GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(RecoilCameraShake);  

@@ -48,13 +48,15 @@ public:
 
 	UPROPERTY()
 	FWeaponDataStruct DataStruct;
+
+	// Data table reference
+	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
+	UDataTable* WeaponDataTable;
 	
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Data Table")
 	UDataTable* AttachmentsDataTable;
-
-	
-	
+		
 	bool bRuntimeSpawned;
 
 	UPROPERTY(EditInstanceOnly, Category = "Weapon")

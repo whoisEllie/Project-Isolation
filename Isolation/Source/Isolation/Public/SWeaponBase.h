@@ -14,8 +14,8 @@ class USkeletalMeshComponent;
 class USkeletalMesh;
 class UStaticMesh;
 class UAnimMontage;
-class UBlendSpace;
 class UNiagaraSystem;
+class UBlendSpace;
 class USoundCue;
 class UPhysicalMaterial;
 class UDataTable;
@@ -36,109 +36,144 @@ struct FAttachmentData : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The skeletal mesh displayed on the weapon itself
+	UPROPERTY(EditDefaultsOnly, Category = "General")
 	USkeletalMesh* AttachmentMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The static mesh displayed on the weapon pickup
+	UPROPERTY(EditDefaultsOnly, Category = "General")
 	UStaticMesh* PickupMesh;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attachments")
+	// The type of attachment
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "General")
 	EAttachmentType AttachmentType;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The name of the socket with which to override the muzzle 
+	UPROPERTY(EditDefaultsOnly, Category = "Barrel")
 	FName MuzzleLocationOverride;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The name of the socket at which to spawn particles for muzzle flash
+	UPROPERTY(EditDefaultsOnly, Category = "Barrel")
 	FName ParticleSpawnLocationOverride;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// Whether the current barrel attachment is silenced or not
+	UPROPERTY(EditDefaultsOnly, Category = "Barrel")
 	bool bSilenced;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The firing sound to use instead of the default for this particular magazine attachment 
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	USoundBase* FiringSoundOverride;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The silenced firing sound to use instead of the default for this particular magazine attachment
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	USoundBase* SilencedFiringSoundOverride;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The impact that this magazine has on the base damage of the weapon
+	UPROPERTY(EditDefaultsOnly, Category = "General")
 	float BaseDamageImpact;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The pitch variation impact of this attachment
+	UPROPERTY(EditDefaultsOnly, Category = "General")
 	float WeaponPitchVariationImpact;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The yaw variation impact of this attachment
+	UPROPERTY(EditDefaultsOnly, Category = "General")
 	float WeaponYawVariationImpact;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// An override for the default walk BlendSpace
+	UPROPERTY(EditDefaultsOnly, Category = "Grip")
 	UBlendSpace* BS_Walk;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
-	UBlendSpace* BS_ADS_Walk;
+	// An override for the default ADS walk BlendSpace
+	UPROPERTY(EditDefaultsOnly, Category = "Grip")
+	UBlendSpace* BS_Ads_Walk;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// An override for the default idle animation sequence
+	UPROPERTY(EditDefaultsOnly, Category = "Grip")
 	UAnimSequence* Anim_Idle;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
-	UAnimSequence* Anim_ADS_Idle;
+	// An override for the default ADS idle animation sequence
+	UPROPERTY(EditDefaultsOnly, Category = "Grip")
+	UAnimSequence* Anim_Ads_Idle;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// An override for the default sprint animation sequence
+	UPROPERTY(EditDefaultsOnly, Category = "Grip")
 	UAnimSequence* Anim_Sprint;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The ammunition type to be used (Spawned on the pickup)
+	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 	EAmmoType AmmoToUse;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The clip capacity of the weapon (Spawned on the pickup)
+	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 	int ClipCapacity;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The clip size of the weapon (Spawned on the pickup)
+	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 	int ClipSize;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
-	float WeaponHealth;
+	// The default health of the weapon (Spawned on the pickup)
+	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
+	float WeaponHealth = 100.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The rate of fire of this magazine attachment
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	float FireRate;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// Whether this magazine supports automatic fire
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	bool AutomaticFire;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The offset applied to the camera to align with the sights
+	UPROPERTY(EditDefaultsOnly, Category = "Sights")
 	float VerticalCameraOffset;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
-	UCurveFloat* VerticalRecoilCurve;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The vertical recoil curve to be used with this magazine
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
+	UCurveFloat* VerticalRecoilCurve;
+
+	// The horizontal recoil curve to be used with this magazine
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	UCurveFloat* HorizontalRecoilCurve;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The camera shake to be applied to the recoil from this magazine
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	TSubclassOf<UCameraShakeBase> RecoilCameraShake;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// How much this attachment multiplies the vertical recoil of the weapon
+	UPROPERTY(EditDefaultsOnly, Category = "General")
 	float VerticalRecoilMultiplier;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// How much this attachment multiplies the horizontal recoil of this weapon
+	UPROPERTY(EditDefaultsOnly, Category = "General")
 	float HorizontalRecoilMultiplier;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
-	bool bIsShotgun;
+	// Whether this magazine fires shotgun shells (should we fire lots of pellets or just one bullet?)
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
+	bool bIsShotgun = false;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The range of the shotgun shells in this magazine
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	float ShotgunRange;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// The amount of pellets fired
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	int ShotgunPellets;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// An override for the weapon's empty reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	UAnimationAsset* EmptyWeaponReload;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// An override for the weapon's reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	UAnimationAsset* WeaponReload;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	// An override for the player's empty reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	UAnimMontage* EmptyPlayerReload;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+
+	// An override for the player's reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	UAnimMontage* PlayerReload;
 };
 
@@ -148,67 +183,172 @@ struct FWeaponData : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	//Pickup reference
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	TSubclassOf<ASWeaponPickup> PickupReference;
+	// Required
 
-	// Determines whether the weapon is automatic or not
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	bool bAutomaticFire;
-	// Rate of fire (in time between shots) for the weapon
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	float RateOfFire;
-	// Determines if the weapon can have a round in the chamber or not
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	bool bCanBeChambered;
-	// We wait for the animation to finish before the player is allowed to fire again (for weapons where the character has to perform an action before being able to fire again) Requires fireMontage to be set
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Variables")
-	bool bWaitForAnim;
+	//Pickup reference
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
+	TSubclassOf<ASWeaponPickup> PickupReference;
+	
 	// Determines the socket or bone with which the weapon will be attached to the character's hand (typically the root bone or the grip bone)
-	UPROPERTY(EditDefaultsOnly, Category = "General")
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
 	FName WeaponAttachmentSocketName;
-	// Determines if the weapon should fire more than one 'pellet' every time it is fired. Enable if you'd like your weapon to act like a shotgun
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	bool bIsShotgun;
-	// Determines if the weapon should use a silenced sound effect
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	bool bIsSilenced;
-	// Determines the amount of pellets a shotgun will fire
-	UPROPERTY(EditDefaultsOnly, Category = "General")
-	int ShotgunPelletCount;
-	// The name of the socket on the meshComp where the line trace is shot from (start point)
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	FName MuzzleSocketName;
-	// The name of the socket on the meshComp where the muzzle flash effect is played from
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	FName ParticleSocketName;
+		
 	// The distance the shot will travel
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
 	float LengthMultiplier;
-	// The pitch variation applied to the bullet as it leaves the barrel
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	float WeaponPitchVariation;
-	// The yaw variation applied to the bullet as it leaves the barrel
-	UPROPERTY(EditDefaultsOnly, Category = "Line Trace")
-	float WeaponYawVariation;
+		
 	// unmodified damage values of this weapon
-	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
 	float BaseDamage;
+	
 	// multiplier to be applied when the player hits an enemy's head bone
-	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
 	float HeadshotMultiplier;
+
+	// The amount of health taken away from the weapon every time the trigger is pulled
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
+	float WeaponDegradationRate;
+
+	// The pitch variation applied to the bullet as it leaves the barrel
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
+	float WeaponPitchVariation;
+	
+	// The yaw variation applied to the bullet as it leaves the barrel
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
+	float WeaponYawVariation;
+
+	// Attachments
+
+	// Whether this weapon has a unique set of attachments and is broken up into multiple meshes or is unique
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	bool bHasAttachments = true;
+
+	// The table which holds the attachment data
+	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
+	UDataTable* AttachmentsDataTable;
+
+	// Animations
+
+	// The walking BlendSpace
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UBlendSpace* BS_Walk;
+
+	// The ADS Walking BlendSpace
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UBlendSpace* BS_Ads_Walk;
+
+	// The Idle animation sequence
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimSequence* Anim_Idle;
+
+	// The ADS Idle animation sequence
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimSequence* Anim_Ads_Idle;
+
+	// The weapon's empty reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimationAsset* EmptyWeaponReload;
+
+	// The weapon's reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimationAsset* WeaponReload;
+
+	// The player's empty reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimMontage* EmptyPlayerReload;
+
+	// The player's reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimMontage* PlayerReload;
+
+	// The sprinting animation sequence
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimSequence* Anim_Sprint;
+
+	// Firing Mechanisms
+
+	// Determines if the weapon can have a round in the chamber or not
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	bool bCanBeChambered;
+
+	// Whether the weapon is silenced or not
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	bool bSilenced;
+
+	// We wait for the animation to finish before the player is allowed to fire again (for weapons where the character has to perform an action before being able to fire again) Requires fireMontage to be set
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	bool bWaitForAnim;
+
+	// Whether this weapon is a shotgun or not
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	bool bIsShotgun = false;
+	
+	// The name of the socket which denotes the end of the muzzle (used for gunfire)
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	FName MuzzleLocation;
+
+	// The name of the socket at which to spawn particles for muzzle flash
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	FName ParticleSpawnLocation;
+
+	// The ammunition type to be used (Spawned on the pickup)
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	EAmmoType AmmoToUse;
+
+	// The clip capacity of the weapon (Spawned on the pickup)
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	int ClipCapacity;
+
+	// The clip size of the weapon (Spawned on the pickup)
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	int ClipSize;
+
+	// The weapon's default health (Spawned on the pickup)
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	float WeaponHealth = 100.0f;
+
+	// The rate of fire of the weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	float RateOfFire;
+
+	// Whether this weapon supports automatic fire
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	bool bAutomaticFire;
+		
+	// The vertical recoil curve to be used with this weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UCurveFloat* VerticalRecoilCurve;
+
+	// The horizontal recoil curve to be used with this weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UCurveFloat* HorizontalRecoilCurve;
+
+	// The camera shake to be applied to the recoil from this weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	TSubclassOf<UCameraShakeBase> RecoilCameraShake;
+	
+	// The range of the shotgun shells of this weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	float ShotgunRange;
+
+	// The amount of pellets fired
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	int ShotgunPellets;
 
 	// Damage surfaces
 
 	// surface (physical material) for areas which should spawn blood particles when hit and receive normal damage (equivalent to the baseDamage variable)
 	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
 	UPhysicalMaterial* NormalDamageSurface;
+	
 	// surface (physical material) for areas which should spawn blood particles when hit and receive boosted damage (equivalent to the baseDamage variable multiplied by the headshotMultiplier)
 	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
 	UPhysicalMaterial* HeadshotDamageSurface;
+	
 	// surface (physical material) for areas which should spawn ground particles when hit)
 	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
 	UPhysicalMaterial* GroundSurface;
+	
 	// surface (physical material) for areas which should spawn rock particles when hit)
 	UPROPERTY(EditDefaultsOnly, Category = "Damage Surfaces")
 	UPhysicalMaterial* RockSurface;
@@ -218,12 +358,15 @@ struct FWeaponData : public FTableRowBase
 	// particle effect (Niagara system) to be spawned when an enemy is hit
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
 	UNiagaraSystem* EnemyHitEffect;
+	
 	// particle effect (Niagara system) to be spawned when the ground is hit
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
 	UNiagaraSystem* GroundHitEffect;
+	
 	// particle effect (Niagara system) to be spawned when a rock is hit
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
 	UNiagaraSystem* RockHitEffect;
+	
 	// particle effect (Niagara system) to be spawned when no defined type is hit
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
 	UNiagaraSystem* DefaultHitEffect;
@@ -237,18 +380,14 @@ struct FWeaponData : public FTableRowBase
 	// Firing sound
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
 	USoundBase* FireSound;
+	
 	// Silenced firing sound
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
 	USoundBase* SilencedSound;
+	
 	// Empty firing sound
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
 	USoundBase* EmptyFireSound;
-	
-	// Weapon Degradation
-	
-	// The amount of health taken away from the weapon every time the trigger is pulled
-	UPROPERTY(EditDefaultsOnly, Category = "Degradation")
-	float WeaponDegradationRate;
 	
 };
 
@@ -288,15 +427,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
 	UDataTable* WeaponDataTable;
 
-	FWeaponData* WeaponData;
-
+	// The Key reference to the weapon data table
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
-	UDataTable* AttachmentsDataTable;
+	FString DataTableNameRef;
+
+	FWeaponData* WeaponData;
 
 	FAttachmentData* AttachmentData;
 	
 	// Attachments
-	UPROPERTY(EditDefaultsOnly, Category = "Attachments")
 	TArray<FName> AttachmentNameArray;
 	
 	// Debug boolean, toggle for debug strings and line traces to be shown
@@ -311,46 +450,39 @@ public:
 	USkeletalMeshComponent* MeshComp;
 
 	// The skeletal mesh used to hold the current barrel attachment
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UPROPERTY()
 	USkeletalMeshComponent* BarrelAttachment;
 
 	// The skeletal mesh used to hold the current magazine attachment
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UPROPERTY()
 	USkeletalMeshComponent* MagazineAttachment;
 
 	// The skeletal mesh used to hold the current sights attachment
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UPROPERTY()
 	USkeletalMeshComponent* SightsAttachment;
 
 	// The skeletal mesh used to hold the current stock attachment
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UPROPERTY()
 	USkeletalMeshComponent* StockAttachment;
 
 	// The skeletal mesh used to hold the current grip attachment
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UPROPERTY()
 	USkeletalMeshComponent* GripAttachment;
 	
 	// General
 
 	// Determines if the player can fire
-	bool bCanFire;
+	bool bCanFire = true;
+	
 	// Keeps track of whether the weapon is being reloaded
 	bool bIsReloading;
-	// Is the weapon silenced or not (determines sounds)
-	bool bSilenced;
-
+	
 	float DamageModifier;
 
 	float WeaponPitchModifier;
 
 	float WeaponYawModifier;
-
-	// Sound Cues
-	UPROPERTY(BlueprintReadOnly, Category = "Sounds")
-	USoundBase* SoundOverride;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Sounds")
-	USoundBase* SilencedOverride;
+	
 
 	// Line Trace
 
@@ -377,35 +509,16 @@ public:
 	// hit result variable set when a line trace is spawned
 	UPROPERTY(BlueprintReadOnly, Category = "Damage")
 	FHitResult Hit;
-	// internal variable used to keep track of the final damage value after modifications
-	float FinalDamage;
+	
 	// damage type (set in blueprints)
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 	TSubclassOf<UDamageType> DamageType;
+
+	// internal variable used to keep track of the final damage value after modifications
+	float FinalDamage;
 	
 
-	// Animation
 
-	// value used to keep track of the length of animations for timers
-	float AnimTime;
-	// Blend space
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animations")
-	UBlendSpace* WalkBlendSpace;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
-	UBlendSpace* ADSWalkBlendSpace;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
-	UAnimSequence* Anim_Idle;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
-	UAnimSequence* Anim_Sprint;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
-	UAnimSequence* Anim_ADS_Idle;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attachments")
-	float VerticalCameraOffset;
 
 
 	// Timers
@@ -422,51 +535,84 @@ public:
 	void StartRecoil();
 	
 	FTimeline VerticalRecoilTimeline;
+	
 	UFUNCTION()
 	void HandleVerticalRecoilProgress(float value) const;
-	UPROPERTY(EditDefaultsOnly, Category = "Curves")
+	
+	UPROPERTY()
 	UCurveFloat* VerticalRecoilCurve;
 
 	FTimeline HorizontalRecoilTimeline;
+	
 	UFUNCTION()
 	void HandleHorizontalRecoilProgress(float value) const;
-	UPROPERTY(EditDefaultsOnly, Category = "Curves")
+	
+	UPROPERTY()
 	UCurveFloat* HorizontalRecoilCurve;
 
 	FTimeline RecoilRecoveryTimeline;
+	
 	UFUNCTION()
 	void HandleRecoveryProgress(float value) const;
-	UPROPERTY(EditDefaultsOnly, Category = "Curves")
+	
+	UPROPERTY()
 	UCurveFloat* RecoveryCurve;
+
+	
 	FRotator ControlRotation;
 
 	void RecoilRecovery();
+	
 	bool bShouldRecover;
 
 	UPROPERTY()
 	TSubclassOf<UCameraShakeBase> RecoilCameraShake;
 
 	float VerticalRecoilModifier;
+	
 	float HorizontalRecoilModifier;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Particles")
 	UNiagaraSystem* EjectedCasing;
 
 	
-	bool bIsShotgun;
-
-	float ShotgunLength;
-
-	int ShotgunPellets;
 
 	UPROPERTY()
 	UAnimationAsset* EmptyWeaponReload;
+	
 	UPROPERTY()
 	UAnimationAsset* WeaponReload;
+	
 	UPROPERTY()
 	UAnimMontage* EmptyPlayerReload;
+	
 	UPROPERTY()
 	UAnimMontage* PlayerReload;
+	
+	
+	// Animation
+
+	// value used to keep track of the length of animations for timers
+	float AnimTime;
+	
+	// Blend space
+	UPROPERTY(BlueprintReadOnly, Category = "Animations")
+	UBlendSpace* WalkBlendSpace;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Attachments")
+	UBlendSpace* ADSWalkBlendSpace;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attachments")
+	UAnimSequence* Anim_Idle;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attachments")
+	UAnimSequence* Anim_Sprint;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attachments")
+	UAnimSequence* Anim_ADS_Idle;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Attachments")
+	float VerticalCameraOffset;
 
 	
 protected:
