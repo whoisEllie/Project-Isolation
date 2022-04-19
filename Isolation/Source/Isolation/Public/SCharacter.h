@@ -28,7 +28,7 @@ enum class EAmmoType : uint8
 };
 
 UENUM(BlueprintType)
-enum EMovementState
+enum class EMovementState : uint8
 {
 	State_Walk      UMETA(DisplayName = "Walking"),
 	State_Sprint    UMETA(DisplayName = "Sprinting"),
@@ -135,7 +135,13 @@ public:
 
 	// Enumerator holding the 4 possible movement states defined above
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement State")
-    TEnumAsByte<EMovementState> MovementState; // DONT USE TENUMASBYTE
+    EMovementState MovementState;
+
+	// UI
+
+	// The current message to be displayed above the screen (if any)
+	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	FName InteractText;
 
 	// Other
 	// Name of the socket we attach our camera to
@@ -298,8 +304,10 @@ protected:
 	// The right movement value (used to drive animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	float RightMovement;
+	// The distance at which old weapons spawn during a weapon swap
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float WeaponSpawnDistance;
+	// The maximum distance in unreal units at which the player can interact with an object
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float InteractDistance;
 
@@ -308,7 +316,6 @@ protected:
 	// amount of traces to draw for vault calculations, to get distance in unreal units, multiply by 5
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	int VaultTraceAmount;
-
 
 	// Variables for movement
 	// The maximum speed of the character when in the sprint state

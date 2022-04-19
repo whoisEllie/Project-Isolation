@@ -2,7 +2,10 @@
 
 
 #include "SInteractionActor.h"
+
+#include "SCharacter.h"
 #include "SInteractedActor.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ASInteractionActor::ASInteractionActor()
@@ -21,6 +24,7 @@ void ASInteractionActor::Interact()
 	{
 		InteractedActor->Interacted();
 		OnInteraction(InteractedActor);
+		
 	}
 	InteractionCompleted();
 }

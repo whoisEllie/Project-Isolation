@@ -100,6 +100,10 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Grip")
 	UAnimSequence* Anim_Sprint;
 
+	// The shooting animation for the weapon itself (bolt shooting back/forward)
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimSequence* Gun_Shot;
+
 	// The ammunition type to be used (Spawned on the pickup)
 	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 	EAmmoType AmmoToUse;
@@ -265,6 +269,10 @@ struct FWeaponData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
 	UAnimSequence* Anim_Sprint;
 
+	// The shooting animation for the weapon itself (bolt shooting back/forward)
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimSequence* Gun_Shot;
+
 	// Firing Mechanisms
 
 	// Determines if the weapon can have a round in the chamber or not
@@ -410,7 +418,7 @@ public:
 	void Fire();
 
 	// Applies recoil to the player controller
-	void Recoil() const;
+	void Recoil();
 	
 	// Plays the reload animation and sets a timer based on the length of the reload montage
 	void Reload();
@@ -420,8 +428,19 @@ public:
 
 	// Allows the player to fire again
 	void EnableFire();
-	
+
+	// Spawns the weapons attachments and applies their data/modifications to the weapon's statistics 
 	void SpawnAttachments(TArray<FName> AttachmentsArray);
+
+	// Begins applying recoil to the weapon
+	void StartRecoil();
+
+	// Initiates the recoil function
+	void RecoilRecovery();
+
+	// Interpolates the player back to their initial view vector
+	UFUNCTION()
+	void HandleRecoveryProgress(float value) const;
 
 	// Data table reference
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
@@ -431,8 +450,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
 	FString DataTableNameRef;
 
+	// Reference to the data stored in the weapon DataTable
 	FWeaponData* WeaponData;
 
+	// Reference to the data stored in the attachment DataTable
 	FAttachmentData* AttachmentData;
 	
 	// Attachments
@@ -476,11 +497,14 @@ public:
 	
 	// Keeps track of whether the weapon is being reloaded
 	bool bIsReloading;
-	
+
+	// The sum of the modifications the attachments make to damage
 	float DamageModifier;
 
+	// The sum of the modifications the attachments make to pitch
 	float WeaponPitchModifier;
 
+	// The sum of the modifications the attachments make to yaw
 	float WeaponYawModifier;
 	
 
@@ -488,19 +512,22 @@ public:
 
 	// The override for the weapon socket, in the case that we have a barrel attachment
 	FName SocketOverride;
+	
 	// The override for the particle system socket, in the case that we have a barrel attachment
 	FName ParticleSocketOverride;
+	
 	// Keeps track of the starting position of the line trace
 	FVector TraceStart;
+	
 	// keeps track of the starting rotation of the line trace (required for calculating the trace end point)
 	FRotator TraceStartRotation;
+	
 	// keeps track of the vector direction of the line trace (derived from rotation)
 	FVector TraceDirection;
+	
 	// end point of the line trace
 	FVector TraceEnd;
-	// The range of the weapon
-
-
+	
 	// collision parameters for spawning the line trace
 	FCollisionQueryParams QueryParams;
 
@@ -517,10 +544,7 @@ public:
 	// internal variable used to keep track of the final damage value after modifications
 	float FinalDamage;
 	
-
-
-
-
+	
 	// Timers
 	
 	// The timer that handles automatic fire
@@ -532,70 +556,61 @@ public:
 
 	// Recoil
 
-	void StartRecoil();
-	
-	FTimeline VerticalRecoilTimeline;
-	
-	UFUNCTION()
-	void HandleVerticalRecoilProgress(float value) const;
-	
+
+
+	// The curve for vertical recoil (set from WeaponData)
 	UPROPERTY()
 	UCurveFloat* VerticalRecoilCurve;
 
-	FTimeline HorizontalRecoilTimeline;
-	
-	UFUNCTION()
-	void HandleHorizontalRecoilProgress(float value) const;
-	
+	// The timeline for vertical recoil (generated from the curve)
+	FTimeline VerticalRecoilTimeline;
+
+	// The curve for horizontal recoil (set from WeaponData)
 	UPROPERTY()
 	UCurveFloat* HorizontalRecoilCurve;
 
-	FTimeline RecoilRecoveryTimeline;
-	
-	UFUNCTION()
-	void HandleRecoveryProgress(float value) const;
-	
+	// The timeline for horizontal recoil (generated from the curve)
+	FTimeline HorizontalRecoilTimeline;
+
+	// The curve for recovery (set from WeaponData)
 	UPROPERTY()
 	UCurveFloat* RecoveryCurve;
 
+	// The timeline for recover (set from the curve)
+	FTimeline RecoilRecoveryTimeline;
 	
+	// A value to temporarily cache the player's control rotation so that we can return to it
 	FRotator ControlRotation;
 
-	void RecoilRecovery();
-	
+	// Keeping track of whether we should do a recoil recovery after finishing firing or not
 	bool bShouldRecover;
 
-	UPROPERTY()
-	TSubclassOf<UCameraShakeBase> RecoilCameraShake;
-
-	float VerticalRecoilModifier;
+	// Used in recoil to make sure the first shot has properly applied recoil
+	int ShotsFired;
 	
+	// The base multiplier for vertical recoil, modified by attachments
+	float VerticalRecoilModifier;
+
+	// The base multiplier for horizontal recoil, modified by attachments
 	float HorizontalRecoilModifier;
 
+	// The ejected casing particle effect to be played after each shot
 	UPROPERTY(EditDefaultsOnly, Category = "Particles")
 	UNiagaraSystem* EjectedCasing;
-
 	
-
-	UPROPERTY()
-	UAnimationAsset* EmptyWeaponReload;
-	
-	UPROPERTY()
-	UAnimationAsset* WeaponReload;
-	
-	UPROPERTY()
-	UAnimMontage* EmptyPlayerReload;
-	
-	UPROPERTY()
-	UAnimMontage* PlayerReload;
 	
 	
 	// Animation
 
-	// value used to keep track of the length of animations for timers
+	// Value used to keep track of the length of animations for timers
 	float AnimTime;
+
+	// The offset given to the camera in order to align the gun sights
+	UPROPERTY(BlueprintReadOnly, Category = "Attachments")
+	float VerticalCameraOffset;
 	
-	// Blend space
+	// Local instances of animations for use in AnimBP (Set from WeaponData and/or Attachments)
+	
 	UPROPERTY(BlueprintReadOnly, Category = "Animations")
 	UBlendSpace* WalkBlendSpace;
 	
@@ -611,8 +626,17 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Attachments")
 	UAnimSequence* Anim_ADS_Idle;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Attachments")
-	float VerticalCameraOffset;
+	UPROPERTY()
+	UAnimationAsset* EmptyWeaponReload;
+	
+	UPROPERTY()
+	UAnimationAsset* WeaponReload;
+	
+	UPROPERTY()
+	UAnimMontage* EmptyPlayerReload;
+	
+	UPROPERTY()
+	UAnimMontage* PlayerReload;
 
 	
 protected:

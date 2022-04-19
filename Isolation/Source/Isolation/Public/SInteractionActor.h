@@ -24,6 +24,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Interacted Actor")
 	TArray<ASInteractedActor*> InteractedActors;
 
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category = "Interacted Actor")
+	FName PopupDescription;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
 	UStaticMeshComponent* MeshComp;
 

@@ -108,6 +108,15 @@ void ASCharacter::InteractionIndicator()
         if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
         {
             bCanInteract = true;
+            ASInteractionActor* InteractionActor = Cast<ASInteractionActor>(InteractionHit.GetActor());
+            if (InteractionActor)
+            {
+                InteractText = InteractionActor->PopupDescription;
+            }
+            else
+            {
+                InteractText = "";
+            }
             
             if (IsValid(Cast<ASWeaponPickup>(InteractionHit.GetActor())))
             {
@@ -174,18 +183,18 @@ void ASCharacter::StartCrouch()
     bHoldingCrouch = true;
     if (GetCharacterMovement()->IsMovingOnGround())
     {
-        if (MovementState == State_Crouch)
+        if (MovementState == EMovementState::State_Crouch)
         {
             EndCrouch(false);
             //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
         }
-        else if (MovementState == State_Sprint && !bPerformedSlide)
+        else if (MovementState == EMovementState::State_Sprint && !bPerformedSlide)
         {
             StartSlide();
         }
         else
         {
-            MovementState = State_Crouch;
+            MovementState = EMovementState::State_Crouch;
             UpdateMovementSpeed();
         }
     }
@@ -199,7 +208,7 @@ void ASCharacter::StopCrouch()
 {
     bHoldingCrouch = false;
     bPerformedSlide = false;
-    if (MovementState == State_Slide)
+    if (MovementState == EMovementState::State_Slide)
     {
         StopSlide();
     }
@@ -207,7 +216,7 @@ void ASCharacter::StopCrouch()
 
 void ASCharacter::EndCrouch(bool bToSprint)
 {
-    if (MovementState == State_Crouch || MovementState == State_Slide)
+    if (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)
     {
         //FVector centerVector = GetActorLocation();
         //centerVector.Z += 46;
@@ -223,11 +232,11 @@ void ASCharacter::EndCrouch(bool bToSprint)
         //}
         if (bToSprint)
         {
-            MovementState = State_Sprint;
+            MovementState = EMovementState::State_Sprint;
         }
         else
         {
-            MovementState = State_Walk;
+            MovementState = EMovementState::State_Walk;
         }
         UpdateMovementSpeed();
     }
@@ -239,20 +248,20 @@ void ASCharacter::StartSprint()
     bHoldingSprint = true;
     bPerformedSlide = false;
     // Updates the sprint speed
-    MovementState = State_Sprint;
+    MovementState = EMovementState::State_Sprint;
     UpdateMovementSpeed();
 }
 
 // Stopping to sprint (IE_Released)
 void ASCharacter::StopSprint()
 {
-    if (MovementState == State_Slide && bHoldingCrouch)
+    if (MovementState == EMovementState::State_Slide && bHoldingCrouch)
     {
-        MovementState = State_Crouch;
+        MovementState = EMovementState::State_Crouch;
     }
     else
     {
-        MovementState = State_Walk;
+        MovementState = EMovementState::State_Walk;
     }
     
     bHoldingSprint = false;
@@ -261,7 +270,7 @@ void ASCharacter::StopSprint()
 
 void ASCharacter::StartSlide()
 {
-    MovementState = State_Slide;
+    MovementState = EMovementState::State_Slide;
     bPerformedSlide = true;
     UpdateMovementSpeed();
     GetWorldTimerManager().SetTimer(SlideStop, this, &ASCharacter::StopSlide, SlideTime, false, SlideTime);
@@ -269,7 +278,7 @@ void ASCharacter::StartSlide()
 
 void ASCharacter::StopSlide()
 {
-    if (MovementState == State_Slide && FloorAngle > -15.0f)
+    if (MovementState == EMovementState::State_Slide && FloorAngle > -15.0f)
     {
         if (bHoldingSprint)
         {
@@ -277,11 +286,11 @@ void ASCharacter::StopSlide()
         }
         else if (bHoldingCrouch)
         {
-            MovementState = State_Crouch;
+            MovementState = EMovementState::State_Crouch;
         }
         else
         {
-            MovementState = State_Walk;
+            MovementState = EMovementState::State_Walk;
         }
         bPerformedSlide = false;
         GetWorldTimerManager().ClearTimer(SlideStop);
@@ -457,19 +466,20 @@ void ASCharacter::Vault(float Height, FTransform TargetTransform)
 {
     VaultStartLocation = GetActorTransform();
     VaultEndLocation = TargetTransform;
-    MovementState = State_Vault;
+    MovementState = EMovementState::State_Vault;
     UpdateMovementSpeed();
     HandsMeshComp->GetAnimInstance()->Montage_Play(VaultMontage, 1.0f);
     VaultTimeline.PlayFromStart();
 }
 
+// TODO: Convert to switch statement
 // Function that determines the player's maximum speed, based on whether they're crouching, sprinting or neither
 void ASCharacter::UpdateMovementSpeed()
 {
     bIsSprinting = false;
     bIsCrouching = false;
     
-    if (MovementState == State_Crouch)
+    if (MovementState == EMovementState::State_Crouch)
     {
         bIsCrouching = true;
         GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
@@ -481,7 +491,7 @@ void ASCharacter::UpdateMovementSpeed()
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (MovementState == State_Sprint)
+    else if (MovementState == EMovementState::State_Sprint)
     {
         bIsSprinting = true;
         GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
@@ -493,7 +503,7 @@ void ASCharacter::UpdateMovementSpeed()
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (MovementState == State_Walk)
+    else if (MovementState == EMovementState::State_Walk)
     {
         GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
         if (CurrentWeapon)
@@ -504,7 +514,7 @@ void ASCharacter::UpdateMovementSpeed()
         GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
         GetCharacterMovement()->GroundFriction = 8.0f;
     }
-    else if (MovementState == State_Slide)
+    else if (MovementState == EMovementState::State_Slide)
     {
         GetCharacterMovement()->MaxWalkSpeed = SlideSpeed;
         if (CurrentWeapon)
@@ -515,7 +525,7 @@ void ASCharacter::UpdateMovementSpeed()
         GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
         GetCharacterMovement()->GroundFriction = 1.0f;
     }
-    else if (MovementState == State_Vault)
+    else if (MovementState == EMovementState::State_Vault)
     {
         if (CurrentWeapon)
         {
@@ -652,20 +662,20 @@ void ASCharacter::Tick(const float DeltaTime)
 
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
-	const float TargetHalfHeight = (MovementState == State_Crouch || MovementState == State_Slide)? FinalCapsuleHalfHeight : DefaultCapsuleHalfHeight;
+	const float TargetHalfHeight = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? FinalCapsuleHalfHeight : DefaultCapsuleHalfHeight;
 	// Interpolates between the current height and the target height
 	const float NewHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHalfHeight, DeltaTime, CrouchSpeed);
 	// Sets the half height of the capsule component to the new interpolated half height
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    const float TargetFOV = (MovementState == State_Sprint || MovementState == State_Slide)? SpeedFOV : DefaultFOV;
+    const float TargetFOV = (MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide)? SpeedFOV : DefaultFOV;
     //Interpolates between current fov and target fov
     const float InFieldOfView = FMath::FInterpTo(CameraComp->FieldOfView, TargetFOV, DeltaTime, FOVChangeSpeed);
     // Sets the new camera FOV
     CameraComp->SetFieldOfView(InFieldOfView);
 
-    if (bWantsToAim == true && MovementState != State_Sprint && MovementState != State_Slide)
+    if (bWantsToAim == true && MovementState != EMovementState::State_Sprint && MovementState != EMovementState::State_Slide)
     {
         bIsAiming = true;
     }

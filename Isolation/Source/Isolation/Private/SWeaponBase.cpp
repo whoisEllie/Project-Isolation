@@ -63,8 +63,13 @@ void ASWeaponBase::BeginPlay()
 	QueryParams.bTraceComplex = true;
 	QueryParams.bReturnPhysicalMaterial = true;
 
+    // Getting a reference to the relevant row in the WeaponData DataTable
     WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName(DataTableNameRef), FString(DataTableNameRef), true);
 
+    /*
+     *Setting our default animation values
+     *We set these here, but they can be overriden later by variables from applied attachments.
+     */
     if (WeaponData)
     {
         if (WeaponData->BS_Walk)
@@ -159,6 +164,7 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                     WeaponData->WeaponReload = AttachmentData->WeaponReload;
                     WeaponData->EmptyPlayerReload = AttachmentData->EmptyPlayerReload;
                     WeaponData->PlayerReload = AttachmentData->PlayerReload;
+                    WeaponData->Gun_Shot = AttachmentData->Gun_Shot;
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
                 {
@@ -220,6 +226,8 @@ void ASWeaponBase::StartRecoil()
 {
     const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     const ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+
+    ShotsFired = 0;
     
 
     if (bCanFire && (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) > 0 && !bIsReloading && CharacterController)
@@ -272,8 +280,8 @@ void ASWeaponBase::Fire()
             // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
             if (WeaponData->bHasAttachments && BarrelAttachment)
             {
-                TraceStart = BarrelAttachment->GetSocketLocation(SocketOverride);
-                TraceStartRotation = BarrelAttachment->GetSocketRotation(SocketOverride);
+                TraceStart = BarrelAttachment->GetSocketLocation(WeaponData->MuzzleLocation);
+                TraceStartRotation = BarrelAttachment->GetSocketRotation(WeaponData->MuzzleLocation);
             }
             else
             {
@@ -287,6 +295,12 @@ void ASWeaponBase::Fire()
 
             // Applying Recoil to the weapon
             Recoil();
+
+            // Playing an animation on the weapon mesh
+            if (WeaponData->Gun_Shot)
+            {
+                MeshComp->PlayAnimation(WeaponData->Gun_Shot, false);
+            }
 
             // Drawing a line trace based on the parameters calculated previously 
             if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel1, QueryParams))
@@ -377,13 +391,13 @@ void ASWeaponBase::Fire()
     
 }
 
-void ASWeaponBase::Recoil() const
+void ASWeaponBase::Recoil()
 {
     const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     // Apply recoil
-    if (WeaponData->bAutomaticFire && CharacterController)
+    if (WeaponData->bAutomaticFire && CharacterController && ShotsFired > 0)
     {
         CharacterController->AddPitchInput(WeaponData->VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()) * VerticalRecoilModifier);
         CharacterController->AddYawInput(WeaponData->HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()) * HorizontalRecoilModifier);
@@ -394,8 +408,8 @@ void ASWeaponBase::Recoil() const
         CharacterController->AddYawInput(WeaponData->HorizontalRecoilCurve->GetFloatValue(0) * HorizontalRecoilModifier);
     }
 
-    GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(RecoilCameraShake);  
-
+    ShotsFired += 1;
+    GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(WeaponData->RecoilCameraShake);  
 }
 
 void ASWeaponBase::RecoilRecovery()
@@ -412,7 +426,7 @@ void ASWeaponBase::Reload()
 {
     
     // Casting to the game instance (which stores all the ammunition and health variables)
-    ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     // Changing the maximum ammunition based on if the weapon can hold a bullet in the chamber
@@ -426,17 +440,30 @@ void ASWeaponBase::Reload()
     if(!bIsReloading && CharacterController->AmmoMap[(PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.AmmoType : PlayerCharacter->SecondaryWeaponCacheMap.AmmoType)] > 0 && (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) != (PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipCapacity : PlayerCharacter->SecondaryWeaponCacheMap.ClipCapacity) + Value)
     {
          // Differentiating between having no ammunition in the magazine (having to chamber a round after reloading) or not, and playing an animation relevant to that
-        if ((PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) <= 0 && EmptyPlayerReload)
+        if ((PlayerCharacter->bIsPrimary? PlayerCharacter->PrimaryWeaponCacheMap.ClipSize : PlayerCharacter->SecondaryWeaponCacheMap.ClipSize) <= 0 && WeaponData->EmptyPlayerReload)
         {
-            // TODO: Figure out magazine reload animations 
-            //MagazineAttachment->PlayAnimation(EmptyWeaponReload, false);
-            AnimTime = PlayerCharacter->HandsMeshComp->GetAnimInstance()->Montage_Play(EmptyPlayerReload, 1.0f);
+            if (WeaponData->bHasAttachments)
+            {
+                MagazineAttachment->PlayAnimation(WeaponData->EmptyWeaponReload, false);
+            }
+            else
+            {
+                MeshComp->PlayAnimation(WeaponData->EmptyWeaponReload, false);
+            }
+            
+            AnimTime = PlayerCharacter->HandsMeshComp->GetAnimInstance()->Montage_Play(WeaponData->EmptyPlayerReload, 1.0f);
         }
-        else if (PlayerReload)
+        else if (WeaponData->PlayerReload)
         {
-            // TODO: Figure out magazine reload animations
-            //MagazineAttachment->PlayAnimation(WeaponReload, false);
-            AnimTime = PlayerCharacter->HandsMeshComp->GetAnimInstance()->Montage_Play(PlayerReload, 1.0f);
+            if (WeaponData->bHasAttachments)
+            {
+                MagazineAttachment->PlayAnimation(WeaponData->WeaponReload, false);
+            }
+            else
+            {
+                MeshComp->PlayAnimation(WeaponData->WeaponReload, false);
+            }
+            AnimTime = PlayerCharacter->HandsMeshComp->GetAnimInstance()->Montage_Play(WeaponData->PlayerReload, 1.0f);
         }
         else
         {
@@ -448,6 +475,7 @@ void ASWeaponBase::Reload()
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Reload", true);
         }
+        
         // Setting variables to make sure that the player cannot fire or reload during the time that the weapon is in it's reloading animation
         bCanFire = false;
         bIsReloading = true;
@@ -524,29 +552,14 @@ void ASWeaponBase::Tick(float DeltaTime)
     RecoilRecoveryTimeline.TickTimeline(DeltaTime);
 }
 
-
-void ASWeaponBase::HandleVerticalRecoilProgress(float value) const
-{
-    if (bShowDebug)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::SanitizeFloat(value));
-    }
-}
-
-void ASWeaponBase::HandleHorizontalRecoilProgress(float value) const
-{
-    if (bShowDebug)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::SanitizeFloat(value));
-    }
-}
-
-
+// Recovering the player's recoil to the pre-fired position
 void ASWeaponBase::HandleRecoveryProgress(float value) const
 {
+    // Getting a reference to the Character Controller
     const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
+    // Calculating the new control rotation by interpolating between current and target 
     const FRotator NewControlRotation = FMath::Lerp(CharacterController->GetControlRotation(), ControlRotation, value);
     
     CharacterController->SetControlRotation(NewControlRotation);
