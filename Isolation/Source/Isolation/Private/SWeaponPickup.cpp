@@ -96,7 +96,6 @@ void ASWeaponPickup::SpawnAttachmentMesh()
 			DataStruct.ClipCapacity = WeaponData->ClipCapacity;
 			DataStruct.ClipSize = WeaponData->ClipSize;
 			DataStruct.WeaponHealth = 100.0f;
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::FromInt(DataStruct.ClipCapacity));
 		}
 	}
 }

@@ -130,6 +130,9 @@ public:
 	// keeps track of whether the object we are looking at is one we are able to interact with (used for UI)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	bool bCanInteract;
+	// keeps track of whether the interaction object is a weapon pickup (used for UI)
+	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	bool bInteractionIsWeapon;
 
 	// Enumerators
 
@@ -141,7 +144,7 @@ public:
 
 	// The current message to be displayed above the screen (if any)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
-	FName InteractText;
+	FText InteractText;
 
 	// Other
 	// Name of the socket we attach our camera to

@@ -327,6 +327,14 @@ void ASWeaponBase::Fire()
                 // Applying the previously set damage to the hit actor
                 UGameplayStatics::ApplyPointDamage(HitActor, FinalDamage, TraceDirection, Hit, GetInstigatorController(), this, DamageType);
             }
+            else
+            {
+                // Drawing debug line trace
+                if (bShowDebug)
+                {
+                    DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                }
+            }
 
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 

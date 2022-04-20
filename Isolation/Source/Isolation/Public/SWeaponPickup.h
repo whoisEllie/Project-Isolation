@@ -53,7 +53,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
 	UDataTable* WeaponDataTable;
 	
-
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Data Table")
 	UDataTable* AttachmentsDataTable;
 		
@@ -67,6 +66,10 @@ public:
 
 	UPROPERTY()
 	bool bIsNewPrimary;
+
+	// Visualisation
+	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
+	FText WeaponName;
 
 protected:
 	// Called when the game starts or when spawned

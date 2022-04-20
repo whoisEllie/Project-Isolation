@@ -108,19 +108,26 @@ void ASCharacter::InteractionIndicator()
         if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
         {
             bCanInteract = true;
-            ASInteractionActor* InteractionActor = Cast<ASInteractionActor>(InteractionHit.GetActor());
+            const ASInteractionActor* InteractionActor = Cast<ASInteractionActor>(InteractionHit.GetActor());
             if (InteractionActor)
             {
                 InteractText = InteractionActor->PopupDescription;
             }
             else
             {
-                InteractText = "";
+                InteractText = FText::GetEmpty();
             }
+
             
-            if (IsValid(Cast<ASWeaponPickup>(InteractionHit.GetActor())))
+            const ASWeaponPickup* InteractedPickup = Cast<ASWeaponPickup>(InteractionHit.GetActor());
+            if (InteractedPickup)
             {
-               //TODO: Link up with widget BP via variables and pass through data for weapon stats
+                bInteractionIsWeapon = true;
+                InteractText = InteractedPickup->WeaponName;
+            }
+            else
+            {
+                bInteractionIsWeapon = false;
             }
         }
     }
