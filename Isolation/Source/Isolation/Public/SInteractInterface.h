@@ -24,5 +24,5 @@ class ISOLATION_API ISInteractInterface
 public:
 
 	UFUNCTION()
-	virtual void Interact() = 0;
+	virtual void Interact();
 };
