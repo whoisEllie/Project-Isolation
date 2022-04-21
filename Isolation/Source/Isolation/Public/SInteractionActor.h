@@ -21,22 +21,17 @@ public:
 
 	virtual void Interact() override;
 
+	// The actors to which we cast upon receiving an interaction
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Interacted Actor")
 	TArray<ASInteractedActor*> InteractedActors;
 
+	// The description to be passed to the player for this item
 	UPROPERTY(BlueprintReadWrite, EditInstanceOnly, Category = "Interacted Actor")
 	FText PopupDescription;
 
+	// The mesh as which to render
 	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
 	UStaticMeshComponent* MeshComp;
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	
 	// Called for every item interacted with
 	UFUNCTION(BlueprintImplementableEvent)

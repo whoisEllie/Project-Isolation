@@ -10,35 +10,20 @@
 // Sets default values
 ASInteractionActor::ASInteractionActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
 	RootComponent = MeshComp;
-
 }
 
+// Implementing the function from our interface
 void ASInteractionActor::Interact()
 {
+	// Calling Interacted() on all of the interacted actors
 	for (ASInteractedActor* InteractedActor : InteractedActors)
 	{
 		InteractedActor->Interacted();
 		OnInteraction(InteractedActor);
-		
 	}
+
+	// Calling the local interaction complete function
 	InteractionCompleted();
 }
-
-// Called when the game starts or when spawned
-void ASInteractionActor::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-// Called every frame
-void ASInteractionActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-

@@ -6,13 +6,11 @@
 // Sets default values
 ASInteractedActor::ASInteractedActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 void ASInteractedActor::Interacted()
 {
+	// Calls function to be implemented in blueprints
 	OnInteracted();
 }
 
@@ -22,11 +20,3 @@ void ASInteractedActor::BeginPlay()
 	Super::BeginPlay();
 	
 }
-
-// Called every frame
-void ASInteractedActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-

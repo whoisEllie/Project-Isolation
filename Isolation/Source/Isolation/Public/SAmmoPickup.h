@@ -13,21 +13,29 @@ class USceneComponent;
 class USoundBase;
 
 
-UENUM()
-enum class ELocalAmmoType : uint8
-{
-	Pistol       UMETA(DisplayName = "Pistol Ammo"),
-	Rifle        UMETA(DisplayName = "Rifle Ammo"),
-	Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
-	Special		 UMETA(DisplayName = "Special Ammo"),
-};
-
+// Keeping track of which asset to spawn
 UENUM()
 enum class EAmmoAmount : uint8
 {
 	Low    		UMETA(DisplayName="Low Ammo"),
 	Medium 		UMETA(DisplayName="Medium Ammo"),
 	High 		UMETA(DisplayName="High Ammo"),
+};
+
+USTRUCT()
+struct FAmmoTypeMeshes
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly)
+	TMap<EAmmoAmount, UStaticMesh*> FullAmmoBoxes;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TMap<EAmmoAmount, UStaticMesh*> EmptyAmmoBoxes;
+
+	UPROPERTY(EditDefaultsOnly)
+	TMap<EAmmoAmount, int> AmmoCounts;
+	
 };
 
 UCLASS()
@@ -42,50 +50,33 @@ public:
 	// Interface functions
 	virtual void Interact() override;
 
+	// Override construction script
+	virtual void OnConstruction(const FTransform& Transform) override;
+	
+	// The main mesh
 	UPROPERTY()
-	USceneComponent* ArrowComp;
+	UStaticMeshComponent* MeshComp;
 
-	UPROPERTY(EditDefaultsOnly)
-	UStaticMeshComponent* PreviewMeshComp;
-
-	UPROPERTY(EditDefaultsOnly)
-	UStaticMeshComponent* LowMeshComp;
-
-	UPROPERTY(EditDefaultsOnly)
-	UStaticMeshComponent* MediumMeshComp;
-
-	UPROPERTY(EditDefaultsOnly)
-	UStaticMeshComponent* HighMeshComp;
-
-	UPROPERTY(EditDefaultsOnly)
-	UStaticMeshComponent* EmptyLowMeshComp;
-
-	UPROPERTY(EditDefaultsOnly)
-	UStaticMeshComponent* EmptyMediumMeshComp;
-
-	UPROPERTY(EditDefaultsOnly)
-	UStaticMeshComponent* EmptyHighMeshComp;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
-	int LowAmmoCount;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
-	int MediumAmmoCount;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Ammo Values")
-	int HighAmmoCount;
-
-	UPROPERTY(EditAnywhere, Category = "Ammo Amount")
+	// The Map keeping track of all values for the meshes and ammo counts
+	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
+	TMap<EAmmoType, FAmmoTypeMeshes> AmmoData;
+	
+	// The enum implementation for what amount of ammunition to spawn 
+	UPROPERTY(EditInstanceOnly, Category = "Properties")
     EAmmoAmount AmmoAmount;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Ammo Type")
-	ELocalAmmoType AmmoType;
-
-	int UpdateAmmo;
-
+	// The enum implementation for what type of ammo this pickup should spawn
+	UPROPERTY(EditInstanceOnly, Category = "Properties")
+	EAmmoType AmmoType;
+	
+	// Whether the player can interact with this ammo pickup (whether it is full or empty, basically)
 	bool bCanInteract;
+
+	// Whether debug print statements should be shown
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bDrawDebug;
 
+	// The sound effect to play when ammunition is collected
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
 	USoundBase* PickupSFX;
 
@@ -93,9 +84,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	void UpdateEmptyVisibility();
+	// Updates the mesh from full to empty
+	void SetEmptyMesh();
 };

@@ -4,43 +4,18 @@
 #include "SAmmoPickup.h"
 #include "SCharacter.h"
 #include "SCharacterController.h"
+#include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ASAmmoPickup::ASAmmoPickup()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	// Creating our mesh
+	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PreviewMeshComp"));
+	RootComponent = MeshComp;
 
-	ArrowComp = CreateDefaultSubobject<USceneComponent>(TEXT("ArrowComp"));
-	RootComponent = ArrowComp;
-
-	PreviewMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PreviewMeshComp"));
-	PreviewMeshComp->SetupAttachment(ArrowComp);
-
-	LowMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LowMeshComp"));
-	LowMeshComp->SetupAttachment(ArrowComp);
-	LowMeshComp->ToggleVisibility(false);
-
-	MediumMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MediumMeshComp"));
-	MediumMeshComp->SetupAttachment(ArrowComp);
-	MediumMeshComp->ToggleVisibility(false);
-
-	HighMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HighMeshComp"));
-	HighMeshComp->SetupAttachment(ArrowComp);
-	HighMeshComp->ToggleVisibility(false);
-
-	EmptyLowMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EmptyLowMeshComp"));
-	EmptyLowMeshComp->SetupAttachment(ArrowComp);
-	EmptyLowMeshComp->ToggleVisibility(false);
-
-	EmptyMediumMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EmptyMediumMeshComp"));
-	EmptyMediumMeshComp->SetupAttachment(ArrowComp);
-	EmptyMediumMeshComp->ToggleVisibility(false);
-
-	EmptyHighMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EmptyHighMeshComp"));
-	EmptyHighMeshComp->SetupAttachment(ArrowComp);
-	EmptyHighMeshComp->ToggleVisibility(false);
+	// True by default
+	bCanInteract = true;
 }
 
 // Called when the game starts or when spawned
@@ -48,27 +23,16 @@ void ASAmmoPickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	PreviewMeshComp->ToggleVisibility(false);
-
-	switch(AmmoAmount)
+	// Checking whether the desired mesh exists
+	if (AmmoData[AmmoType].FullAmmoBoxes.Find(AmmoAmount) != nullptr)
 	{
-		case EAmmoAmount::Low:
-			LowMeshComp->ToggleVisibility(false);
-			UpdateAmmo = LowAmmoCount;
-			break;
-
-		case EAmmoAmount::Medium:
-			MediumMeshComp->ToggleVisibility(false);
-			UpdateAmmo = MediumAmmoCount;
-			break;
-
-		case EAmmoAmount::High:
-			HighMeshComp->ToggleVisibility(true);
-			UpdateAmmo = HighAmmoCount;
-			break;
+		// Updating MeshComp with the desired mesh
+		MeshComp->SetStaticMesh(AmmoData[AmmoType].FullAmmoBoxes[AmmoAmount]);
 	}
-
-	bCanInteract = true;
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Mesh to spawn not found in SAmmoPickup, make sure all meshes are set."));
+	}
 }
 
 void ASAmmoPickup::Interact()
@@ -79,73 +43,54 @@ void ASAmmoPickup::Interact()
 		const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 		ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
-		switch (AmmoType)
+
+		// Printing the ammo before pickup for debug reasons
+		if (bDrawDebug)
 		{
-		case ELocalAmmoType::Pistol:
-			CharacterController->AmmoMap[EAmmoType::Pistol] += UpdateAmmo;
-			if (bDrawDebug)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[EAmmoType::Pistol]));
-			}
-			break;
-
-		case ELocalAmmoType::Rifle:
-			CharacterController->AmmoMap[EAmmoType::Rifle] += UpdateAmmo;
-			if (bDrawDebug)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[EAmmoType::Rifle]));
-			}
-			break;
-
-		case ELocalAmmoType::Shotgun:
-			CharacterController->AmmoMap[EAmmoType::Shotgun] += UpdateAmmo;
-			if (bDrawDebug)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[EAmmoType::Shotgun]));
-			}
-			break;
-
-		case ELocalAmmoType::Special:
-			CharacterController->AmmoMap[EAmmoType::Special] += UpdateAmmo;
-			if (bDrawDebug)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[EAmmoType::Special]));
-			}
-			break;
+			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Green, FString::FromInt(CharacterController->AmmoMap[AmmoType]));
+			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Green, TEXT("Before"));
 		}
 
+		// Adding ammo to our character's ammo map
+		CharacterController->AmmoMap[AmmoType] += AmmoData[AmmoType].AmmoCounts[AmmoAmount];
+
+		// Printing the ammo after pickup for debug reasons
+		if (bDrawDebug)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[AmmoType]));
+			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("After"));
+		}
+
+		// Spawning our pickup sound effect
 		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSFX, GetActorLocation());
-		UpdateEmptyVisibility();
+
+		// Switching the mesh to it's empty variant
+		SetEmptyMesh();
 	}
 }
 
-// Called every frame
-void ASAmmoPickup::Tick(float DeltaTime)
+void ASAmmoPickup::OnConstruction(const FTransform& Transform)
 {
-	Super::Tick(DeltaTime);
+	Super::OnConstruction(Transform);
 
-}
-
-void ASAmmoPickup::UpdateEmptyVisibility()
-{
-	switch(AmmoAmount)
+	// Checking whether the desired mesh exists in the editor
+	if (AmmoData[AmmoType].FullAmmoBoxes.Find(AmmoAmount) != nullptr)
 	{
-	case EAmmoAmount::Low:
-		EmptyLowMeshComp->ToggleVisibility(true);
-		LowMeshComp->ToggleVisibility(false);
-		break;
+		// Updating MeshComp with the desired mesh in editor
+		MeshComp->SetStaticMesh(AmmoData[AmmoType].FullAmmoBoxes[AmmoAmount]);
+	}
+}
 
-	case EAmmoAmount::Medium:
-		EmptyMediumMeshComp->ToggleVisibility(true);
-		MediumMeshComp->ToggleVisibility(false);
-		break;
-
-	case EAmmoAmount::High:
-		EmptyHighMeshComp->ToggleVisibility(true);
-		HighMeshComp->ToggleVisibility(false);
-		break;
+void ASAmmoPickup::SetEmptyMesh()
+{
+	// Checking whether the desired empty mesh exists
+	if (AmmoData[AmmoType].EmptyAmmoBoxes.Find(AmmoAmount) != nullptr)
+	{
+		// Updating MeshComp with the desired empty mesh
+		MeshComp->SetStaticMesh(AmmoData[AmmoType].EmptyAmmoBoxes[AmmoAmount]);
 	}
 
+	// Updating bCanInteract
 	bCanInteract = false;
 }
 
