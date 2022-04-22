@@ -23,7 +23,7 @@ enum class EAmmoAmount : uint8
 };
 
 USTRUCT()
-struct FAmmoTypeMeshes
+struct FAmmoTypeData
 {
 	GENERATED_BODY()
 
@@ -59,7 +59,7 @@ public:
 
 	// The Map keeping track of all values for the meshes and ammo counts
 	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
-	TMap<EAmmoType, FAmmoTypeMeshes> AmmoData;
+	TMap<EAmmoType, FAmmoTypeData> AmmoData;
 	
 	// The enum implementation for what amount of ammunition to spawn 
 	UPROPERTY(EditInstanceOnly, Category = "Properties")
@@ -70,7 +70,7 @@ public:
 	EAmmoType AmmoType;
 	
 	// Whether the player can interact with this ammo pickup (whether it is full or empty, basically)
-	bool bCanInteract;
+	bool bIsEmpty;
 
 	// Whether debug print statements should be shown
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")

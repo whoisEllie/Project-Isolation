@@ -15,7 +15,7 @@ ASAmmoPickup::ASAmmoPickup()
 	RootComponent = MeshComp;
 
 	// True by default
-	bCanInteract = true;
+	bIsEmpty = false;
 }
 
 // Called when the game starts or when spawned
@@ -37,7 +37,7 @@ void ASAmmoPickup::BeginPlay()
 
 void ASAmmoPickup::Interact()
 {
-	if (bCanInteract)
+	if (!bIsEmpty)
 	{
 		// Casting to the player controller (which stores all the ammunition and health variables)
 		const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
@@ -68,7 +68,7 @@ void ASAmmoPickup::Interact()
 		SetEmptyMesh();
 	}
 }
-
+	
 void ASAmmoPickup::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
@@ -90,7 +90,7 @@ void ASAmmoPickup::SetEmptyMesh()
 		MeshComp->SetStaticMesh(AmmoData[AmmoType].EmptyAmmoBoxes[AmmoAmount]);
 	}
 
-	// Updating bCanInteract
-	bCanInteract = false;
+	// Updating bIsEmpty
+	bIsEmpty = true;
 }
 
