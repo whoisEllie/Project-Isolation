@@ -47,7 +47,7 @@ public:
 	// Sets default values for this actor's properties
 	ASAmmoPickup();
 
-	// Interface functions
+	// Interface function
 	virtual void Interact() override;
 
 	// Override construction script

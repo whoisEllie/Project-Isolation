@@ -20,54 +20,45 @@ public:
 	// Sets default values for this actor's properties
 	ASWeaponPickup();
 
+	// Interface function
 	virtual void Interact() override;
 
+	// Spawns attachment meshes from data table
 	UFUNCTION(BlueprintCallable)
 	void SpawnAttachmentMesh();
 
-	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
-	UStaticMeshComponent* MainMesh;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
-	UStaticMeshComponent* BarrelAttachment;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
-	UStaticMeshComponent* MagazineAttachment;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
-	UStaticMeshComponent* SightsAttachment;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
-	UStaticMeshComponent* StockAttachment;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
-	UStaticMeshComponent* GripAttachment;
-
+	// Weapon to spawn when picked up
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<ASWeaponBase> WeaponReference;
 
+	// Local weapon data struct to keep track of ammo amounts and weapon health
 	UPROPERTY()
 	FWeaponDataStruct DataStruct;
 
-	// Data table reference
+	// Data table reference for weapon (used to see if the weapon has attachments)
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
 	UDataTable* WeaponDataTable;
-	
+
+	// Data table reference for attachments
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Data Table")
 	UDataTable* AttachmentsDataTable;
-		
+
+	// Whether this pickup has been spawned at runtime or not  (determines whether we inherit DataStruct values or
+	// reset to default)
 	bool bRuntimeSpawned;
 
+	// Whether to run physics simulations or not
 	UPROPERTY(EditInstanceOnly, Category = "Weapon")
 	bool bStatic;
-	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Data")
+
+	// The array of attachments to spawn (usually inherited, can be set by instance)
+	UPROPERTY(BlueprintReadWrite, EditInstanceOnly, Category = "Data")
 	TArray<FName> AttachmentArray;
 
-	UPROPERTY()
+	// Whether this weapon will become the primary or secondary weapon
 	bool bIsNewPrimary;
-
-	// Visualisation
+	
+	// Visualisation name
 	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 	FText WeaponName;
 
@@ -75,16 +66,22 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	// Meshes for Weapon + Attachments
+	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* MainMesh;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* BarrelAttachment;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* MagazineAttachment;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* SightsAttachment;
 	
-	// Called for every item interacted with
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnInteraction(AActor* ImplementedActor);
+	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* StockAttachment;
 
-	// Called when the interaction is completed
-	UFUNCTION()
-	void InteractionCompleted();
-
+	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* GripAttachment;
 };

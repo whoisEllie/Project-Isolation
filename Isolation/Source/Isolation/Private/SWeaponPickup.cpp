@@ -8,9 +8,7 @@
 // Sets default values
 ASWeaponPickup::ASWeaponPickup()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	
+	// Creating all of our 
 	MainMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MainMesh"));
 	MainMesh->SetupAttachment(RootComponent);
 
@@ -34,8 +32,11 @@ ASWeaponPickup::ASWeaponPickup()
 void ASWeaponPickup::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Spawning attachments on begin play
 	SpawnAttachmentMesh();
-	
+
+	// Simulating physics if not bStatic
 	if (!bStatic)
 	{
 		MainMesh->SetSimulatePhysics(true);
@@ -44,52 +45,56 @@ void ASWeaponPickup::BeginPlay()
 
 void ASWeaponPickup::SpawnAttachmentMesh()
 {
+	// Getting a reference to our Weapon Data table in order to see if we have attachments
 	ASWeaponBase* WeaponVariables =  WeaponReference.GetDefaultObject();
 	const FWeaponData* WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName(WeaponVariables->DataTableNameRef), FString(WeaponVariables->DataTableNameRef), true);
 
-	if (WeaponData->bHasAttachments)
+	// Spawning attachments if the weapon has them and the attachments table exists
+	if (WeaponData->bHasAttachments && AttachmentsDataTable)
 	{
-		if (AttachmentsDataTable)
+		// Iterating through all the attachments in AttachmentArray
+		for (FName RowName : AttachmentArray)
 		{
-			for (FName RowName : AttachmentArray)
+			// Searching the data table for the attachment
+			const FAttachmentData* AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
+
+			// Applying the effects of the attachment
+			if (AttachmentData)
 			{
-				const FAttachmentData* AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
-				
-				if (AttachmentData)
+				if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
 				{
-					if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
+					BarrelAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+				}
+				else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
+				{
+					MagazineAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+					// Pulling default values from the Magazine attachment type
+					if (!bRuntimeSpawned)
 					{
-						BarrelAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+						DataStruct.AmmoType = AttachmentData->AmmoToUse;
+						DataStruct.ClipCapacity = AttachmentData->ClipCapacity;
+						DataStruct.ClipSize = AttachmentData->ClipSize;
+						DataStruct.WeaponHealth = 100.0f;
 					}
-					else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
-					{
-						MagazineAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-						if (!bRuntimeSpawned)
-						{
-							DataStruct.AmmoType = AttachmentData->AmmoToUse;
-							DataStruct.ClipCapacity = AttachmentData->ClipCapacity;
-							DataStruct.ClipSize = AttachmentData->ClipSize;
-							DataStruct.WeaponHealth = 100.0f;
-						}
-					}
-					else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
-					{
-						SightsAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-					}
-					else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
-					{
-						StockAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-					}
-					else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
-					{
-						GripAttachment->SetStaticMesh(AttachmentData->PickupMesh);
-					}
+				}
+				else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
+				{
+					SightsAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+				}
+				else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
+				{
+					StockAttachment->SetStaticMesh(AttachmentData->PickupMesh);
+				}
+				else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
+				{
+					GripAttachment->SetStaticMesh(AttachmentData->PickupMesh);
 				}
 			}
 		}
 	}
 	else
 	{
+		// Applying default values if the weapon doesn't use attachments
 		if (!bRuntimeSpawned)
 		{
 			DataStruct.AmmoType = WeaponData->AmmoToUse;
@@ -102,10 +107,13 @@ void ASWeaponPickup::SpawnAttachmentMesh()
 
 void ASWeaponPickup::Interact()
 {
+	// Casting to the player character 
 	DataStruct.WeaponAttachments = AttachmentArray;
-
 	ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+
+	// Swapping weapons based on different situations
 	
+	// If the player has no weapons or only a primary weapon
 	if ((PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon == nullptr) || (PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon != nullptr))
 	{
 		PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
@@ -120,6 +128,7 @@ void ASWeaponPickup::Interact()
 		PlayerCharacter->PrimaryWeapon = WeaponReference;
 		PlayerCharacter->bIsPrimary = true;
 	}
+	// If the player has a primary weapon but no secondary weapon
 	else if (PlayerCharacter->SecondaryWeapon == nullptr && PlayerCharacter->PrimaryWeapon != nullptr)
 	{
 		PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
@@ -133,8 +142,10 @@ void ASWeaponPickup::Interact()
 		PlayerCharacter->SecondaryWeapon = WeaponReference;
 		PlayerCharacter->bIsPrimary = false;
 	}
+	// If both weapon slots are occupied
 	else
 	{
+		// Swapping the primary weapon
 		if (PlayerCharacter->bIsPrimary)
 		{
 			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->PrimaryWeaponCacheMap, bStatic, GetTransform());
@@ -147,6 +158,7 @@ void ASWeaponPickup::Interact()
 			}
 			PlayerCharacter->PrimaryWeapon = WeaponReference;
 		}
+		// Swapping the secondary weapon
 		else
 		{
 			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->SecondaryWeaponCacheMap, bStatic, GetTransform());
@@ -160,19 +172,7 @@ void ASWeaponPickup::Interact()
 			PlayerCharacter->SecondaryWeapon = WeaponReference;
 		}
 	}
-	
-	InteractionCompleted();
-}
 
-// Called every frame
-void ASWeaponPickup::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-void ASWeaponPickup::InteractionCompleted()
-{
+	// Destroying the pickup
 	Destroy();
 }
-
