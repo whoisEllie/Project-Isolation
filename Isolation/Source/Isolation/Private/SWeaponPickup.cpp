@@ -117,8 +117,6 @@ void ASWeaponPickup::Interact()
 	if ((PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon == nullptr) || (PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon != nullptr))
 	{
 		PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
-		PlayerCharacter->bNewPrimarySpawn = true;
-
 		
 		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct, bStatic, FTransform::Identity);
 		if (PlayerCharacter->CurrentWeapon)
@@ -132,7 +130,6 @@ void ASWeaponPickup::Interact()
 	else if (PlayerCharacter->SecondaryWeapon == nullptr && PlayerCharacter->PrimaryWeapon != nullptr)
 	{
 		PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
-		PlayerCharacter->bNewSecondarySpawn = true;
 		
 		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct, bStatic, FTransform::Identity);
 		if (PlayerCharacter->CurrentWeapon)
@@ -150,7 +147,6 @@ void ASWeaponPickup::Interact()
 		{
 			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->PrimaryWeaponCacheMap, bStatic, GetTransform());
 			PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
-			PlayerCharacter->bNewPrimarySpawn = true;
 			
 			if (PlayerCharacter->CurrentWeapon)
 			{
@@ -163,7 +159,6 @@ void ASWeaponPickup::Interact()
 		{
 			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->SecondaryWeaponCacheMap, bStatic, GetTransform());
 			PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
-			PlayerCharacter->bNewSecondarySpawn = true;
 			
 			if (PlayerCharacter->CurrentWeapon)
 			{

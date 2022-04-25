@@ -58,6 +58,7 @@ struct FWeaponDataStruct
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
 	float WeaponHealth;
 
+	// The attachments used in the current weapon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
 	TArray<FName> WeaponAttachments;
 };
@@ -71,20 +72,17 @@ public:
 	// Sets default values for this character's properties
 	ASCharacter();
 
-	// Switches to new weapon
+	// Switching to a new weapon
 	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct, bool bStatic, FTransform PickupTransform);
-
-	bool bIsPrimary;
-
-	bool bNewPrimarySpawn;
-	bool bNewSecondarySpawn;
-	
+		
     //Hands mesh, assignable through blueprints
     UPROPERTY(EditDefaultsOnly, Category = "Components")
     USkeletalMeshComponent* HandsMeshComp;
+	
 	//Camera Comp - component for the FPS camera
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	UCameraComponent* CameraComp;
+	
 	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USpringArmComponent* SpringArmComp;
@@ -93,9 +91,11 @@ public:
 	// A reference to the player's current primary weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASWeaponBase> PrimaryWeapon;
+	
 	// A reference to the player's current secondary weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASWeaponBase> SecondaryWeapon;
+	
 	// The player's currently equipped weapon
 	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
 	ASWeaponBase* CurrentWeapon;
@@ -105,38 +105,56 @@ public:
 	
 	// The boolean holding whether the player wants to aim or not
 	bool bWantsToAim;
+
+	// Whether we should render a crosshair or not
+	UPROPERTY(BlueprintReadWrite, Category = "Crosshair")
+	bool bShowCrosshair;
+	
 	// The boolean holding whether we are aiming or not
 	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
 	bool bIsAiming;
+	
 	// The boolean keeping track of whether we're vaulting or not
 	bool bIsVaulting;
+	
 	// Keeps track whether the player is holding the Crouch button
 	bool bHoldingCrouch;
+	
 	// Have we performed a slide yet?
 	bool bPerformedSlide;
+	
 	// Is holding the sprint key
 	bool bHoldingSprint;
+	
 	// wants to slide? (is holding the crouch/slide key, but not on the ground)
 	bool bWantsToSlide;
+	
 	// prints debug variables if enabled
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bDrawDebug;
+	
 	// keeps track of whether we're sprinting (for animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsSprinting;
+	
 	// keeps track of whether we're crouching (for animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsCrouching;
+	
 	// keeps track of whether the object we are looking at is one we are able to interact with (used for UI)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	bool bCanInteract;
+	
 	// keeps track of whether the interaction object is a weapon pickup (used for UI)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	bool bInteractionIsWeapon;
 
+	// Whether the player is holding the primary weapon (or not, and are thus holding the secondary weapon)
+	bool bIsPrimary;
+
 	// Enumerators
 
-	// Enumerator holding the 4 possible movement states defined above
+	// Enumerator holding the 5 possible movement states defined above in EMovementState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement State")
     EMovementState MovementState;
 
@@ -147,18 +165,21 @@ public:
 	FText InteractText;
 
 	// Other
+	
 	// Name of the socket we attach our camera to
 	UPROPERTY(EditDefaultsOnly, Category = "Other")
 	FName CameraSocketName;
 
 	// Weapon variables
 
+	// Weapon cache maps
 	UPROPERTY(EditDefaultsOnly)
 	FWeaponDataStruct PrimaryWeaponCacheMap;
 
 	UPROPERTY(EditDefaultsOnly)
 	FWeaponDataStruct SecondaryWeaponCacheMap;
 
+	// Hand animations for when the player has no weapon 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
 	UBlendSpace* BS_Walk;
 
@@ -217,7 +238,7 @@ protected:
 	void CheckVault();
 	
 	// Function that actually executes the Vault
-	void Vault(float Height, FTransform TargetTransform);
+	void Vault(FTransform TargetTransform);
 	
 	// Global system to update movement speed
 	void UpdateMovementSpeed();
@@ -225,6 +246,9 @@ protected:
 	void SwapToPrimary();
 
 	void SwapToSecondary();
+	
+	// Changing the weapon with the scroll wheel
+	void ScrollWeapon();
 
 	// Fires the weapon
 	void StartFire();
@@ -235,26 +259,33 @@ protected:
 	// Reloads the weapon
 	void Reload();
 
+	// Starts ADS
 	void StartADS();
 
+	// Ends ADS
 	void StopADS();
 
+	// Checks the angle of the floor to determine slide behaviour
 	void CheckAngle();
 
+	// Ticks the timeline
 	UFUNCTION()
 	void TimelineProgress(float value);
 
+	// Interaction with the world using SInteractInterface
 	void WorldInteract();
 
+	// Displaying the indicator for interaction
 	void InteractionIndicator();
 
-	void ScrollWeapon();
-
-	FTimeline VaultTimeline;
-
+	// The curve for vaulting
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 	UCurveFloat* CurveFloat;
-
+	
+	// The timeline for vaulting (generated from the curve)
+	FTimeline VaultTimeline;
+	
+	// Hit results for various line traces
 	FHitResult Hit;
 
 	FHitResult VaultHit;
@@ -267,49 +298,65 @@ protected:
 
 	FTransform VaultEndLocation;
 
+	// The montage for the hands vault animation 
 	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
 	UAnimMontage* VaultMontage;
 
 	// Floats
 	
 	// Variables for crouch system
+	
 	// Sets the height of the player when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float FinalCapsuleHalfHeight;
+	
 	// Set in the default values, the base height of the capsule
 	float DefaultCapsuleHalfHeight;
+	
 	// Determines the rate at which the character crouches
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float CrouchSpeed;
+	
 	// Slide time
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float SlideTime;
+	
 	// Default FOV
 	float DefaultFOV;
+	
 	// target FOV
 	float SpeedFOV;
+	
 	// change speed for the fov
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float FOVChangeSpeed;
+	
 	// amount for FOV to increase
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float FOVChangeAmount;
+	
 	// current angle of floor
 	float FloorAngle;
+	
 	// vector of floor
 	FVector FloorVector;
+	
 	// The height of the highest surface that the player can mantle up onto
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float MaxVaultHeight;
+	
 	// The forward movement value (used to drive animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	float ForwardMovement;
+	
 	// The right movement value (used to drive animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	float RightMovement;
+	
 	// The distance at which old weapons spawn during a weapon swap
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float WeaponSpawnDistance;
+	
 	// The maximum distance in unreal units at which the player can interact with an object
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float InteractDistance;
@@ -321,19 +368,24 @@ protected:
 	int VaultTraceAmount;
 
 	// Variables for movement
+	
 	// The maximum speed of the character when in the sprint state
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float SprintSpeed;
+	
 	// The maximum speed of the character when in the walk state
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float WalkSpeed;
+	
 	// Determines the speed of the character when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float CrouchMovementSpeed;
+	
 	// Determines the speed of the character when sliding
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float SlideSpeed;
-	//
+	
+	// Vault transforms
 	FTransform LocalTargetTransform;
 
 	// Timer managers

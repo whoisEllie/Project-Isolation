@@ -62,13 +62,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 	FText WeaponName;
 
+	// Main weapon mesh
+	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UStaticMeshComponent* MainMesh;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Meshes for Weapon + Attachments
-	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
-	UStaticMeshComponent* MainMesh;
+	// Meshes for Attachments
 
 	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
 	UStaticMeshComponent* BarrelAttachment;
