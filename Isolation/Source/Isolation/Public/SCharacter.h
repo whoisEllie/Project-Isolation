@@ -74,6 +74,16 @@ public:
 
 	// Switching to a new weapon
 	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct, bool bStatic, FTransform PickupTransform);
+
+	// Functions for UI
+	// Get the amount of ammunition currently loaded into the weapon
+	UFUNCTION(BlueprintCallable)
+	FText GetCurrentWeaponLoadedAmmo() const;
+
+	// Get the amount of ammunition remaining (i.e., the amount of ammo the player has of the ammo type used by the
+	// current weapon)
+	UFUNCTION(BlueprintCallable)
+	FText GetCurrentWeaponRemainingAmmo() const;
 		
     //Hands mesh, assignable through blueprints
     UPROPERTY(EditDefaultsOnly, Category = "Components")

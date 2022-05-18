@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SCharacter.h"
+
+#include <string>
+
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -9,6 +12,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
+#include "SCharacterController.h"
 #include "SInteractInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -588,10 +592,23 @@ void ASCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const 
     }
 }
 
+FText ASCharacter::GetCurrentWeaponLoadedAmmo() const
+{
+    return bIsPrimary? FText::AsNumber(PrimaryWeaponCacheMap.ClipSize) : FText::AsNumber(SecondaryWeaponCacheMap.ClipSize);
+}
+
+FText ASCharacter::GetCurrentWeaponRemainingAmmo() const
+{
+    ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
+    
+    return bIsPrimary? FText::AsNumber(CharacterController->AmmoMap[PrimaryWeaponCacheMap.AmmoType]) : FText::AsNumber(CharacterController->AmmoMap[SecondaryWeaponCacheMap.AmmoType]);
+}
+
+
 // Spawning and equipping the primary weapon 
 void ASCharacter::SwapToPrimary()
 {
-    if (PrimaryWeapon && !bIsPrimary)
+    if (PrimaryWeapon && !bIsPrimary && !CurrentWeapon->bIsReloading)
     {
         // Calling UpdateWeapon with relevant variables
         UpdateWeapon(PrimaryWeapon, false, SecondaryWeaponCacheMap, false, FTransform::Identity);
@@ -613,7 +630,7 @@ void ASCharacter::SwapToPrimary()
 // Spawning and equipping the secondary weapon
 void ASCharacter::SwapToSecondary()
 {
-    if (SecondaryWeapon && bIsPrimary)
+    if (SecondaryWeapon && bIsPrimary && !CurrentWeapon->bIsReloading)
     {
         // Calling UpdateWeapon with relevant variables
         UpdateWeapon(SecondaryWeapon, false, PrimaryWeaponCacheMap, false, FTransform::Identity);
@@ -683,7 +700,12 @@ void ASCharacter::Tick(const float DeltaTime)
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    const float TargetFOV = (MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide)? SpeedFOV : DefaultFOV;
+    float TargetFOV = (MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide)? SpeedFOV : DefaultFOV;
+    if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)
+    {
+        TargetFOV = DefaultFOV - CurrentWeapon->WeaponData->AimingFOVChange;
+        FOVChangeSpeed = 6;
+    }
     //Interpolates between current fov and target fov
     const float InFieldOfView = FMath::FInterpTo(CameraComp->FieldOfView, TargetFOV, DeltaTime, FOVChangeSpeed);
     // Sets the new camera FOV

@@ -131,6 +131,14 @@ struct FAttachmentData : public FTableRowBase
 	// The offset applied to the camera to align with the sights
 	UPROPERTY(EditDefaultsOnly, Category = "Sights")
 	float VerticalCameraOffset;
+
+	// Whether the player's FOV should change when aiming with this weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Sights")
+	bool bAimingFOV = false;
+
+	// The decrease in FOV of the camera to when aim down sights
+	UPROPERTY(EditDefaultsOnly, Category = "Sights")
+	float AimingFOVChange;
 	
 	// The vertical recoil curve to be used with this magazine
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
@@ -290,6 +298,14 @@ struct FWeaponData : public FTableRowBase
 	// Whether this weapon is a shotgun or not
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
 	bool bIsShotgun = false;
+
+	// Whether the player's FOV should change when aiming with this weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	bool bAimingFOV = false;
+
+	// The decrease in FOV of the camera to when aim down sights
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	float AimingFOVChange;
 	
 	// The name of the socket which denotes the end of the muzzle (used for gunfire)
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
@@ -379,9 +395,13 @@ struct FWeaponData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
 	UNiagaraSystem* DefaultHitEffect;
 
-	// particle effect (Niagara system) to be spawned at the muzzle when a shot is fired
+	// particle effect to be spawned at the muzzle when a shot is fired
 	UPROPERTY(EditDefaultsOnly, Category = "VFX")
-	UNiagaraSystem* MuzzleFlash;
+	UParticleSystem* MuzzleFlash;
+
+	// particle effect to be spawned at the muzzle that shows the path of the bullet
+	UPROPERTY(EditDefaultsOnly, Category = "VFX")
+	UParticleSystem* BulletTrace;
 
 	// Sound bases
 

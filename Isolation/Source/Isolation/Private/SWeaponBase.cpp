@@ -8,9 +8,8 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Math/UnrealMathUtility.h"
 #include "SCharacterController.h"
-#include "func_lib/SWeaponStatsCalculator.h"
 #include "SCharacter.h"
-#include "Interfaces/ITargetDevice.h"
+#include "Particles/ParticleSystem.h"
 
 // Sets default values
 ASWeaponBase::ASWeaponBase()
@@ -170,6 +169,8 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                 {
                     SightsAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
                     VerticalCameraOffset = AttachmentData->VerticalCameraOffset;
+                    WeaponData->bAimingFOV = AttachmentData->bAimingFOV;
+                    WeaponData->AimingFOVChange = AttachmentData->AimingFOVChange;
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
                 {
@@ -336,6 +337,16 @@ void ASWeaponBase::Fire()
                 }
             }
 
+            // Spawning the bullet trace particle effect
+            if (WeaponData->bHasAttachments)
+            {
+                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrace, BarrelAttachment->GetSocketLocation(WeaponData->ParticleSpawnLocation), TraceStartRotation);
+            }
+            else
+            {
+                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrace, MeshComp->GetSocketLocation(WeaponData->ParticleSpawnLocation), TraceStartRotation);
+            }
+
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 
             if (Hit.PhysMaterial.Get() == WeaponData->NormalDamageSurface || Hit.PhysMaterial.Get() == WeaponData->HeadshotDamageSurface)
@@ -356,6 +367,16 @@ void ASWeaponBase::Fire()
             }
         }
 
+        // Spawning the muzzle flash particle
+        if (WeaponData->bHasAttachments)
+        {
+            UGameplayStatics::SpawnEmitterAttached(WeaponData->MuzzleFlash, BarrelAttachment, WeaponData->ParticleSpawnLocation, FVector::ZeroVector, BarrelAttachment->GetSocketRotation(WeaponData->ParticleSpawnLocation), FVector::OneVector);
+        }
+        else
+        {
+            UGameplayStatics::SpawnEmitterAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSpawnLocation, FVector::ZeroVector, MeshComp->GetSocketRotation(WeaponData->ParticleSpawnLocation), FVector::OneVector);
+        }
+
         // Spawning the firing sound
         if(WeaponData->bSilenced)
         {
@@ -364,16 +385,6 @@ void ASWeaponBase::Fire()
         else
         {
             UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->FireSound, TraceStart);
-        }
-
-        // Spawning the firing particle effect
-        if (ParticleSocketOverride != "")
-        {
-            UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, BarrelAttachment, ParticleSocketOverride, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
-        }
-        else
-        {
-            UNiagaraFunctionLibrary::SpawnSystemAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSpawnLocation, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true, true);
         }
 
 
