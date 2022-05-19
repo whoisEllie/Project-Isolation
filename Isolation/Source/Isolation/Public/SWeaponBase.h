@@ -139,6 +139,22 @@ struct FAttachmentData : public FTableRowBase
 	// The decrease in FOV of the camera to when aim down sights
 	UPROPERTY(EditDefaultsOnly, Category = "Sights")
 	float AimingFOVChange;
+
+	// Whether this weapon has a scope and we need to render a SceneCaptureComponent2D
+	UPROPERTY(EditDefaultsOnly, Category = "Sights")
+	bool bIsScope = false;
+
+	// The Magnification of the scope
+	UPROPERTY(EditDefaultsOnly, Category = "Sights")
+	float ScopeMagnification = 1.0f;
+
+	// The linear FOV at a magnification of 1x
+	UPROPERTY(EditDefaultsOnly, Category = "Sights")
+	float UnmagnifiedLFoV = 200.0f;
+
+	// Dynamic material for scope
+	UPROPERTY(EditDefaultsOnly, Category = "Sights")
+	UMaterialInterface* DynamicMat;
 	
 	// The vertical recoil curve to be used with this magazine
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
@@ -306,6 +322,22 @@ struct FWeaponData : public FTableRowBase
 	// The decrease in FOV of the camera to when aim down sights
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
 	float AimingFOVChange;
+
+	// Whether this weapon has a scope and we need to render a SceneCaptureComponent2D
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	bool bIsScope = false;
+
+	// The Magnification of the scope
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	float ScopeMagnification = 1.0f;
+
+	// The linear FOV at a magnification of 1x
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	float UnmagnifiedLFoV = 200.0f;
+
+	// Dynamic material for scope
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UMaterialInterface* DynamicMat;
 	
 	// The name of the socket which denotes the end of the muzzle (used for gunfire)
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
@@ -462,6 +494,13 @@ public:
 	UFUNCTION()
 	void HandleRecoveryProgress(float value) const;
 
+	float FOVFromMagnification() const;
+
+	void RenderScope() const;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Default")
+	float ScopeFrameRate = 60.0f;
+
 	// Data table reference
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
 	UDataTable* WeaponDataTable;
@@ -509,6 +548,9 @@ public:
 	// The skeletal mesh used to hold the current grip attachment
 	UPROPERTY()
 	USkeletalMeshComponent* GripAttachment;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	USceneCaptureComponent2D* ScopeCaptureComponent;
 	
 	// General
 
@@ -526,6 +568,9 @@ public:
 
 	// The sum of the modifications the attachments make to yaw
 	float WeaponYawModifier;
+
+	// Used to blend between material instance parameters in the scope
+	float ScopeBlendFloat = 1;
 	
 
 	// Line Trace
@@ -573,6 +618,8 @@ public:
 	FTimerHandle AnimationWaitDelay;
 	// The timer used to keep track of how long a reloading animation takes and only assigning variables 
 	FTimerHandle ReloadingDelay;
+	// The timer used for rendering the scope image
+	FTimerHandle ScopeRenderTimer;
 
 	// Recoil
 

@@ -9,6 +9,8 @@
 #include "Math/UnrealMathUtility.h"
 #include "SCharacterController.h"
 #include "SCharacter.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Misc/GeneratedTypeName.h"
 #include "Particles/ParticleSystem.h"
 
 // Sets default values
@@ -41,6 +43,11 @@ ASWeaponBase::ASWeaponBase()
     GripAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GripAttachment"));
     GripAttachment->CastShadow = false;
     GripAttachment->SetupAttachment(RootComponent);
+
+    ScopeCaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ScopeCaptureComponent"));
+    ScopeCaptureComponent->SetupAttachment(RootComponent);
+    ScopeCaptureComponent->bCaptureEveryFrame = false;
+    ScopeCaptureComponent->bCaptureOnMovement = false;
     
     // Default value allowing the weapon to be fired
     bCanFire = true;
@@ -64,6 +71,17 @@ void ASWeaponBase::BeginPlay()
 
     // Getting a reference to the relevant row in the WeaponData DataTable
     WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName(DataTableNameRef), FString(DataTableNameRef), true);
+
+    // Making sure we don't have pop in on the scope texture
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    if (PlayerCharacter->bIsAiming && WeaponData->bIsScope)
+    {
+        ScopeBlendFloat = 0.0f;
+    }
+    else
+    {
+        ScopeBlendFloat = 1.0f;
+    }
 
     /*
      *Setting our default animation values
@@ -171,6 +189,22 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                     VerticalCameraOffset = AttachmentData->VerticalCameraOffset;
                     WeaponData->bAimingFOV = AttachmentData->bAimingFOV;
                     WeaponData->AimingFOVChange = AttachmentData->AimingFOVChange;
+                    WeaponData->bIsScope = AttachmentData->bIsScope;
+                    WeaponData->ScopeMagnification = AttachmentData->ScopeMagnification;
+                    WeaponData->UnmagnifiedLFoV = AttachmentData->UnmagnifiedLFoV;
+                    WeaponData->DynamicMat = AttachmentData->DynamicMat;
+                    if (WeaponData->bIsScope)
+                    {
+                        if (bShowDebug)
+                        {
+                            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::SanitizeFloat(FOVFromMagnification()));
+                        }
+                        ScopeCaptureComponent->FOVAngle = FOVFromMagnification();
+                    }
+                    if (WeaponData->bIsScope)
+                    {
+                        GetWorldTimerManager().SetTimer(ScopeRenderTimer, this, &ASWeaponBase::RenderScope, 1.0f/ScopeFrameRate, true, 0.0f);
+                    }
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
                 {
@@ -566,9 +600,28 @@ void ASWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(WeaponData->DynamicMat, this->GetClass());
+    
     VerticalRecoilTimeline.TickTimeline(DeltaTime);
     HorizontalRecoilTimeline.TickTimeline(DeltaTime);
     RecoilRecoveryTimeline.TickTimeline(DeltaTime);
+    
+    if (WeaponData)
+    {
+        if (WeaponData->bIsScope && PlayerCharacter->bIsAiming)
+        {
+            ScopeBlendFloat = FMath::FInterpConstantTo(ScopeBlendFloat, 0, DeltaTime, 8.0f);
+            DynMaterial->SetScalarParameterValue("Scopeacity", ScopeBlendFloat);
+            SightsAttachment->SetMaterial(1, DynMaterial);
+        }
+        else
+        {
+            ScopeBlendFloat = FMath::FInterpConstantTo(ScopeBlendFloat, 1, DeltaTime, 8.0f);
+            DynMaterial->SetScalarParameterValue("Scopeacity", ScopeBlendFloat);
+            SightsAttachment->SetMaterial(1, DynMaterial);
+        }
+    }
 }
 
 // Recovering the player's recoil to the pre-fired position
@@ -583,3 +636,20 @@ void ASWeaponBase::HandleRecoveryProgress(float value) const
     
     CharacterController->SetControlRotation(NewControlRotation);
 }
+
+// Converts an unmagnified linear FoV and magnification value into a magnified FoV
+float ASWeaponBase::FOVFromMagnification() const
+{
+    return (FMath::RadiansToDegrees(2*(FMath::Atan(((WeaponData->UnmagnifiedLFoV/WeaponData->ScopeMagnification)/2)/100.0f))));
+}
+
+void ASWeaponBase::RenderScope() const
+{
+    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    if (PlayerCharacter->bIsAiming)
+    {
+        ScopeCaptureComponent->CaptureScene();
+    }
+}
+
+

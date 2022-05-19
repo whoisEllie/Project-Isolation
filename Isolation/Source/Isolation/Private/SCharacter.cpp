@@ -600,8 +600,15 @@ FText ASCharacter::GetCurrentWeaponLoadedAmmo() const
 FText ASCharacter::GetCurrentWeaponRemainingAmmo() const
 {
     ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
-    
-    return bIsPrimary? FText::AsNumber(CharacterController->AmmoMap[PrimaryWeaponCacheMap.AmmoType]) : FText::AsNumber(CharacterController->AmmoMap[SecondaryWeaponCacheMap.AmmoType]);
+
+    if (CharacterController)
+    {
+        return bIsPrimary? FText::AsNumber(CharacterController->AmmoMap[PrimaryWeaponCacheMap.AmmoType]) : FText::AsNumber(CharacterController->AmmoMap[SecondaryWeaponCacheMap.AmmoType]);
+    }
+    else
+    {
+        return FText::FromString("No Character Controller found");
+    }
 }
 
 
