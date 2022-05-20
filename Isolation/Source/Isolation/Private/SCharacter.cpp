@@ -153,6 +153,8 @@ void ASCharacter::ScrollWeapon()
 // Built in UE function for moving forward/back
 void ASCharacter::MoveForward(float value)
 {
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("Forward: %f"), value), true);
+   
     ForwardMovement = value;
 	AddMovementInput(GetActorForwardVector() * value);
 }
@@ -160,6 +162,9 @@ void ASCharacter::MoveForward(float value)
 // Built in UE function for moving left/right
 void ASCharacter::MoveRight(float value)
 {
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("Right: %f"), value), true);
+
+
     RightMovement = value;
 	AddMovementInput(GetActorRightVector() * value);
 }
@@ -316,136 +321,134 @@ void ASCharacter::StopSlide()
 void ASCharacter::CheckVault()
 {
     float ForwardVelocity = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
-    if (ForwardVelocity > 0 && !bIsVaulting && GetCharacterMovement()->IsFalling())
+    // When you have a if statement, that end at the end of the function, just invert the statement and call return. Is way faster.
+    if (!(ForwardVelocity > 0 && !bIsVaulting && GetCharacterMovement()->IsFalling())) return;
+
+    // store those for future use.
+    FVector ColliderLocation = GetCapsuleComponent()->GetComponentLocation();
+    FRotator ColliderRotation = GetCapsuleComponent()->GetComponentRotation();
+
+
+    FVector StartLocation = ColliderLocation;
+    FVector EndLocation = ColliderLocation + (UKismetMathLibrary::GetForwardVector(ColliderRotation) * 75);
+    if (bDrawDebug)
     {
-        FVector StartLocation = GetCapsuleComponent()->GetComponentLocation();
-        FVector EndLocation = (GetCapsuleComponent()->GetComponentLocation() + (UKismetMathLibrary::GetForwardVector(GetCapsuleComponent()->GetComponentRotation()) * 75));
+        DrawDebugCapsule(GetWorld(), StartLocation, 50, 30, FQuat::Identity, FColor::Red);
+    }
+
+    FCollisionQueryParams TraceParams;
+    TraceParams.bTraceComplex = true;
+    TraceParams.AddIgnoredActor(this);
+
+    if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50), TraceParams)) return;
+    if (!Hit.bBlockingHit) return;
+
+
+    FVector ForwardImpactPoint = Hit.ImpactPoint;
+    FVector ForwardImpactNormal = Hit.ImpactNormal;
+    FVector CapsuleLocation = ForwardImpactPoint;
+    CapsuleLocation.Z = ColliderLocation.Z;
+    CapsuleLocation += (ForwardImpactNormal * -15);
+
+    StartLocation = CapsuleLocation;
+    StartLocation.Z += 100;
+    EndLocation = CapsuleLocation;
+
+    if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams)) return;
+    if (!GetCharacterMovement()->IsWalkable(Hit)) return;
+
+    FVector SecondaryVaultStartLocation = Hit.ImpactPoint;
+    SecondaryVaultStartLocation.Z += 5;
+    FVector SecondaryVaultEndLocation = SecondaryVaultStartLocation;
+    SecondaryVaultEndLocation.Z = 0;
+
+    if (bDrawDebug)
+    {
+        DrawDebugSphere(GetWorld(), SecondaryVaultStartLocation, 10, 8, FColor::Orange);
+    }
+
+    float InitialTraceHeight = 0;
+    float PreviousTraceHeight = 0;
+    float CurrentTraceHeight = 0;
+    bool bInitialSwitch = false;
+    bool bVaultFailed = true;
+
+    int i;
+
+    FVector forwardAddition = UKismetMathLibrary::GetForwardVector(ColliderRotation) * 5;
+    float calucationHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2;
+    float scaledCapsuleWthoutHemi = GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
+    for (i = 0; i <= VaultTraceAmount; i++)
+    {
+        SecondaryVaultStartLocation += forwardAddition;
+        SecondaryVaultEndLocation += forwardAddition;
+        bVaultFailed = true;
+        if (!GetWorld()->LineTraceSingleByChannel(VaultHit, SecondaryVaultStartLocation, SecondaryVaultEndLocation, ECC_WorldStatic, TraceParams)) continue;
         if (bDrawDebug)
         {
-            DrawDebugCapsule(GetWorld(), StartLocation, 50, 30, FQuat::Identity, FColor::Red);
+            DrawDebugLine(GetWorld(), SecondaryVaultStartLocation, VaultHit.ImpactPoint, FColor::Red, false, 10.0f, 0.0f, 2.0f);
         }
-                FCollisionQueryParams TraceParams;
-        TraceParams.bTraceComplex = true;
-        TraceParams.AddIgnoredActor(this);
 
-        if (GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50), TraceParams))
+        float TraceLength = (SecondaryVaultStartLocation.Z - VaultHit.ImpactPoint.Z);
+        if (!bInitialSwitch)
         {
-            if (Hit.bBlockingHit)
-            {
-                FVector ForwardImpactPoint = Hit.ImpactPoint;
-                FVector ForwardImpactNormal = Hit.ImpactNormal;
-                FVector CapsuleLocation = ForwardImpactPoint;
-                CapsuleLocation.Z = (GetCapsuleComponent()->GetComponentLocation().Z);
-                CapsuleLocation += (ForwardImpactNormal * -15);
-                StartLocation = CapsuleLocation;
-                StartLocation.Z += 100;
-                EndLocation = CapsuleLocation;
-                if (bDrawDebug)
-                {
-                    DrawDebugSphere(GetWorld(), StartLocation, 1, 4, FColor::Blue);
-                }
-                
-                if (GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams))
-                {
-                    if (GetCharacterMovement()->IsWalkable(Hit))
-                    {
-                        FVector SecondaryVaultStartLocation = Hit.ImpactPoint;
-                        SecondaryVaultStartLocation.Z += 5;
-                        if (bDrawDebug)
-                        {
-                            DrawDebugSphere(GetWorld(), SecondaryVaultStartLocation, 10, 8, FColor::Orange);
-                        }
-                        FRotator CacheRotator = GetCapsuleComponent()->GetComponentRotation();
-                        FVector SecondaryVaultEndLocation = SecondaryVaultStartLocation;
-                        SecondaryVaultEndLocation.Z = 0;
-
-                        float InitialTraceHeight = 0;
-                        float PreviousTraceHeight = 0;
-                        float CurrentTraceHeight = 0;
-                        bool bInitialSwitch = false;
-                        bool bVaultFailed = true;
-                        
-                        int i;
-                        for (i = 0; i <= VaultTraceAmount; i++)
-                        {
-                            SecondaryVaultStartLocation += (UKismetMathLibrary::GetForwardVector(CacheRotator) * 5);
-                            SecondaryVaultEndLocation += (UKismetMathLibrary::GetForwardVector(CacheRotator) * 5);
-                            bVaultFailed = true;
-                            if(GetWorld()->LineTraceSingleByChannel(VaultHit, SecondaryVaultStartLocation, SecondaryVaultEndLocation, ECC_WorldStatic, TraceParams))
-                            {
-                                if (bDrawDebug)
-                                {
-                                    DrawDebugLine(GetWorld(), SecondaryVaultStartLocation, VaultHit.ImpactPoint, FColor::Red, false, 10.0f, 0.0f, 2.0f);
-                                }
-
-                                float TraceLength = (SecondaryVaultStartLocation.Z - VaultHit.ImpactPoint.Z);
-                                if (!bInitialSwitch)
-                                {
-                                    InitialTraceHeight = TraceLength;
-                                    bInitialSwitch = true;
-                                }
-                                PreviousTraceHeight = CurrentTraceHeight;
-                                CurrentTraceHeight = TraceLength;
-                                if (!(FMath::IsNearlyEqual(CurrentTraceHeight, InitialTraceHeight, 20.0f)) && CurrentTraceHeight < MaxVaultHeight)
-                                {
-                                    if (FMath::IsNearlyEqual(PreviousTraceHeight, CurrentTraceHeight, 3.0f))
-                                    {
-                                        FVector DownTracePoint = VaultHit.Location;
-                                        DownTracePoint.Z = VaultHit.ImpactPoint.Z;
-                                        //UPrimitiveComponent* hitComponent = hit.Component;
-
-                                        FVector CalculationVector = FVector::ZeroVector;
-                                        CalculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
-                                        DownTracePoint += CalculationVector;
-                                        StartLocation = DownTracePoint;
-                                        StartLocation.Z += (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
-                                        EndLocation = DownTracePoint;
-                                        EndLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
-
-                                        //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
-                                        if (!GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams))
-                                        {
-                                            ForwardImpactNormal.X -= 1;
-                                            ForwardImpactNormal.Y -= 1;
-                                            LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
-                                            bIsVaulting = true;
-                                            Vault(LocalTargetTransform);
-                                            bVaultFailed = false;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (bVaultFailed)
-                        {
-                            FVector DownTracePoint = Hit.Location;
-                            DownTracePoint.Z = Hit.ImpactPoint.Z;
-                            //UPrimitiveComponent* hitComponent = hit.Component;
-
-                            FVector calculationVector = FVector::ZeroVector;
-                            calculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
-                            DownTracePoint += calculationVector;
-                            StartLocation = DownTracePoint;
-                            StartLocation.Z += (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
-                            EndLocation = DownTracePoint;
-                            EndLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
-
-                            //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
-                            if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams))
-                            {
-                                ForwardImpactNormal.X -= 1;
-                                ForwardImpactNormal.Y -= 1;
-                                LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
-                                bIsVaulting = true;
-                                Vault(LocalTargetTransform);
-                            }
-                        }
-                    }
-                }
-            }
+            InitialTraceHeight = TraceLength;
+            bInitialSwitch = true;
         }
+
+        PreviousTraceHeight = CurrentTraceHeight;
+        CurrentTraceHeight = TraceLength;
+        if (!(!(FMath::IsNearlyEqual(CurrentTraceHeight, InitialTraceHeight, 20.0f)) && CurrentTraceHeight < MaxVaultHeight)) continue;
+
+        if (!FMath::IsNearlyEqual(PreviousTraceHeight, CurrentTraceHeight, 3.0f)) continue;
+
+        FVector DownTracePoint = VaultHit.Location;
+        DownTracePoint.Z = VaultHit.ImpactPoint.Z;
+        //UPrimitiveComponent* hitComponent = hit.Component;
+
+        FVector CalculationVector = FVector::ZeroVector;
+        CalculationVector.Z = calucationHeight;
+        DownTracePoint += CalculationVector;
+        StartLocation = DownTracePoint;
+        StartLocation.Z += scaledCapsuleWthoutHemi;
+        EndLocation = DownTracePoint;
+        EndLocation.Z -= scaledCapsuleWthoutHemi;
+
+        //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
+        if (GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams)) continue;
+
+        ForwardImpactNormal.X -= 1;
+        ForwardImpactNormal.Y -= 1;
+        LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
+        bIsVaulting = true;
+        Vault(LocalTargetTransform);
+        bVaultFailed = false;
+        break;
+
     }
+
+    if (!bVaultFailed) return;
+
+    FVector DownTracePoint = Hit.Location;
+    DownTracePoint.Z = Hit.ImpactPoint.Z;
+    //UPrimitiveComponent* hitComponent = hit.Component;
+
+    FVector calculationVector = FVector::ZeroVector;
+    calculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
+    DownTracePoint += calculationVector;
+    StartLocation = DownTracePoint;
+    StartLocation.Z += (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
+    EndLocation = DownTracePoint;
+    EndLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
+
+    //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
+    if (GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams)) return;
+
+    ForwardImpactNormal.X -= 1;
+    ForwardImpactNormal.Y -= 1;
+    LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
+    bIsVaulting = true;
+    Vault(LocalTargetTransform);
 }
 
 void ASCharacter::CheckAngle()
@@ -707,7 +710,7 @@ void ASCharacter::Tick(const float DeltaTime)
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    float TargetFOV = (MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide)? SpeedFOV : DefaultFOV;
+    float TargetFOV = (MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) ? SpeedFOV : DefaultFOV;
     if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)
     {
         TargetFOV = DefaultFOV - CurrentWeapon->WeaponData->AimingFOVChange;
