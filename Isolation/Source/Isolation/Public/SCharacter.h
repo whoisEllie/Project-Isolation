@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SHUDWidget.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
 #include "SCharacter.generated.h"
@@ -204,6 +205,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
 	UAnimSequence* Anim_Sprint;
+
+	UPROPERTY()
+	USHUDWidget* UserWidget;
     
 protected:
 
@@ -295,6 +299,9 @@ protected:
 	// The timeline for vaulting (generated from the curve)
 	FTimeline VaultTimeline;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<USHUDWidget> HUDWidget;	
+	
 	// Hit results for various line traces
 	FHitResult Hit;
 
@@ -329,7 +336,7 @@ protected:
 	
 	// Slide time
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float SlideTime;
+	float SlideTime = 1.0f;
 	
 	// Default FOV
 	float DefaultFOV;
@@ -339,11 +346,11 @@ protected:
 	
 	// change speed for the fov
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float FOVChangeSpeed;
+	float FOVChangeSpeed = 2.0f;
 	
 	// amount for FOV to increase
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float FOVChangeAmount;
+	float FOVChangeAmount = 5.0f;
 	
 	// current angle of floor
 	float FloorAngle;
@@ -353,7 +360,7 @@ protected:
 	
 	// The height of the highest surface that the player can mantle up onto
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float MaxVaultHeight;
+	float MaxVaultHeight = 200.0f;
 	
 	// The forward movement value (used to drive animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
@@ -365,35 +372,35 @@ protected:
 	
 	// The distance at which old weapons spawn during a weapon swap
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float WeaponSpawnDistance;
+	float WeaponSpawnDistance = 100.0f;
 	
 	// The maximum distance in unreal units at which the player can interact with an object
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float InteractDistance;
+	float InteractDistance = 400.0f;
 
 	// Integers
 
 	// amount of traces to draw for vault calculations, to get distance in unreal units, multiply by 5
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	int VaultTraceAmount;
+	int VaultTraceAmount = 25.0f;
 
 	// Variables for movement
 	
 	// The maximum speed of the character when in the sprint state
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float SprintSpeed;
+	float SprintSpeed = 700.0f;
 	
 	// The maximum speed of the character when in the walk state
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float WalkSpeed;
+	float WalkSpeed = 400.0f;
 	
 	// Determines the speed of the character when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float CrouchMovementSpeed;
+	float CrouchMovementSpeed = 250.0f;
 	
 	// Determines the speed of the character when sliding
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float SlideSpeed;
+	float SlideSpeed = 1000.0f;
 	
 	// Vault transforms
 	FTransform LocalTargetTransform;

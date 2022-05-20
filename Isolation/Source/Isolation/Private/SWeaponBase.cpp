@@ -615,7 +615,7 @@ void ASWeaponBase::Tick(float DeltaTime)
             DynMaterial->SetScalarParameterValue("Scopeacity", ScopeBlendFloat);
             SightsAttachment->SetMaterial(1, DynMaterial);
         }
-        else
+        else if (WeaponData->bIsScope)
         {
             ScopeBlendFloat = FMath::FInterpConstantTo(ScopeBlendFloat, 1, DeltaTime, 8.0f);
             DynMaterial->SetScalarParameterValue("Scopeacity", ScopeBlendFloat);
