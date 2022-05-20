@@ -163,8 +163,6 @@ void ASCharacter::ScrollWeapon()
 // Built in UE function for moving forward/back
 void ASCharacter::MoveForward(float value)
 {
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("Forward: %f"), value), true);
-   
     ForwardMovement = value;
 	AddMovementInput(GetActorForwardVector() * value);
 }
@@ -172,9 +170,6 @@ void ASCharacter::MoveForward(float value)
 // Built in UE function for moving left/right
 void ASCharacter::MoveRight(float value)
 {
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::White, FString::Printf(TEXT("Right: %f"), value), true);
-
-
     RightMovement = value;
 	AddMovementInput(GetActorRightVector() * value);
 }
@@ -434,7 +429,6 @@ void ASCharacter::CheckVault()
         Vault(LocalTargetTransform);
         bVaultFailed = false;
         break;
-
     }
 
     if (!bVaultFailed) return;
