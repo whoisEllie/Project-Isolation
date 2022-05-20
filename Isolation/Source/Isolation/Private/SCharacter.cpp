@@ -19,6 +19,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "SWeaponBase.h"
 #include "SWeaponPickup.h"
+#include "Blueprint/UserWidget.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -60,6 +61,15 @@ void ASCharacter::TimelineProgress(float value)
 void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+    if (IsValid(HUDWidget))
+    {
+        UserWidget = Cast<USHUDWidget>(CreateWidget(GetWorld(), HUDWidget));
+        if (UserWidget != nullptr)
+        {
+            UserWidget->AddToViewport();
+        }
+    }
 	
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     DefaultFOV = CameraComp->FieldOfView;
@@ -710,11 +720,14 @@ void ASCharacter::Tick(const float DeltaTime)
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    float TargetFOV = (MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) ? SpeedFOV : DefaultFOV;
-    if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)
+    float TargetFOV = (MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide)? SpeedFOV : DefaultFOV;
+    if (CurrentWeapon)
     {
-        TargetFOV = DefaultFOV - CurrentWeapon->WeaponData->AimingFOVChange;
-        FOVChangeSpeed = 6;
+        if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)
+        {
+            TargetFOV = DefaultFOV - CurrentWeapon->WeaponData->AimingFOVChange;
+            FOVChangeSpeed = 6;
+        }
     }
     //Interpolates between current fov and target fov
     const float InFieldOfView = FMath::FInterpTo(CameraComp->FieldOfView, TargetFOV, DeltaTime, FOVChangeSpeed);
