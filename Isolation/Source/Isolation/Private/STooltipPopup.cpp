@@ -23,7 +23,7 @@ void ASTooltipPopup::BeginPlay()
 	BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &ASTooltipPopup::OnOverlap);
 }
 
-// Generates text from TextData struct
+// Generates text with embedded input button images from TextData struct
 void ASTooltipPopup::GenerateText()
 {
 	FString Result = "";
@@ -42,6 +42,7 @@ void ASTooltipPopup::GenerateText()
 				break;
 
 		case ETextType::KeyInput:
+				OutMappings.Empty();
 				Settings->GetInputSettings()->GetActionMappingByName(FName(*TextStruct.Input), OutMappings);
 				for (FInputActionKeyMapping KeyMapping : OutMappings)
 				{
@@ -83,7 +84,7 @@ void ASTooltipPopup::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Confirmed Playercharacter overlap"));
 			}
 
-			PlayerCharacter->UserWidget->ReceiveInput(TooltipTitle, TooltipDescription);
+			PlayerCharacter->UserWidget->ReceiveTooltipInput(TooltipTitle, TooltipDescription);
 			ShouldDisplay = false;
 			GetWorldTimerManager().SetTimer(DisplayDelayHandle, this, &ASTooltipPopup::ResetDisplay, 30.0f, false, 30.0f);
 		}

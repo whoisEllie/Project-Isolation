@@ -18,6 +18,9 @@ class ISOLATION_API ASCharacterController : public APlayerController
 
 	public:
 
-    UPROPERTY(EditDefaultsOnly, Category = "Variables")
+    UPROPERTY(EditDefaultsOnly, Category = "Inventory")
     TMap<EAmmoType, int32> AmmoMap;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory")
+	int AmmoBoxCount;
 };

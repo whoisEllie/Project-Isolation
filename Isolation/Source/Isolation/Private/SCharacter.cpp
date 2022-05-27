@@ -12,6 +12,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
+#include "SAmmoPickup.h"
 #include "SCharacterController.h"
 #include "SInteractInterface.h"
 #include "Kismet/GameplayStatics.h"
@@ -20,6 +21,7 @@
 #include "SWeaponBase.h"
 #include "SWeaponPickup.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/AudioComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -28,23 +30,30 @@ ASCharacter::ASCharacter()
 	PrimaryActorTick.bCanEverTick = true;
     
     // Spawning the spring arm component
-    SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("springArmComp"));
+    SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComp"));
     SpringArmComp->bUsePawnControlRotation = true;
     SpringArmComp->SetupAttachment(RootComponent);
     
     // Spawning the FPS hands mesh component and attaching it to the spring arm component
-    HandsMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("meshComp"));
+    HandsMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
     HandsMeshComp->CastShadow = false;
     HandsMeshComp->AttachToComponent(SpringArmComp, FAttachmentTransformRules::KeepRelativeTransform);
     
     // Spawning the camera atop the FPS hands mesh
-    CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("cameraComp"));
-    CameraComp->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::KeepRelativeTransform, "cameraSocket");
+    CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
+    CameraComp->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::KeepRelativeTransform, "CameraSocket");
+
+    // Spawning the footstep sound component
+    FootstepAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("FootstepAudioComp"));
+    FootstepAudioComp->SetupAttachment(RootComponent);
+    FootstepAudioComp->bAutoActivate = false;
     
     CrouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
     FinalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
     bIsPrimary = true;
+
+    QueryParams.bReturnPhysicalMaterial = true;
 }
 
 void ASCharacter::TimelineProgress(float value)
@@ -122,9 +131,14 @@ void ASCharacter::InteractionIndicator()
         {
             bCanInteract = true;
             const ASInteractionActor* InteractionActor = Cast<ASInteractionActor>(InteractionHit.GetActor());
+            ASAmmoPickup* AmmoPickup = Cast<ASAmmoPickup>(InteractionHit.GetActor());
             if (InteractionActor)
             {
                 InteractText = InteractionActor->PopupDescription;
+            }
+            else if (AmmoPickup)
+            {
+                InteractText = *AmmoPickup->PickupName.Find(AmmoPickup->AmmoType);
             }
             else
             {
@@ -144,6 +158,28 @@ void ASCharacter::InteractionIndicator()
             }
         }
     }
+}
+
+void ASCharacter::FootstepSounds()
+{
+    const FVector TraceStart = GetActorLocation();
+    FVector TraceEnd = TraceStart;
+    TraceEnd.Z -= 100.0f;
+    
+    if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel3, QueryParams))
+    {
+        FootstepAudioComp->SetIntParameter(FName("floor"), SurfaceMaterialArray.Find(Hit.PhysMaterial.Get()));
+        if (bDrawDebug)
+        {
+            DrawDebugLine(GetWorld(), TraceStart, Hit.Location, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+        }
+    }
+    else if (bDrawDebug)
+    {
+        DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+    }
+
+    FootstepAudioComp->Play();
 }
 
 // Swapping weapons with the scroll wheel

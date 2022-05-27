@@ -208,6 +208,9 @@ public:
 
 	UPROPERTY()
 	USHUDWidget* UserWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UAudioComponent* FootstepAudioComp;
     
 protected:
 
@@ -291,6 +294,17 @@ protected:
 
 	// Displaying the indicator for interaction
 	void InteractionIndicator();
+
+	// Plays footstep sounds, called from animations with anim notify.
+	UFUNCTION(BlueprintCallable)
+	void FootstepSounds();
+
+	// collision parameters for spawning the line trace
+	FCollisionQueryParams QueryParams;
+
+	// Array of physical materials for footsteps
+	UPROPERTY(EditDefaultsOnly, Category = "Footsteps")
+	TArray<UPhysicalMaterial*> SurfaceMaterialArray;
 
 	// The curve for vaulting
 	UPROPERTY(EditAnywhere, Category = "Timeline")

@@ -5,21 +5,28 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 
-void USHUDWidget::ReceiveInput(FText MainText, FText DescriptionText)
+void USHUDWidget::ReceiveTooltipInput(FText MainText, FText DescriptionText)
 {
 	LocalMainText = MainText;
 	LocalDescriptionText = DescriptionText;
-	LocalTime = ReadTime(DescriptionText.ToString()) + 2.0f;
+	TooltipDisplayTime = ReadTime(DescriptionText.ToString()) + 2.0f;
 	
 	if (TooltipVisible)
 	{
 		PlayAnimation(TooltipSlideOut);
-		GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, this, &USHUDWidget::ShowToolTip, 0.35f, false, 0.35f);
+		GetWorld()->GetTimerManager().SetTimer(TooltipDelayTimerHandle, this, &USHUDWidget::ShowToolTip, 0.35f, false, 0.35f);
 	}
 	else
 	{
 		ShowToolTip();
 	}
+}
+
+void USHUDWidget::ShowRepairKitCount()
+{
+	PlayAnimation(RepairKitSlideIn);
+	GetWorld()->GetTimerManager().SetTimer(RepairKitTimerHandle, this, &USHUDWidget::HideRapirKitCount, 5.0f, false, 5.0f);
+
 }
 
 void USHUDWidget::ShowToolTip()
@@ -29,7 +36,7 @@ void USHUDWidget::ShowToolTip()
 	
 	PlayAnimation(TooltipSlideIn);
 
-	GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, this, &USHUDWidget::HideTooltip, LocalTime, false, LocalTime);
+	GetWorld()->GetTimerManager().SetTimer(TooltipDelayTimerHandle, this, &USHUDWidget::HideTooltip, TooltipDisplayTime, false, TooltipDisplayTime);
 
 	TooltipVisible = true;
 }
@@ -38,6 +45,11 @@ void USHUDWidget::HideTooltip()
 {
 	PlayAnimation(TooltipSlideOut);
 	TooltipVisible = false;
+}
+
+void USHUDWidget::HideRapirKitCount()
+{
+	PlayAnimation(RepairKitSlideOut);
 }
 
 float USHUDWidget::ReadTime(FString Text)

@@ -60,6 +60,9 @@ public:
 	// The Map keeping track of all values for the meshes and ammo counts
 	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
 	TMap<EAmmoType, FAmmoTypeData> AmmoData;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
+	TMap<EAmmoType, FText> PickupName;
 	
 	// The enum implementation for what amount of ammunition to spawn 
 	UPROPERTY(EditInstanceOnly, Category = "Properties")

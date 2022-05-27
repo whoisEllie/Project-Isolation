@@ -19,13 +19,19 @@ class ISOLATION_API USHUDWidget : public UUserWidget
 
 public:
 	
-	void ReceiveInput(FText MainText, FText DescriptionText);
+	void ReceiveTooltipInput(FText MainText, FText DescriptionText);
 
 	UPROPERTY(Transient, meta = ( BindWidgetAnim ))
 	UWidgetAnimation* TooltipSlideIn;
 
 	UPROPERTY(Transient, meta = ( BindWidgetAnim ))
 	UWidgetAnimation* TooltipSlideOut;
+
+	UPROPERTY(Transient, meta = ( BindWidgetAnim ))
+	UWidgetAnimation* RepairKitSlideIn;
+	
+	UPROPERTY(Transient, meta = ( BindWidgetAnim ))
+	UWidgetAnimation* RepairKitSlideOut;
 
 	UPROPERTY(Transient, meta = ( BindWidget ))
 	UTextBlock* TooltipTitle;
@@ -37,17 +43,23 @@ public:
 	
 	FText LocalDescriptionText;
 	
-	float LocalTime;
+	float TooltipDisplayTime;
 
 	bool TooltipVisible = false;
 
+	void ShowRepairKitCount();
+
 private:
 
-	FTimerHandle DelayTimerHandle;
+	FTimerHandle TooltipDelayTimerHandle;
+
+	FTimerHandle RepairKitTimerHandle;
 
 	void ShowToolTip();
 	
 	void HideTooltip();
+
+	void HideRapirKitCount();
 
 	float ReadTime(FString Text);
 };
