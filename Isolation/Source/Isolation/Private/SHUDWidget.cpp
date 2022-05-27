@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
+#include "SHUDWidget.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
-#include "SHUDWidget.h"
 
 void USHUDWidget::ReceiveInput(FText MainText, FText DescriptionText)
 {

@@ -4,6 +4,7 @@
 #include "STooltipPopup.h"
 #include "SCharacter.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/InputSettings.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -22,9 +23,52 @@ void ASTooltipPopup::BeginPlay()
 	BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &ASTooltipPopup::OnOverlap);
 }
 
+// Generates text from TextData struct
+void ASTooltipPopup::GenerateText()
+{
+	FString Result = "";
+	const UInputSettings* Settings = const_cast<UInputSettings*>(GetDefault<UInputSettings>());
+
+	TArray<FInputActionKeyMapping> OutMappings;
+	
+	for (FTextStruct TextStruct : TextData)
+	{
+		switch (TextStruct.TextType)
+		{
+			case ETextType::Text:
+				Result.Append(TEXT("<Text>"));
+				Result += TextStruct.Input;
+				Result.Append(TEXT("</>"));
+				break;
+
+		case ETextType::KeyInput:
+				Settings->GetInputSettings()->GetActionMappingByName(FName(*TextStruct.Input), OutMappings);
+				for (FInputActionKeyMapping KeyMapping : OutMappings)
+				{
+					if (KeyConversionMap.Contains(KeyMapping.Key.ToString()))
+					{
+						Result.Append(TEXT("<img id=\""));
+						Result += FString(KeyConversionMap[KeyMapping.Key.ToString()]);
+						Result.Append(TEXT("\"/>"));
+					}
+					else
+					{
+						Result += KeyMapping.Key.ToString();
+					}
+				}
+				break;
+		}
+	}
+
+	TooltipDescription = FText::FromString(Result);
+}
+
+
 void ASTooltipPopup::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
 {
+	GenerateText();
+	
 	if (ShouldDisplay)
 	{
 		if (bShowDebug)

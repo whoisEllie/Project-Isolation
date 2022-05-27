@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/MultiLineEditableTextBox.h"
+#include "Components/RichTextBlock.h"
 #include "Components/TextBlock.h"
 #include "SHUDWidget.generated.h"
 
@@ -30,7 +31,7 @@ public:
 	UTextBlock* TooltipTitle;
 
 	UPROPERTY(Transient, meta = ( BindWidget ))
-	UMultiLineEditableTextBox* TooltipDescription;
+	URichTextBlock* TooltipDescription;
 
 	FText LocalMainText;
 	
