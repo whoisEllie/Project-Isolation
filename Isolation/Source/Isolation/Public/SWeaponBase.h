@@ -188,6 +188,10 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	int ShotgunPellets;
 
+	// The increase in shot variation when the player is not aiming down the sights
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
+	float AccuracyDebuff = 1.25f;
+
 	// An override for the weapon's empty reload animation
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	UAnimationAsset* EmptyWeaponReload;
@@ -390,6 +394,10 @@ struct FWeaponData : public FTableRowBase
 	// The amount of pellets fired
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
 	int ShotgunPellets;
+
+	// The increase in shot variation when the player is not aiming down the sights
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	float AccuracyDebuff = 1.25f;
 
 	// Damage surfaces
 
@@ -639,8 +647,8 @@ public:
 	// The timeline for horizontal recoil (generated from the curve)
 	FTimeline HorizontalRecoilTimeline;
 
-	// The curve for recovery (set from WeaponData)
-	UPROPERTY()
+	// The curve for recovery 
+	UPROPERTY(EditDefaultsOnly, Category = "Recoil")
 	UCurveFloat* RecoveryCurve;
 
 	// The timeline for recover (set from the curve)

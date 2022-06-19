@@ -9,8 +9,8 @@
 #include "Math/UnrealMathUtility.h"
 #include "SCharacterController.h"
 #include "SCharacter.h"
+#include "Camera/CameraComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
-#include "Misc/GeneratedTypeName.h"
 #include "Particles/ParticleSystem.h"
 
 // Sets default values
@@ -22,26 +22,38 @@ ASWeaponBase::ASWeaponBase()
     // Creating our weapon's skeletal mesh, telling it to not cast shadows and finally setting it as the root of the actor
     MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
     MeshComp->CastShadow = false;
+    MeshComp->SetRenderCustomDepth(true);
+    MeshComp->SetCustomDepthStencilValue(2);
     RootComponent = MeshComp;
 
     BarrelAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BarrelAttachment"));
     BarrelAttachment->CastShadow = false;
+    BarrelAttachment->SetRenderCustomDepth(true);
+    BarrelAttachment->SetCustomDepthStencilValue(2);
     BarrelAttachment->SetupAttachment(RootComponent);
 
     MagazineAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MagazineAttachment"));
     MagazineAttachment->CastShadow = false;
+    MagazineAttachment->SetRenderCustomDepth(true);
+    MagazineAttachment->SetCustomDepthStencilValue(2);
     MagazineAttachment->SetupAttachment(RootComponent);
 
     SightsAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SightsAttachment"));
     SightsAttachment->CastShadow = false;
+    SightsAttachment->SetRenderCustomDepth(true);
+    SightsAttachment->SetCustomDepthStencilValue(2);
     SightsAttachment->SetupAttachment(RootComponent);
 
     StockAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("StockAttachment"));
     StockAttachment->CastShadow = false;
+    StockAttachment->SetRenderCustomDepth(true);
+    StockAttachment->SetCustomDepthStencilValue(2);
     StockAttachment->SetupAttachment(RootComponent);
 
     GripAttachment = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GripAttachment"));
     GripAttachment->CastShadow = false;
+    GripAttachment->SetRenderCustomDepth(true);
+    GripAttachment->SetCustomDepthStencilValue(2);
     GripAttachment->SetupAttachment(RootComponent);
 
     ScopeCaptureComponent = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ScopeCaptureComponent"));
@@ -71,6 +83,23 @@ void ASWeaponBase::BeginPlay()
 
     // Getting a reference to the relevant row in the WeaponData DataTable
     WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName(DataTableNameRef), FString(DataTableNameRef), true);
+
+    // if we don't have attachments then we can check to render the scope here
+    if (!WeaponData->bHasAttachments)
+    {
+        if (WeaponData->bIsScope)
+        {
+            if (bShowDebug)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::SanitizeFloat(FOVFromMagnification()));
+            }
+            ScopeCaptureComponent->FOVAngle = FOVFromMagnification();
+        }
+        if (WeaponData->bIsScope)
+        {
+            GetWorldTimerManager().SetTimer(ScopeRenderTimer, this, &ASWeaponBase::RenderScope, 1.0f/ScopeFrameRate, true, 0.0f);
+        }
+    }
 
     // Making sure we don't have pop in on the scope texture
     const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
@@ -182,6 +211,7 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                     WeaponData->EmptyPlayerReload = AttachmentData->EmptyPlayerReload;
                     WeaponData->PlayerReload = AttachmentData->PlayerReload;
                     WeaponData->Gun_Shot = AttachmentData->Gun_Shot;
+                    WeaponData->AccuracyDebuff = AttachmentData->AccuracyDebuff;
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
                 {
@@ -312,21 +342,21 @@ void ASWeaponBase::Fire()
         const int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPellets : 1;
         for (int i = 0; i < NumberOfShots; i++)
         {
-            // Setting up the parameters we need to do a line trace from the muzzle of the gun and calculating the start and end points of the ray trace
-            if (WeaponData->bHasAttachments && BarrelAttachment)
+
+            TraceStart = PlayerCharacter->CameraComp->GetComponentLocation();
+            TraceStartRotation = PlayerCharacter->CameraComp->GetComponentRotation();
+
+            float AccuracyMultiplier = 1.0f;
+            if (!PlayerCharacter->bIsAiming)
             {
-                TraceStart = BarrelAttachment->GetSocketLocation(WeaponData->MuzzleLocation);
-                TraceStartRotation = BarrelAttachment->GetSocketRotation(WeaponData->MuzzleLocation);
+                AccuracyMultiplier = WeaponData->AccuracyDebuff;
             }
-            else
-            {
-                TraceStart = MeshComp->GetSocketLocation(WeaponData->MuzzleLocation);
-                TraceStartRotation = MeshComp->GetSocketRotation(WeaponData->MuzzleLocation);
-            }
-            TraceStartRotation.Pitch += FMath::FRandRange(-(WeaponData->WeaponPitchVariation + WeaponPitchModifier), WeaponData->WeaponPitchVariation + WeaponPitchModifier);
-            TraceStartRotation.Yaw += FMath::FRandRange(-(WeaponData->WeaponYawVariation + WeaponYawModifier), WeaponData->WeaponYawVariation + WeaponYawModifier);
+            
+            TraceStartRotation.Pitch += FMath::FRandRange(-((WeaponData->WeaponPitchVariation + WeaponPitchModifier) * AccuracyMultiplier), (WeaponData->WeaponPitchVariation + WeaponPitchModifier) * AccuracyMultiplier);
+            TraceStartRotation.Yaw += FMath::FRandRange(-((WeaponData->WeaponYawVariation + WeaponYawModifier) * AccuracyMultiplier), (WeaponData->WeaponYawVariation + WeaponYawModifier) * AccuracyMultiplier);
             TraceDirection = TraceStartRotation.Vector();
             TraceEnd = TraceStart + (TraceDirection * (WeaponData->bIsShotgun? WeaponData->ShotgunRange : WeaponData->LengthMultiplier));
+            
 
             // Applying Recoil to the weapon
             Recoil();
@@ -337,13 +367,15 @@ void ASWeaponBase::Fire()
                 MeshComp->PlayAnimation(WeaponData->Gun_Shot, false);
             }
 
+            FVector EndPoint = TraceEnd;
+
             // Drawing a line trace based on the parameters calculated previously 
             if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel1, QueryParams))
             {                
                 // Drawing debug line trace
                 if (bShowDebug)
                 {
-                    DrawDebugLine(GetWorld(), TraceStart, Hit.Location, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                    DrawDebugLine(GetWorld(), (WeaponData->bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData->MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData->MuzzleLocation)), Hit.Location, FColor::Red, false, 10.0f, 0.0f, 2.0f);
                 }
                 
                 // Resetting finalDamage
@@ -361,24 +393,28 @@ void ASWeaponBase::Fire()
 
                 // Applying the previously set damage to the hit actor
                 UGameplayStatics::ApplyPointDamage(HitActor, FinalDamage, TraceDirection, Hit, GetInstigatorController(), this, DamageType);
+
+                EndPoint = Hit.Location;
             }
             else
             {
                 // Drawing debug line trace
                 if (bShowDebug)
                 {
-                    DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                    DrawDebugLine(GetWorld(), (WeaponData->bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData->MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData->MuzzleLocation)), TraceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
                 }
             }
 
+            const FRotator ParticleRotation = (EndPoint - (WeaponData->bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData->MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData->MuzzleLocation))).Rotation();
+            
             // Spawning the bullet trace particle effect
             if (WeaponData->bHasAttachments)
             {
-                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrace, BarrelAttachment->GetSocketLocation(WeaponData->ParticleSpawnLocation), TraceStartRotation);
+                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrace, BarrelAttachment->GetSocketLocation(WeaponData->ParticleSpawnLocation), ParticleRotation);
             }
             else
             {
-                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrace, MeshComp->GetSocketLocation(WeaponData->ParticleSpawnLocation), TraceStartRotation);
+                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrace, MeshComp->GetSocketLocation(WeaponData->ParticleSpawnLocation), ParticleRotation);
             }
 
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
@@ -450,7 +486,7 @@ void ASWeaponBase::Recoil()
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     // Apply recoil
-    if (WeaponData->bAutomaticFire && CharacterController && ShotsFired > 0)
+    if (WeaponData->bAutomaticFire && CharacterController && ShotsFired > 0 && IsValid(VerticalRecoilCurve) && IsValid(HorizontalRecoilCurve))
     {
         CharacterController->AddPitchInput(WeaponData->VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()) * VerticalRecoilModifier);
         CharacterController->AddYawInput(WeaponData->HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()) * HorizontalRecoilModifier);

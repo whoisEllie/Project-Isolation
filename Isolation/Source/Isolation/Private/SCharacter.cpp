@@ -750,7 +750,7 @@ void ASCharacter::Tick(const float DeltaTime)
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > SprintSpeed)? SpeedFOV : DefaultFOV;
+    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? SpeedFOV : DefaultFOV;
     if (CurrentWeapon)
     {
         if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)

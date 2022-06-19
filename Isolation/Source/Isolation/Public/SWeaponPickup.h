@@ -63,7 +63,7 @@ public:
 	FText WeaponName;
 
 	// Main weapon mesh
-	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
 	UStaticMeshComponent* MainMesh;
 
 protected:
