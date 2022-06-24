@@ -48,6 +48,10 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "General")
 	EAttachmentType AttachmentType;
 
+	// Attachments that are incompatible with the given attachment
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "General")
+	TArray<FString> IncompatibleAttachments;
+
 	// The name of the socket with which to override the muzzle 
 	UPROPERTY(EditDefaultsOnly, Category = "Barrel")
 	FName MuzzleLocationOverride;
@@ -207,6 +211,8 @@ struct FAttachmentData : public FTableRowBase
 	// An override for the player's reload animation
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	UAnimMontage* PlayerReload;
+
+	
 };
 
 
@@ -506,6 +512,9 @@ public:
 
 	void RenderScope() const;
 
+	UFUNCTION(BlueprintCallable)
+	void SetShowDebug(bool IsVisible);
+
 	UPROPERTY(EditDefaultsOnly, Category = "Default")
 	float ScopeFrameRate = 60.0f;
 
@@ -527,8 +536,8 @@ public:
 	TArray<FName> AttachmentNameArray;
 	
 	// Debug boolean, toggle for debug strings and line traces to be shown
-	UPROPERTY(EditDefaultsOnly, Category = "Debug")
-	bool bShowDebug;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bShowDebug = false;
 	
 
 	// Components

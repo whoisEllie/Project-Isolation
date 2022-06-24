@@ -91,7 +91,7 @@ public:
     USkeletalMeshComponent* HandsMeshComp;
 	
 	//Camera Comp - component for the FPS camera
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Components")
 	UCameraComponent* CameraComp;
 	
 	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
@@ -258,7 +258,7 @@ protected:
 	void Vault(FTransform TargetTransform);
 	
 	// Global system to update movement speed
-	void UpdateMovementSpeed();
+	void UpdateMovementValues(EMovementState NewMovementState);
 
 	void SwapToPrimary();
 
@@ -383,6 +383,14 @@ protected:
 	// The right movement value (used to drive animations)
 	UPROPERTY(BlueprintReadOnly, Category = "Variables")
 	float RightMovement;
+
+	// The look up value (used to drive procedural weapon sway)
+	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	float MouseY;
+
+	// The right look value (used to drive procedural weapon sway)
+	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	float MouseX;
 	
 	// The distance at which old weapons spawn during a weapon swap
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")

@@ -63,6 +63,10 @@ void ASCharacter::TimelineProgress(float value)
     if (value == 1)
     {
         bIsVaulting = false;
+        if (bHoldingSprint)
+        {
+            UpdateMovementValues(EMovementState::State_Sprint);
+        }
     }
 }
 
@@ -213,6 +217,7 @@ void ASCharacter::MoveRight(float value)
 // Built in UE function for looking up/down
 void ASCharacter::LookUp(float value)
 {
+    MouseX = value;
 	AddControllerPitchInput(value);
     // checking mouse movement for recoil compensation logic
     if (value != 0.0f && CurrentWeapon)
@@ -225,6 +230,7 @@ void ASCharacter::LookUp(float value)
 // Built in UE function for looking left/right
 void ASCharacter::LookRight(float value)
 {
+    MouseY = value;
 	AddControllerYawInput(value);
     // checking mouse movement for recoil compensation logic
     if (value != 0.0f && CurrentWeapon)
@@ -251,8 +257,7 @@ void ASCharacter::StartCrouch()
         }
         else
         {
-            MovementState = EMovementState::State_Crouch;
-            UpdateMovementSpeed();
+            UpdateMovementValues(EMovementState::State_Crouch);
         }
     }
     else if (!bPerformedSlide)
@@ -289,13 +294,12 @@ void ASCharacter::EndCrouch(bool bToSprint)
         //}
         if (bToSprint)
         {
-            MovementState = EMovementState::State_Sprint;
+            UpdateMovementValues(EMovementState::State_Sprint);
         }
         else
         {
-            MovementState = EMovementState::State_Walk;
+            UpdateMovementValues(EMovementState::State_Walk);
         }
-        UpdateMovementSpeed();
     }
 }
 
@@ -305,8 +309,7 @@ void ASCharacter::StartSprint()
     bHoldingSprint = true;
     bPerformedSlide = false;
     // Updates the sprint speed
-    MovementState = EMovementState::State_Sprint;
-    UpdateMovementSpeed();
+    UpdateMovementValues(EMovementState::State_Sprint);
 }
 
 // Stopping to sprint (IE_Released)
@@ -314,22 +317,20 @@ void ASCharacter::StopSprint()
 {
     if (MovementState == EMovementState::State_Slide && bHoldingCrouch)
     {
-        MovementState = EMovementState::State_Crouch;
+        UpdateMovementValues(EMovementState::State_Crouch);
     }
     else
     {
-        MovementState = EMovementState::State_Walk;
+        UpdateMovementValues(EMovementState::State_Walk);
     }
     
     bHoldingSprint = false;
-    UpdateMovementSpeed();
 }
 
 void ASCharacter::StartSlide()
 {
-    MovementState = EMovementState::State_Slide;
     bPerformedSlide = true;
-    UpdateMovementSpeed();
+    UpdateMovementValues(EMovementState::State_Slide);
     GetWorldTimerManager().SetTimer(SlideStop, this, &ASCharacter::StopSlide, SlideTime, false, SlideTime);
 }
 
@@ -343,15 +344,14 @@ void ASCharacter::StopSlide()
         }
         else if (bHoldingCrouch)
         {
-            MovementState = EMovementState::State_Crouch;
+            UpdateMovementValues(EMovementState::State_Crouch);
         }
         else
         {
-            MovementState = EMovementState::State_Walk;
+            UpdateMovementValues(EMovementState::State_Walk);
         }
         bPerformedSlide = false;
         GetWorldTimerManager().ClearTimer(SlideStop);
-        UpdateMovementSpeed();
     }
     else if (FloorAngle < -15.0f)
     {
@@ -518,17 +518,18 @@ void ASCharacter::Vault(const FTransform TargetTransform)
 {
     VaultStartLocation = GetActorTransform();
     VaultEndLocation = TargetTransform;
-    MovementState = EMovementState::State_Vault;
-    UpdateMovementSpeed();
+    UpdateMovementValues(EMovementState::State_Vault);
     HandsMeshComp->GetAnimInstance()->Montage_Play(VaultMontage, 1.0f);
     VaultTimeline.PlayFromStart();
 }
 
 // Function that determines the player's maximum speed and other related variables based on movement state
-void ASCharacter::UpdateMovementSpeed()
+void ASCharacter::UpdateMovementValues(EMovementState NewMovementState)
 {
     bIsSprinting = false;
     bIsCrouching = false;
+
+    MovementState = NewMovementState;
 
     switch (MovementState)
     {

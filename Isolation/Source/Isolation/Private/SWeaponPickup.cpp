@@ -3,6 +3,7 @@
 
 #include "SWeaponPickup.h"
 #include "SWeaponBase.h"
+#include "func_lib/SAttachmentRandomiser.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values

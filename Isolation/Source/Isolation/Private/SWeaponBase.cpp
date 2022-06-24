@@ -627,7 +627,13 @@ void ASWeaponBase::UpdateAmmo()
 
     // Resetting bIsReloading and allowing the player to fire the gun again
     bIsReloading = false;
-    EnableFire();
+    
+
+    // Making sure the player cannot fire if sprinting
+    if (!(PlayerCharacter->MovementState == EMovementState::State_Sprint) && !(PlayerCharacter->MovementState == EMovementState::State_Slide))
+    {
+        EnableFire();
+    }
 }
 
 
@@ -686,6 +692,11 @@ void ASWeaponBase::RenderScope() const
     {
         ScopeCaptureComponent->CaptureScene();
     }
+}
+
+void ASWeaponBase::SetShowDebug(bool IsVisible)
+{
+    bShowDebug = IsVisible;
 }
 
 
