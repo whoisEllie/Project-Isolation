@@ -2,8 +2,6 @@
 
 
 #include "func_lib/SAttachmentRandomiser.h"
-
-#include "LocalFileNetworkReplayStreaming/Public/LocalFileNetworkReplayStreaming.h"
 #include "Math/UnrealMathUtility.h"
 
 // Sets default values
@@ -13,7 +11,6 @@ ASAttachmentRandomiser::ASAttachmentRandomiser()
 
 TArray<FName> ASAttachmentRandomiser::RandomiseAllAttachments(UDataTable* AttachmentDataTable)
 {
-
 	// Sorting attachments by type
 	TArray<FString> BarrelAttachments;
 	TArray<FString> MagazineAttachments;
@@ -98,7 +95,7 @@ TArray<FName> ASAttachmentRandomiser::ReplaceAttachment(UDataTable* AttachmentDa
 
 			if (CurrentAttachments.Contains(RowKey))
 			{
-				if (!TypesToReplace.Contains("Barrel"))
+				if (!TypesToReplace.Contains(EAttachmentType::Barrel))
 				{
 					TypesToReplace.Add(EAttachmentType::Barrel);
 				}
@@ -111,7 +108,7 @@ TArray<FName> ASAttachmentRandomiser::ReplaceAttachment(UDataTable* AttachmentDa
 
 			if (CurrentAttachments.Contains(RowKey))
 			{
-				if (!TypesToReplace.Contains("Magazine"))
+				if (!TypesToReplace.Contains(EAttachmentType::Magazine))
 				{
 					TypesToReplace.Add(EAttachmentType::Magazine);
 				}
@@ -124,7 +121,7 @@ TArray<FName> ASAttachmentRandomiser::ReplaceAttachment(UDataTable* AttachmentDa
 
 			if (CurrentAttachments.Contains(RowKey))
 			{
-				if (!TypesToReplace.Contains("Sights"))
+				if (!TypesToReplace.Contains(EAttachmentType::Sights))
 				{
 					TypesToReplace.Add(EAttachmentType::Sights);
 				}
@@ -137,7 +134,7 @@ TArray<FName> ASAttachmentRandomiser::ReplaceAttachment(UDataTable* AttachmentDa
 
 			if (CurrentAttachments.Contains(RowKey))
 			{
-				if (!TypesToReplace.Contains("Stock"))
+				if (!TypesToReplace.Contains(EAttachmentType::Stock))
 				{
 					TypesToReplace.Add(EAttachmentType::Stock);
 				}
@@ -150,7 +147,7 @@ TArray<FName> ASAttachmentRandomiser::ReplaceAttachment(UDataTable* AttachmentDa
 
 			if (CurrentAttachments.Contains(RowKey))
 			{
-				if (!TypesToReplace.Contains("Grip"))
+				if (!TypesToReplace.Contains(EAttachmentType::Grip))
 				{
 					TypesToReplace.Add(EAttachmentType::Grip);
 				}
@@ -167,20 +164,20 @@ TArray<FName> ASAttachmentRandomiser::ReplaceAttachment(UDataTable* AttachmentDa
 	// Creating the temp array and populating it with the remaining attachments
 	TArray<FName> TempArray = CurrentAttachments;
 	
-	switch(TypesToReplace)
+	/*switch(TypesToReplace)
 	{
-	case EAttachmentType::Barrel:
-		TempArray.Add(FName(*BarrelAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
-	case EAttachmentType::Magazine:
-		TempArray.Add(FName(*MagazineAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
-	case EAttachmentType::Sights:
-		TempArray.Add(FName(*SightsAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
-	case EAttachmentType::Stock:
-		TempArray.Add(FName(*StockAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
-	case EAttachmentType::Grip:
-		TempArray.Add(FName(*GripAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
-	default: break;
-	}
+		case EAttachmentType::Barrel:
+			TempArray.Add(FName(*BarrelAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
+		case EAttachmentType::Magazine:
+			TempArray.Add(FName(*MagazineAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
+		case EAttachmentType::Sights:
+			TempArray.Add(FName(*SightsAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
+		case EAttachmentType::Stock:
+			TempArray.Add(FName(*StockAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
+		case EAttachmentType::Grip:
+			TempArray.Add(FName(*GripAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
+		default: break;
+	}*/
 	
 	return TempArray;
 }
@@ -196,4 +193,3 @@ TArray<FString> ASAttachmentRandomiser::GetDataTableKeyColumnAsString(UDataTable
 		
 	return RowAggregate;
 }
-

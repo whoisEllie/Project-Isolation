@@ -21,6 +21,7 @@
 #include "SWeaponBase.h"
 #include "SWeaponPickup.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/KismetMaterialLibrary.h"
 #include "Components/AudioComponent.h"
 
 // Sets default values
@@ -804,6 +805,26 @@ void ASCharacter::Tick(const float DeltaTime)
     }
     
     InteractionIndicator();
+
+
+    //Updating material parameters for    
+
+    if (CurrentWeapon)
+    {
+        if (CurrentWeapon->WeaponData)
+        {
+            if (bIsAiming)
+            {
+                ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 1, DeltaTime, 8.0f);
+                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection, OpacityParameterName,ScopeBlend);
+            }
+            else
+            {
+                ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 0, DeltaTime, 8.0f);
+                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection, OpacityParameterName,ScopeBlend);
+            }
+        }
+    }
 }
 
 // Called to bind functionality to input

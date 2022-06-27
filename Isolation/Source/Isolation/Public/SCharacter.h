@@ -211,6 +211,15 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	UAudioComponent* FootstepAudioComp;
+
+	// keeps track of the opacity of scopes
+	float ScopeBlend;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Materials")
+	UMaterialParameterCollection* ScopeOpacityParameterCollection;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Materials")
+	FName OpacityParameterName;
     
 protected:
 

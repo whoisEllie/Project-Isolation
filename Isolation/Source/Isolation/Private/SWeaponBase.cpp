@@ -75,6 +75,9 @@ ASWeaponBase::ASWeaponBase()
 void ASWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+    // Making sure you can't see barrel tips in the scope
+    ScopeCaptureComponent->HiddenActors.Add(this);
     
     //Sets the default values for our trace query
 	QueryParams.AddIgnoredActor(this);
@@ -99,17 +102,6 @@ void ASWeaponBase::BeginPlay()
         {
             GetWorldTimerManager().SetTimer(ScopeRenderTimer, this, &ASWeaponBase::RenderScope, 1.0f/ScopeFrameRate, true, 0.0f);
         }
-    }
-
-    // Making sure we don't have pop in on the scope texture
-    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-    if (PlayerCharacter->bIsAiming && WeaponData->bIsScope)
-    {
-        ScopeBlendFloat = 0.0f;
-    }
-    else
-    {
-        ScopeBlendFloat = 1.0f;
     }
 
     /*
@@ -222,7 +214,6 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                     WeaponData->bIsScope = AttachmentData->bIsScope;
                     WeaponData->ScopeMagnification = AttachmentData->ScopeMagnification;
                     WeaponData->UnmagnifiedLFoV = AttachmentData->UnmagnifiedLFoV;
-                    WeaponData->DynamicMat = AttachmentData->DynamicMat;
                     if (WeaponData->bIsScope)
                     {
                         if (bShowDebug)
@@ -641,29 +632,10 @@ void ASWeaponBase::UpdateAmmo()
 void ASWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-    const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-    UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(WeaponData->DynamicMat, this->GetClass());
-    
+        
     VerticalRecoilTimeline.TickTimeline(DeltaTime);
     HorizontalRecoilTimeline.TickTimeline(DeltaTime);
     RecoilRecoveryTimeline.TickTimeline(DeltaTime);
-    
-    if (WeaponData)
-    {
-        if (WeaponData->bIsScope && PlayerCharacter->bIsAiming)
-        {
-            ScopeBlendFloat = FMath::FInterpConstantTo(ScopeBlendFloat, 0, DeltaTime, 8.0f);
-            DynMaterial->SetScalarParameterValue("Scopeacity", ScopeBlendFloat);
-            SightsAttachment->SetMaterial(1, DynMaterial);
-        }
-        else if (WeaponData->bIsScope)
-        {
-            ScopeBlendFloat = FMath::FInterpConstantTo(ScopeBlendFloat, 1, DeltaTime, 8.0f);
-            DynMaterial->SetScalarParameterValue("Scopeacity", ScopeBlendFloat);
-            SightsAttachment->SetMaterial(1, DynMaterial);
-        }
-    }
 }
 
 // Recovering the player's recoil to the pre-fired position

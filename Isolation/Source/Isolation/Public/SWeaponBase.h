@@ -155,10 +155,6 @@ struct FAttachmentData : public FTableRowBase
 	// The linear FOV at a magnification of 1x
 	UPROPERTY(EditDefaultsOnly, Category = "Sights")
 	float UnmagnifiedLFoV = 200.0f;
-
-	// Dynamic material for scope
-	UPROPERTY(EditDefaultsOnly, Category = "Sights")
-	UMaterialInterface* DynamicMat;
 	
 	// The vertical recoil curve to be used with this magazine
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
@@ -344,10 +340,6 @@ struct FWeaponData : public FTableRowBase
 	// The linear FOV at a magnification of 1x
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
 	float UnmagnifiedLFoV = 200.0f;
-
-	// Dynamic material for scope
-	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
-	UMaterialInterface* DynamicMat;
 	
 	// The name of the socket which denotes the end of the muzzle (used for gunfire)
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
@@ -585,9 +577,6 @@ public:
 
 	// The sum of the modifications the attachments make to yaw
 	float WeaponYawModifier;
-
-	// Used to blend between material instance parameters in the scope
-	float ScopeBlendFloat = 1;
 	
 
 	// Line Trace
