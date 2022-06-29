@@ -361,11 +361,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float SlideTime = 1.0f;
 	
-	// Default FOV
-	float DefaultFOV;
-	
-	// target FOV
-	float SpeedFOV;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
+	float BaseFOV;
 	
 	// change speed for the fov
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")

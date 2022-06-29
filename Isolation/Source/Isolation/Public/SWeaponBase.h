@@ -208,6 +208,9 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine")
 	UAnimMontage* PlayerReload;
 
+	// Unequip animation for the current weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Grip")
+	UAnimMontage* WeaponEquip;
 	
 };
 
@@ -302,6 +305,14 @@ struct FWeaponData : public FTableRowBase
 	// The shooting animation for the weapon itself (bolt shooting back/forward)
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
 	UAnimSequence* Gun_Shot;
+	
+	// An override for the player's reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimMontage* WeaponEquip;
+
+	// An override for the player's reload animation
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
+	UAnimMontage* WeaponUnequip;
 
 	// Firing Mechanisms
 
@@ -683,6 +694,9 @@ public:
 	float VerticalCameraOffset;
 	
 	// Local instances of animations for use in AnimBP (Set from WeaponData and/or Attachments)
+
+	UPROPERTY()
+	UAnimMontage* WeaponEquip;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Animations")
 	UBlendSpace* WalkBlendSpace;

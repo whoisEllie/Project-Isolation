@@ -86,8 +86,7 @@ void ASCharacter::BeginPlay()
     }
 	
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-    DefaultFOV = CameraComp->FieldOfView;
-    SpeedFOV = DefaultFOV + FOVChangeAmount;
+    BaseFOV = CameraComp->FieldOfView;
 
     if (CurveFloat)
     {
@@ -668,6 +667,14 @@ void ASCharacter::SwapToPrimary()
         // Spawning attachments based on the local cache map
         CurrentWeapon->SpawnAttachments(PrimaryWeaponCacheMap.WeaponAttachments);
 
+        if (CurrentWeapon)
+        {
+            if (CurrentWeapon->WeaponData->WeaponEquip)
+            {
+                HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
+            }
+        }
+
         if (bDrawDebug)
         {
             for (const FName Attachment: PrimaryWeaponCacheMap.WeaponAttachments)
@@ -689,6 +696,14 @@ void ASCharacter::SwapToSecondary()
 
         // Spawning attachments based on the local cache map
         CurrentWeapon->SpawnAttachments(SecondaryWeaponCacheMap.WeaponAttachments);
+
+        if (CurrentWeapon)
+        {
+            if (CurrentWeapon->WeaponData->WeaponEquip)
+            {
+                HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
+            }
+        }
 
         if (bDrawDebug)
         {
@@ -752,12 +767,12 @@ void ASCharacter::Tick(const float DeltaTime)
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? SpeedFOV : DefaultFOV;
+    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? (BaseFOV + FOVChangeAmount) : BaseFOV;
     if (CurrentWeapon)
     {
         if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)
         {
-            TargetFOV = DefaultFOV - CurrentWeapon->WeaponData->AimingFOVChange;
+            TargetFOV = BaseFOV - CurrentWeapon->WeaponData->AimingFOVChange;
             FOVChangeSpeed = 6;
         }
     }

@@ -181,6 +181,14 @@ void ASWeaponPickup::Interact()
 		}
 	}
 
+	if (PlayerCharacter->CurrentWeapon)
+	{
+		if (PlayerCharacter->CurrentWeapon->WeaponData->WeaponEquip)
+		{
+			PlayerCharacter->HandsMeshComp->GetAnimInstance()->Montage_Play(PlayerCharacter->CurrentWeapon->WeaponEquip, 1.0f);
+		}
+	}
+
 	// Destroying the pickup
 	Destroy();
 }

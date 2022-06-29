@@ -110,6 +110,10 @@ void ASWeaponBase::BeginPlay()
      */
     if (WeaponData)
     {
+        if (WeaponData->WeaponEquip)
+        {
+            WeaponEquip = WeaponData->WeaponEquip;
+        }
         if (WeaponData->BS_Walk)
         {
             WalkBlendSpace = WeaponData->BS_Walk;
@@ -165,7 +169,7 @@ void ASWeaponBase::BeginPlay()
 void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
 {
     if (WeaponData->bHasAttachments)
-    {
+    {        
         for (FName RowName : AttachmentsArray)
         {
             AttachmentData = WeaponData->AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
@@ -234,6 +238,10 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                 else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
                 {
                     GripAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                    if (AttachmentData->WeaponEquip)
+                    {
+                        WeaponEquip = AttachmentData->WeaponEquip;
+                    }
                     if (AttachmentData->BS_Walk)
                     {
                         WalkBlendSpace = AttachmentData->BS_Walk;
