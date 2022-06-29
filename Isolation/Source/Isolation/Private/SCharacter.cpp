@@ -23,6 +23,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Components/AudioComponent.h"
+#include "GameFramework/InputSettings.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -86,8 +87,7 @@ void ASCharacter::BeginPlay()
     }
 	
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-    DefaultFOV = CameraComp->FieldOfView;
-    SpeedFOV = DefaultFOV + FOVChangeAmount;
+    BaseFOV = CameraComp->FieldOfView;
 
     if (CurveFloat)
     {
@@ -187,16 +187,30 @@ void ASCharacter::FootstepSounds()
     FootstepAudioComp->Play();
 }
 
+void ASCharacter::SwapToPrimary()
+{
+    UpdateWeapon(PrimaryWeapon, false, SecondaryWeaponCacheMap, PrimaryWeaponCacheMap,
+    false, FTransform::Identity, true);
+}
+
+void ASCharacter::SwapToSecondary()
+{
+    UpdateWeapon(SecondaryWeapon, false, PrimaryWeaponCacheMap, SecondaryWeaponCacheMap,
+    false, FTransform::Identity, false);
+}
+
 // Swapping weapons with the scroll wheel
 void ASCharacter::ScrollWeapon()
 {
     if (bIsPrimary)
     {
-        SwapToSecondary();
+        UpdateWeapon(SecondaryWeapon, false, PrimaryWeaponCacheMap, SecondaryWeaponCacheMap,
+    false, FTransform::Identity, false);
     }
     else
     {
-        SwapToPrimary();
+        UpdateWeapon(PrimaryWeapon, false, SecondaryWeaponCacheMap, PrimaryWeaponCacheMap,
+    false, FTransform::Identity, true);
     }
 }
 
@@ -592,10 +606,45 @@ void ASCharacter::UpdateMovementValues(EMovementState NewMovementState)
     }
 }
 
-// Spawns a new weapon (either from weapon swap or picking up a new weapon)
-void ASCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const bool bSpawnPickup,
-                               const FWeaponDataStruct OldDataStruct, const bool bStatic, const FTransform PickupTransform)
+
+void ASCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct CurrentWeaponDataStruct, FWeaponDataStruct NewWeaponDataStruct,
+    bool bStatic, FTransform PickupTransform, bool bIsPrimaryWeapon)
 {
+    
+    if (bIsPrimary == bIsPrimaryWeapon/* || (bIsPrimaryWeapon && !PrimaryWeapon) || (!bIsPrimaryWeapon && !SecondaryWeapon)*/)
+    {
+        return;
+    }
+    
+    if (CurrentWeapon)
+    {
+        if (IsValid(CurrentWeapon->WeaponData->WeaponUnequip))
+        {
+            // Calculating the animtime and playing the animation
+            const float AnimTime = HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponData->WeaponUnequip);
+
+            // Constructing the timer delegate
+            FTimerDelegate TimerDelegate;
+            TimerDelegate.BindUFunction(this, FName("SpawnNewWeapon"), NewWeapon, bSpawnPickup, CurrentWeaponDataStruct, NewWeaponDataStruct, bStatic, PickupTransform, bIsPrimaryWeapon);
+
+            // Setting the timer
+            GetWorldTimerManager().SetTimer(WeaponEquip, TimerDelegate, AnimTime, false);
+        }
+        else
+        {
+            SpawnNewWeapon(NewWeapon, bSpawnPickup, CurrentWeaponDataStruct, NewWeaponDataStruct, bStatic, PickupTransform, bIsPrimaryWeapon);
+        }
+    }
+    else
+    {
+        SpawnNewWeapon(NewWeapon, bSpawnPickup, CurrentWeaponDataStruct, NewWeaponDataStruct, bStatic, PickupTransform, bIsPrimaryWeapon);
+    }
+}
+
+// Spawns a new weapon (either from weapon swap or picking up a new weapon)
+void ASCharacter::SpawnNewWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup,
+                               FWeaponDataStruct CurrentWeaponDataStruct, FWeaponDataStruct NewWeaponDataStruct, bool bStatic, FTransform PickupTransform, bool bIsPrimaryWeapon)
+{    
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
     SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -620,86 +669,38 @@ void ASCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const 
             NewPickup->bStatic = bStatic;
             NewPickup->bRuntimeSpawned = true;
             NewPickup->WeaponReference = CurrentWeapon->GetClass();
-            NewPickup->DataStruct = OldDataStruct;
-            NewPickup->AttachmentArray = OldDataStruct.WeaponAttachments;
+            NewPickup->DataStruct = CurrentWeaponDataStruct;
+            NewPickup->AttachmentArray = CurrentWeaponDataStruct.WeaponAttachments;
             NewPickup->SpawnAttachmentMesh();
         }
-        
-        // Destroys the current weapon, if it exists
+    }
+
+
+    if (CurrentWeapon)
+    {
         CurrentWeapon->K2_DestroyActor();
     }
+
     // Spawns the new weapon and sets the player as it's owner
     CurrentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
     if (CurrentWeapon)
     {
         CurrentWeapon->SetOwner(this);
         CurrentWeapon->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->WeaponData->WeaponAttachmentSocketName);
-    }
-}
 
-FText ASCharacter::GetCurrentWeaponLoadedAmmo() const
-{
-    return bIsPrimary? FText::AsNumber(PrimaryWeaponCacheMap.ClipSize) : FText::AsNumber(SecondaryWeaponCacheMap.ClipSize);
-}
+        CurrentWeapon->SpawnAttachments(NewWeaponDataStruct.WeaponAttachments);
+        
 
-FText ASCharacter::GetCurrentWeaponRemainingAmmo() const
-{
-    ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
-
-    if (CharacterController)
-    {
-        return bIsPrimary? FText::AsNumber(CharacterController->AmmoMap[PrimaryWeaponCacheMap.AmmoType]) : FText::AsNumber(CharacterController->AmmoMap[SecondaryWeaponCacheMap.AmmoType]);
-    }
-    else
-    {
-        return FText::FromString("No Character Controller found");
-    }
-}
-
-
-// Spawning and equipping the primary weapon 
-void ASCharacter::SwapToPrimary()
-{
-    if (PrimaryWeapon && !bIsPrimary && !CurrentWeapon->bIsReloading)
-    {
-        // Calling UpdateWeapon with relevant variables
-        UpdateWeapon(PrimaryWeapon, false, SecondaryWeaponCacheMap, false, FTransform::Identity);
-
-        // Spawning attachments based on the local cache map
-        CurrentWeapon->SpawnAttachments(PrimaryWeaponCacheMap.WeaponAttachments);
-
-        if (bDrawDebug)
-        {
-            for (const FName Attachment: PrimaryWeaponCacheMap.WeaponAttachments)
-            {
-                GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, Attachment.ToString());
-            }
+        if (IsValid(CurrentWeapon->WeaponData->WeaponEquip))
+        {        
+            HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponData->WeaponEquip, 1.0f);
         }
-        bIsPrimary = true;
     }
+
+    this->bIsPrimary = bIsPrimaryWeapon;
 }
 
-// Spawning and equipping the secondary weapon
-void ASCharacter::SwapToSecondary()
-{
-    if (SecondaryWeapon && bIsPrimary && !CurrentWeapon->bIsReloading)
-    {
-        // Calling UpdateWeapon with relevant variables
-        UpdateWeapon(SecondaryWeapon, false, PrimaryWeaponCacheMap, false, FTransform::Identity);
 
-        // Spawning attachments based on the local cache map
-        CurrentWeapon->SpawnAttachments(SecondaryWeaponCacheMap.WeaponAttachments);
-
-        if (bDrawDebug)
-        {
-            for (const FName Attachment: SecondaryWeaponCacheMap.WeaponAttachments)
-            {
-                GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, Attachment.ToString());
-            }
-        }
-        bIsPrimary = false;
-    }
-}
 
 // Passing player inputs to SWeaponBase
 void ASCharacter::StartFire()
@@ -738,6 +739,25 @@ void ASCharacter::StopADS()
     bWantsToAim = false;
 }
 
+FText ASCharacter::GetCurrentWeaponLoadedAmmo() const
+{
+    return bIsPrimary? FText::AsNumber(PrimaryWeaponCacheMap.ClipSize) : FText::AsNumber(SecondaryWeaponCacheMap.ClipSize);
+}
+
+FText ASCharacter::GetCurrentWeaponRemainingAmmo() const
+{
+    ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
+
+    if (CharacterController)
+    {
+        return bIsPrimary? FText::AsNumber(CharacterController->AmmoMap[PrimaryWeaponCacheMap.AmmoType]) : FText::AsNumber(CharacterController->AmmoMap[SecondaryWeaponCacheMap.AmmoType]);
+    }
+    else
+    {
+        return FText::FromString("No Character Controller found");
+    }
+}
+
 // Called every frame
 void ASCharacter::Tick(const float DeltaTime)
 {
@@ -752,12 +772,12 @@ void ASCharacter::Tick(const float DeltaTime)
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
 
     // FOV adjustments
-    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? SpeedFOV : DefaultFOV;
+    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? (BaseFOV + FOVChangeAmount) : BaseFOV;
     if (CurrentWeapon)
     {
         if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)
         {
-            TargetFOV = DefaultFOV - CurrentWeapon->WeaponData->AimingFOVChange;
+            TargetFOV = BaseFOV - CurrentWeapon->WeaponData->AimingFOVChange;
             FOVChangeSpeed = 6;
         }
     }
@@ -852,9 +872,18 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASCharacter::Jump);
 
     // Weapon swap
-    PlayerInputComponent->BindAction("PrimaryWeapon", IE_Pressed, this, &ASCharacter::SwapToPrimary);
-    PlayerInputComponent->BindAction("SecondaryWeapon", IE_Pressed, this, &ASCharacter::SwapToSecondary);
+    //DECLARE_DELEGATE_SevenParams(FWeaponSwapDelegate, TSubclassOf<ASWeaponBase>&, bool, FWeaponDataStruct&, FWeaponDataStruct&, bool, FTransform, bool);
 
+    //PlayerInputComponent->BindAction<FWeaponSwapDelegate>("PrimaryWeapon", IE_Pressed, this, &ASCharacter::UpdateWeapon, PrimaryWeapon, false, SecondaryWeaponCacheMap, PrimaryWeaponCacheMap,
+    //false, FTransform::Identity, true);
+
+    //PlayerInputComponent->BindAction<FWeaponSwapDelegate>("SecondaryWeapon", IE_Pressed, this, &ASCharacter::UpdateWeapon, SecondaryWeapon, false, PrimaryWeaponCacheMap, SecondaryWeaponCacheMap,
+    //false, FTransform::Identity, false);
+
+    PlayerInputComponent->BindAction("PrimaryWeapon", IE_Pressed, this, &ASCharacter::SwapToPrimary);
+
+    PlayerInputComponent->BindAction("SecondaryWeapon", IE_Pressed, this, &ASCharacter::SwapToSecondary);
+    
     // Firing
     PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::StartFire);
     PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASCharacter::StopFire);

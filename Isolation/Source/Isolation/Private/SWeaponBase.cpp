@@ -234,6 +234,8 @@ void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
                 else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
                 {
                     GripAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
+                    WeaponData->WeaponUnequip = AttachmentData->WeaponUnequip;
+                    WeaponData->WeaponEquip = AttachmentData->WeaponEquip;
                     if (AttachmentData->BS_Walk)
                     {
                         WalkBlendSpace = AttachmentData->BS_Walk;

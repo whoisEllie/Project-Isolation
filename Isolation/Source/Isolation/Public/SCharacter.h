@@ -74,7 +74,10 @@ public:
 	ASCharacter();
 
 	// Switching to a new weapon
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct, bool bStatic, FTransform PickupTransform);
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct CurrentWeaponDataStruct, FWeaponDataStruct NewWeaponDataStruct, bool bStatic, FTransform PickupTransform, bool bIsPrimaryWeapon);
+
+	UFUNCTION()
+	void SpawnNewWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct CurrentWeaponDataStruct, FWeaponDataStruct NewWeaponDataStruct, bool bStatic, FTransform PickupTransform, bool bIsPrimaryWeapon);
 
 	// Functions for UI
 	// Get the amount of ammunition currently loaded into the weapon
@@ -106,6 +109,8 @@ public:
 	// A reference to the player's current secondary weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASWeaponBase> SecondaryWeapon;
+
+	TSubclassOf<ASWeaponBase> NewWeaponCache;
 	
 	// The player's currently equipped weapon
 	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
@@ -269,9 +274,7 @@ protected:
 	// Global system to update movement speed
 	void UpdateMovementValues(EMovementState NewMovementState);
 
-	void SwapToPrimary();
-
-	void SwapToSecondary();
+	void Test(float test);
 	
 	// Changing the weapon with the scroll wheel
 	void ScrollWeapon();
@@ -308,6 +311,12 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void FootstepSounds();
 
+	// These two have to exist because there is no conceivable way of handling dynamic arguments with UE's input system
+	void SwapToPrimary();
+
+	void SwapToSecondary();
+
+	
 	// collision parameters for spawning the line trace
 	FCollisionQueryParams QueryParams;
 
@@ -362,10 +371,8 @@ protected:
 	float SlideTime = 1.0f;
 	
 	// Default FOV
-	float DefaultFOV;
-	
-	// target FOV
-	float SpeedFOV;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
+	float BaseFOV;
 	
 	// change speed for the fov
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
@@ -438,6 +445,8 @@ protected:
 
 	// Timer managers
 	FTimerHandle SlideStop;
+
+	FTimerHandle WeaponEquip;
     
 public:	
 	// Called every frame
