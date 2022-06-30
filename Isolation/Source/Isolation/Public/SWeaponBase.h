@@ -50,7 +50,7 @@ struct FAttachmentData : public FTableRowBase
 
 	// Attachments that are incompatible with the given attachment
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "General")
-	TArray<FString> IncompatibleAttachments;
+	TArray<FName> IncompatibleAttachments;
 
 	// The name of the socket with which to override the muzzle 
 	UPROPERTY(EditDefaultsOnly, Category = "Barrel")

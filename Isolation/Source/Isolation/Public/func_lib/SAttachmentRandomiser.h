@@ -14,11 +14,11 @@ class ISOLATION_API ASAttachmentRandomiser : public AActor
 	
 public:	
 	// Sets default values for this actor's properties
-	ASAttachmentRandomiser();
-
+	
 	TArray<FName> RandomiseAllAttachments(UDataTable* AttachmentDataTable);
 
-	TArray<FName> ReplaceAttachment(UDataTable* AttachmentDataTable, TArray<FName> AttachmentsToReplace, TArray<FName> CurrentAttachments);
+	UFUNCTION(BlueprintCallable)
+	TArray<FName> ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments);
 
 	static TArray<FString> GetDataTableKeyColumnAsString(UDataTable* DataTable);
 };
