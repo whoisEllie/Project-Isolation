@@ -126,12 +126,12 @@ void ASWeaponPickup::Interact()
 
 	// Swapping weapons based on different situations
 	
-	// If the player has no weapons or only a secondary weapon
+	// If the player has no weapons or only a primary weapon
 	if ((PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon == nullptr) || (PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon != nullptr))
 	{
 		PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
 		
-		PlayerCharacter->SpawnNewWeapon(WeaponReference, false, DataStruct, PlayerCharacter->PrimaryWeaponCacheMap, bStatic, FTransform::Identity, true);
+		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct, bStatic, FTransform::Identity);
 		if (PlayerCharacter->CurrentWeapon)
 		{
 			PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->PrimaryWeaponCacheMap.WeaponAttachments);
@@ -144,7 +144,7 @@ void ASWeaponPickup::Interact()
 	{
 		PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
 		
-		PlayerCharacter->SpawnNewWeapon(WeaponReference, false, DataStruct, PlayerCharacter->SecondaryWeaponCacheMap, bStatic, FTransform::Identity, false);
+		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct, bStatic, FTransform::Identity);
 		if (PlayerCharacter->CurrentWeapon)
 		{
 			PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->SecondaryWeaponCacheMap.WeaponAttachments);
@@ -158,7 +158,7 @@ void ASWeaponPickup::Interact()
 		// Swapping the primary weapon
 		if (PlayerCharacter->bIsPrimary)
 		{
-			PlayerCharacter->SpawnNewWeapon(WeaponReference, true, PlayerCharacter->PrimaryWeaponCacheMap, PlayerCharacter->SecondaryWeaponCacheMap, bStatic, GetTransform(), true);
+			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->PrimaryWeaponCacheMap, bStatic, GetTransform());
 			PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
 			
 			if (PlayerCharacter->CurrentWeapon)
@@ -170,7 +170,7 @@ void ASWeaponPickup::Interact()
 		// Swapping the secondary weapon
 		else
 		{
-			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->SecondaryWeaponCacheMap, PlayerCharacter->PrimaryWeaponCacheMap, bStatic, GetTransform(), false);
+			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->SecondaryWeaponCacheMap, bStatic, GetTransform());
 			PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
 			
 			if (PlayerCharacter->CurrentWeapon)
