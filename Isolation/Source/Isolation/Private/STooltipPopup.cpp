@@ -86,7 +86,7 @@ void ASTooltipPopup::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 
 			PlayerCharacter->UserWidget->ReceiveTooltipInput(TooltipTitle, TooltipDescription);
 			ShouldDisplay = false;
-			GetWorldTimerManager().SetTimer(DisplayDelayHandle, this, &ASTooltipPopup::ResetDisplay, 30.0f, false, 30.0f);
+			GetWorldTimerManager().SetTimer(DisplayDelayHandle, this, &ASTooltipPopup::ResetDisplay, 300.0f, false, 300.0f);
 		}
 	}
 }

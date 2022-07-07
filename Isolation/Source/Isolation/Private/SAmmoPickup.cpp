@@ -65,7 +65,10 @@ void ASAmmoPickup::Interact()
 		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSFX, GetActorLocation());
 
 		// Switching the mesh to it's empty variant
-		SetEmptyMesh();
+		if (!bInfinite)
+		{
+			SetEmptyMesh();
+		}
 	}
 }
 	

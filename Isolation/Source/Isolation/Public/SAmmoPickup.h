@@ -71,6 +71,10 @@ public:
 	// The enum implementation for what type of ammo this pickup should spawn
 	UPROPERTY(EditInstanceOnly, Category = "Properties")
 	EAmmoType AmmoType;
+
+	// Whether this is an infinite ammo box or not (used for demo level)
+	UPROPERTY(EditInstanceOnly, Category = "Properties")
+	bool bInfinite;
 	
 	// Whether the player can interact with this ammo pickup (whether it is full or empty, basically)
 	bool bIsEmpty;
