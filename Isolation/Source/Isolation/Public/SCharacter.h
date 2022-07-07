@@ -348,14 +348,14 @@ protected:
 	
 	// Sets the height of the player when crouched
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float FinalCapsuleHalfHeight;
+	float FinalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
 	
 	// Set in the default values, the base height of the capsule
 	float DefaultCapsuleHalfHeight;
 	
 	// Determines the rate at which the character crouches
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float CrouchSpeed;
+	float CrouchSpeed = 10.0f;
 	
 	// Slide time
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")

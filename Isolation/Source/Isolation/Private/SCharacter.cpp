@@ -49,9 +49,7 @@ ASCharacter::ASCharacter()
     FootstepAudioComp->SetupAttachment(RootComponent);
     FootstepAudioComp->bAutoActivate = false;
     
-    CrouchSpeed = 10.0f; // the speed at which the player crouches, can be overridden in BP_Character
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
-    FinalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
     bIsPrimary = true;
 
     QueryParams.bReturnPhysicalMaterial = true;
@@ -85,7 +83,7 @@ void ASCharacter::BeginPlay()
         }
     }
 	
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     BaseFOV = CameraComp->FieldOfView;
 
     if (CurveFloat)

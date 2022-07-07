@@ -2,6 +2,7 @@
 
 
 #include "func_lib/SAttachmentRandomiser.h"
+#include "func_lib/SDebugHelpers.h"
 #include "Math/UnrealMathUtility.h"
 
 TArray<FName> ASAttachmentRandomiser::RandomiseAllAttachments(UDataTable* AttachmentDataTable)
@@ -21,14 +22,19 @@ TArray<FName> ASAttachmentRandomiser::RandomiseAllAttachments(UDataTable* Attach
 		{
 		case EAttachmentType::Barrel:
 			BarrelAttachments.Add(RowKey);
+			break;
 		case EAttachmentType::Magazine:
 			MagazineAttachments.Add(RowKey);
+			break;
 		case EAttachmentType::Sights:
 			SightsAttachments.Add(RowKey);
+			break;
 		case EAttachmentType::Stock:
 			StockAttachments.Add(RowKey);
+			break;
 		case EAttachmentType::Grip:
 			GripAttachments.Add(RowKey);
+			break;
 		default: break;
 		}
 		
@@ -54,27 +60,33 @@ TArray<FName> ASAttachmentRandomiser::ReplaceIncompatibleAttachments(UDataTable*
 	TArray<FString> SightsAttachments;
 	TArray<FString> StockAttachments;
 	TArray<FString> GripAttachments;
-	
+
+
 	for (FString RowKey : GetDataTableKeyColumnAsString(AttachmentDataTable))
 	{
 		const FAttachmentData* AttachmentData = AttachmentDataTable->FindRow<FAttachmentData>(FName(*RowKey), RowKey, true);
 
 		switch(AttachmentData->AttachmentType)
 		{
-		case EAttachmentType::Barrel:
-			BarrelAttachments.Add(RowKey);
-		case EAttachmentType::Magazine:
-			MagazineAttachments.Add(RowKey);
-		case EAttachmentType::Sights:
-			SightsAttachments.Add(RowKey);
-		case EAttachmentType::Stock:
-			StockAttachments.Add(RowKey);
-		case EAttachmentType::Grip:
-			GripAttachments.Add(RowKey);
-		default: break;
+			case EAttachmentType::Barrel:
+				BarrelAttachments.Add(RowKey);
+				break;
+			case EAttachmentType::Magazine:
+				MagazineAttachments.Add(RowKey);
+				break;
+			case EAttachmentType::Sights:
+				SightsAttachments.Add(RowKey);
+				break;
+			case EAttachmentType::Stock:
+				StockAttachments.Add(RowKey);
+				break;
+			case EAttachmentType::Grip:
+				GripAttachments.Add(RowKey);
+				break;
+			default: break;
 		}
 	}
-
+	
 	// Aggregating attachment incompatibilities
 	TArray<FName> AttachmentsToReplace;
 
@@ -94,11 +106,12 @@ TArray<FName> ASAttachmentRandomiser::ReplaceIncompatibleAttachments(UDataTable*
 		}
 	}
 	
+	
 	// Obtaining attachment type for attachments to replace, removing those attachments from the current attachments
 	// list, creates a list for the types of attachment to replace, and removes unwanted attachments from the
 	// lists generated above
 	TArray<EAttachmentType> TypesToReplace;
-	
+		
 	for (FName RowKey : AttachmentsToReplace)
 	{
 		const FAttachmentData* AttachmentData = AttachmentDataTable->FindRow<FAttachmentData>(RowKey, RowKey.ToString(), true);
@@ -107,68 +120,68 @@ TArray<FName> ASAttachmentRandomiser::ReplaceIncompatibleAttachments(UDataTable*
 		{
 			case EAttachmentType::Barrel:
 
+				if (!TypesToReplace.Contains(EAttachmentType::Barrel))
+				{
+					TypesToReplace.Add(EAttachmentType::Barrel);
+				}
 				if (CurrentAttachments.Contains(RowKey))
 				{
-					if (!TypesToReplace.Contains(EAttachmentType::Barrel))
-					{
-						TypesToReplace.Add(EAttachmentType::Barrel);
-					}
-
 					CurrentAttachments.Remove(RowKey);
-					BarrelAttachments.Remove(RowKey.ToString());
 				}
+				BarrelAttachments.Remove(RowKey.ToString());
+				break;
 				
 			case EAttachmentType::Magazine:
 
+				if (!TypesToReplace.Contains(EAttachmentType::Magazine))
+				{
+					TypesToReplace.Add(EAttachmentType::Magazine);
+				}
 				if (CurrentAttachments.Contains(RowKey))
 				{
-					if (!TypesToReplace.Contains(EAttachmentType::Magazine))
-					{
-						TypesToReplace.Add(EAttachmentType::Magazine);
-					}
-
 					CurrentAttachments.Remove(RowKey);
-					MagazineAttachments.Remove(RowKey.ToString());
 				}
+				MagazineAttachments.Remove(RowKey.ToString());
+				break;
 				
 			case EAttachmentType::Sights:
 
+				if (!TypesToReplace.Contains(EAttachmentType::Sights))
+				{
+					TypesToReplace.Add(EAttachmentType::Sights);
+				}
 				if (CurrentAttachments.Contains(RowKey))
 				{
-					if (!TypesToReplace.Contains(EAttachmentType::Sights))
-					{
-						TypesToReplace.Add(EAttachmentType::Sights);
-					}
-
 					CurrentAttachments.Remove(RowKey);
-					SightsAttachments.Remove(RowKey.ToString());
 				}
+				SightsAttachments.Remove(RowKey.ToString());
+				break;
 				
 			case EAttachmentType::Stock:
 
+				if (!TypesToReplace.Contains(EAttachmentType::Stock))
+				{
+					TypesToReplace.Add(EAttachmentType::Stock);
+				}
 				if (CurrentAttachments.Contains(RowKey))
 				{
-					if (!TypesToReplace.Contains(EAttachmentType::Stock))
-					{
-						TypesToReplace.Add(EAttachmentType::Stock);
-					}
-
 					CurrentAttachments.Remove(RowKey);
-					StockAttachments.Remove(RowKey.ToString());
 				}
+				StockAttachments.Remove(RowKey.ToString());
+				break;
 				
 			case EAttachmentType::Grip:
 
+				if (!TypesToReplace.Contains(EAttachmentType::Grip))
+				{
+					TypesToReplace.Add(EAttachmentType::Grip);
+				}
 				if (CurrentAttachments.Contains(RowKey))
 				{
-					if (!TypesToReplace.Contains(EAttachmentType::Grip))
-					{
-						TypesToReplace.Add(EAttachmentType::Grip);
-					}
-
 					CurrentAttachments.Remove(RowKey);
-					GripAttachments.Remove(RowKey.ToString());
 				}
+				GripAttachments.Remove(RowKey.ToString());
+				break;
 				
 			default: break;
 		}
