@@ -168,6 +168,7 @@ void ASCharacter::FootstepSounds()
     FVector TraceEnd = TraceStart;
     TraceEnd.Z -= 100.0f;
     
+    FootstepAudioComp->SetIntParameter(FName("floor"), 0);
     if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel3, QueryParams))
     {
         FootstepAudioComp->SetIntParameter(FName("floor"), SurfaceMaterialArray.Find(Hit.PhysMaterial.Get()));
