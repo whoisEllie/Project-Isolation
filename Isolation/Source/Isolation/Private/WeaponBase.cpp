@@ -1,16 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SWeaponBase.h"
+#include "WeaponBase.h"
 #include "Engine/Engine.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Math/UnrealMathUtility.h"
-#include "SCharacterController.h"
-#include "SCharacter.h"
+#include "FPSCharacterController.h"
+#include "FPSCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "func_lib/AttachmentHelpers.h"
 #include "Particles/ParticleSystem.h"
 
 // Sets default values

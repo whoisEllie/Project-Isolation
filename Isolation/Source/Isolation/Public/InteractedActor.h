@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SInteractedActor.generated.h"
+#include "InteractedActor.generated.h"
 
 UCLASS()
 class ISOLATION_API ASInteractedActor : public AActor

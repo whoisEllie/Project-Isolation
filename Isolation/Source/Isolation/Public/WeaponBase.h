@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SCharacter.h"
-#include "SWeaponPickup.h"
+#include "FPSCharacter.h"
+#include "WeaponPickup.h"
 #include "Components/TimelineComponent.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
-#include "SWeaponBase.generated.h"
+#include "WeaponBase.generated.h"
 
 class USkeletalMeshComponent;
 class USkeletalMesh;

@@ -1,10 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SInteractionActor.h"
-
-#include "SCharacter.h"
-#include "SInteractedActor.h"
+#include "InteractionActor.h"
+#include "FPSCharacter.h"
+#include "InteractedActor.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values

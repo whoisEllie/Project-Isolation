@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SWeaponPickup.h"
-#include "SWeaponBase.h"
-#include "func_lib/SAttachmentRandomiser.h"
+#include "WeaponPickup.h"
+#include "WeaponBase.h"
+#include "func_lib/AttachmentHelpers.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -53,6 +53,11 @@ void ASWeaponPickup::BeginPlay()
 	if (!bStatic)
 	{
 		MainMesh->SetSimulatePhysics(true);
+	}
+
+	if (bRuntimeSpawned)
+	{
+		
 	}
 }
 

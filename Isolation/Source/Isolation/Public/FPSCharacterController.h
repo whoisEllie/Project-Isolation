@@ -3,9 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SCharacter.h"
+#include "FPSCharacter.h"
 #include "GameFramework/PlayerController.h"
-#include "SCharacterController.generated.h"
+#include "FPSCharacterController.generated.h"
 
 class ASWeaponBase; 
 

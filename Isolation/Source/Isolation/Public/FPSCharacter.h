@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SHUDWidget.h"
+#include "HUDWidget.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
-#include "SCharacter.generated.h"
+#include "FPSCharacter.generated.h"
 
 
 class UCameraComponent;

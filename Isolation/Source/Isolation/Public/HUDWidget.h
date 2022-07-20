@@ -7,7 +7,7 @@
 #include "Components/MultiLineEditableTextBox.h"
 #include "Components/RichTextBlock.h"
 #include "Components/TextBlock.h"
-#include "SHUDWidget.generated.h"
+#include "HUDWidget.generated.h"
 
 /**
  * 

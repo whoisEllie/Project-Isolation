@@ -3,9 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SCharacter.h"
-#include "SInteractionActor.h"
-#include "SWeaponPickup.generated.h"
+#include "FPSCharacter.h"
+#include "InteractionActor.h"
+#include "WeaponPickup.generated.h"
 
 class UStaticMeshComponent;
 class UDataTable;

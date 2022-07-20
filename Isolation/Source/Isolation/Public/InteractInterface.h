@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "SInteractInterface.generated.h"
+#include "InteractInterface.generated.h"
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)

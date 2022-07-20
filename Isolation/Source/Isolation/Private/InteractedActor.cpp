@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SInteractedActor.h"
+#include "InteractedActor.h"
 
 // Sets default values
 ASInteractedActor::ASInteractedActor()

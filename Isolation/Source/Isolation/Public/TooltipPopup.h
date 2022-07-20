@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
-#include "STooltipPopup.generated.h"
+#include "TooltipPopup.generated.h"
 
 UENUM()
 enum class ETextType : uint8

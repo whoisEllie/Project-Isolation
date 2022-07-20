@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SRepairKitPickup.h"
-#include "SCharacterController.h"
+#include "RepairKitPickup.h"
+#include "FPSCharacterController.h"
 #include "Kismet/GameplayStatics.h"
 
 

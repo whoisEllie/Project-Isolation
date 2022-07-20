@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "STooltipPopup.h"
-#include "SCharacter.h"
+#include "TooltipPopup.h"
+#include "FPSCharacter.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/InputSettings.h"
 #include "Kismet/GameplayStatics.h"

@@ -1,17 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "func_lib/SDebugHelpers.h"
+#include "func_lib/DebugHelpers.h"
 
-SDebugHelpers::SDebugHelpers()
-{
-}
 
-SDebugHelpers::~SDebugHelpers()
-{
-}
-
-void SDebugHelpers::PrintStrArray(TArray<FString> Arr, FColor Color, float DisplayTime)
+void FDebugHelpers::PrintStrArray(TArray<FString> Arr, FColor Color, float DisplayTime)
 {
 	for (FString element: Arr)
 	{
@@ -19,7 +12,7 @@ void SDebugHelpers::PrintStrArray(TArray<FString> Arr, FColor Color, float Displ
 	}
 }
 
-void SDebugHelpers::PrintNameArray(TArray<FName> Arr, FColor Color, float DisplayTime)
+void FDebugHelpers::PrintNameArray(TArray<FName> Arr, FColor Color, float DisplayTime)
 {
 	for (FName element: Arr)
 	{
@@ -27,7 +20,7 @@ void SDebugHelpers::PrintNameArray(TArray<FName> Arr, FColor Color, float Displa
 	}
 }
 
-void SDebugHelpers::PrintIntArray(TArray<int> Arr, FColor Color, float DisplayTime)
+void FDebugHelpers::PrintIntArray(TArray<int> Arr, FColor Color, float DisplayTime)
 {
 	for (int element: Arr)
 	{
@@ -35,7 +28,7 @@ void SDebugHelpers::PrintIntArray(TArray<int> Arr, FColor Color, float DisplayTi
 	}
 }
 
-void SDebugHelpers::PrintFloatArray(TArray<float> Arr, FColor Color, float DisplayTime)
+void FDebugHelpers::PrintFloatArray(TArray<float> Arr, FColor Color, float DisplayTime)
 {
 	for (float element: Arr)
 	{

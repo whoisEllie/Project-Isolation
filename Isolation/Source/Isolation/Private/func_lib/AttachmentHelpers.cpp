@@ -1,19 +1,18 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "func_lib/SAttachmentRandomiser.h"
-#include "func_lib/SDebugHelpers.h"
+#include "func_lib/AttachmentHelpers.h"
 #include "Math/UnrealMathUtility.h"
 
-TArray<FName> ASAttachmentRandomiser::RandomiseAllAttachments(UDataTable* AttachmentDataTable)
+TArray<FName> FAttachmentHelpers::RandomiseAllAttachments(UDataTable* AttachmentDataTable) const
 {
-	// Sorting attachments by type
 	TArray<FString> BarrelAttachments;
 	TArray<FString> MagazineAttachments;
 	TArray<FString> SightsAttachments;
 	TArray<FString> StockAttachments;
 	TArray<FString> GripAttachments;
-	
+
+	// Sorting attachments into arrays by their type
 	for (FString RowKey : GetDataTableKeyColumnAsString(AttachmentDataTable))
 	{
 		const FAttachmentData* AttachmentData = AttachmentDataTable->FindRow<FAttachmentData>(FName(*RowKey), RowKey, true);
@@ -37,11 +36,11 @@ TArray<FName> ASAttachmentRandomiser::RandomiseAllAttachments(UDataTable* Attach
 			break;
 		default: break;
 		}
-		
 	}
-
-	// Randomising attachments
+	
 	TArray<FName> TempArray;
+
+	// Randomly adding one of each type of attachment to the array
 	TempArray.Add(FName(*BarrelAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
 	TempArray.Add(FName(*MagazineAttachments[FMath::RandRange(0, (MagazineAttachments.Num() - 1))]));
 	TempArray.Add(FName(*SightsAttachments[FMath::RandRange(0, (SightsAttachments.Num() - 1))]));
@@ -52,16 +51,15 @@ TArray<FName> ASAttachmentRandomiser::RandomiseAllAttachments(UDataTable* Attach
 }
 
 
-TArray<FName> ASAttachmentRandomiser::ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments)
+TArray<FName> FAttachmentHelpers::ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments)
 {
-	// Sorting all possible attachments by type
 	TArray<FString> BarrelAttachments;
 	TArray<FString> MagazineAttachments;
 	TArray<FString> SightsAttachments;
 	TArray<FString> StockAttachments;
 	TArray<FString> GripAttachments;
 
-
+	// Sorting attachments into arrays by their type
 	for (FString RowKey : GetDataTableKeyColumnAsString(AttachmentDataTable))
 	{
 		const FAttachmentData* AttachmentData = AttachmentDataTable->FindRow<FAttachmentData>(FName(*RowKey), RowKey, true);
@@ -87,9 +85,9 @@ TArray<FName> ASAttachmentRandomiser::ReplaceIncompatibleAttachments(UDataTable*
 		}
 	}
 	
-	// Aggregating attachment incompatibilities
 	TArray<FName> AttachmentsToReplace;
 
+	// Aggregating incompatible attachments across all attachments
 	for (FName Attachment : CurrentAttachments)
 	{
 		FAttachmentData* IncompatibleAttachmentData = AttachmentDataTable->FindRow<FAttachmentData>(Attachment, Attachment.ToString(), true);
@@ -105,13 +103,12 @@ TArray<FName> ASAttachmentRandomiser::ReplaceIncompatibleAttachments(UDataTable*
 			}
 		}
 	}
-	
+
+	TArray<EAttachmentType> TypesToReplace;
 	
 	// Obtaining attachment type for attachments to replace, removing those attachments from the current attachments
 	// list, creates a list for the types of attachment to replace, and removes unwanted attachments from the
 	// lists generated above
-	TArray<EAttachmentType> TypesToReplace;
-		
 	for (FName RowKey : AttachmentsToReplace)
 	{
 		const FAttachmentData* AttachmentData = AttachmentDataTable->FindRow<FAttachmentData>(RowKey, RowKey.ToString(), true);
@@ -188,43 +185,42 @@ TArray<FName> ASAttachmentRandomiser::ReplaceIncompatibleAttachments(UDataTable*
 	}
 
 
-	// Creating the temp array and populating it with the remaining attachments
-	TArray<FName> TempArray = CurrentAttachments;
-
+	// Populating empty attachment slots with new, compatible attachments
 	for (EAttachmentType Type : TypesToReplace)
 	{
 		if (Type == EAttachmentType::Barrel)
 		{
-			TempArray.Add(FName(*BarrelAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*BarrelAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
 		}
 		else if (Type == EAttachmentType::Magazine)
 		{
-			TempArray.Add(FName(*MagazineAttachments[FMath::RandRange(0, (MagazineAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*MagazineAttachments[FMath::RandRange(0, (MagazineAttachments.Num() - 1))]));
 		}
 		else if (Type == EAttachmentType::Sights)
 		{
-			TempArray.Add(FName(*SightsAttachments[FMath::RandRange(0, (SightsAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*SightsAttachments[FMath::RandRange(0, (SightsAttachments.Num() - 1))]));
 		}
 		else if (Type == EAttachmentType::Stock)
 		{
-			TempArray.Add(FName(*StockAttachments[FMath::RandRange(0, (StockAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*StockAttachments[FMath::RandRange(0, (StockAttachments.Num() - 1))]));
 		}
 		else if (Type == EAttachmentType::Grip)
 		{
-			TempArray.Add(FName(*GripAttachments[FMath::RandRange(0, (GripAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*GripAttachments[FMath::RandRange(0, (GripAttachments.Num() - 1))]));
 		}
 	}
 	
-	return TempArray;
+	return CurrentAttachments;
 }
 
-TArray<FString> ASAttachmentRandomiser::GetDataTableKeyColumnAsString(UDataTable* DataTable)
+TArray<FString> FAttachmentHelpers::GetDataTableKeyColumnAsString(UDataTable* DataTable)
 {
 	TArray<FString> RowAggregate;
-	
-	for(auto it : DataTable->GetRowMap())
+
+	// Collecting key from each data table row
+	for(auto It : DataTable->GetRowMap())
 	{
-		RowAggregate.Add(it.Key.ToString());
+		RowAggregate.Add(It.Key.ToString());
 	}
 		
 	return RowAggregate;

@@ -3,9 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SInteractInterface.h"
+#include "InteractInterface.h"
 #include "GameFramework/Actor.h"
-#include "SInteractionActor.generated.h"
+#include "InteractionActor.generated.h"
 
 class ASInteractedActor;
 class UStaticMeshComponent;

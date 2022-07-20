@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SCharacter.h"
-#include "SInteractInterface.h"
-#include "SAmmoPickup.generated.h"
+#include "FPSCharacter.h"
+#include "InteractInterface.h"
+#include "AmmoPickup.generated.h"
 
 class UStaticMeshComponent;
 class USceneComponent;

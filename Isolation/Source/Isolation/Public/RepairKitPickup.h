@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SInteractionActor.h"
-#include "SRepairKitPickup.generated.h"
+#include "InteractionActor.h"
+#include "RepairKitPickup.generated.h"
 
 /**
  * 

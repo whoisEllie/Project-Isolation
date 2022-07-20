@@ -1,9 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "SCharacter.h"
-
+#include "FPSCharacter.h"
 #include <string>
-
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -12,14 +10,14 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
-#include "SAmmoPickup.h"
-#include "SCharacterController.h"
-#include "SInteractInterface.h"
+#include "AmmoPickup.h"
+#include "FPSCharacterController.h"
+#include "InteractInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "SWeaponBase.h"
-#include "SWeaponPickup.h"
+#include "WeaponBase.h"
+#include "WeaponPickup.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Components/AudioComponent.h"

@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SAmmoPickup.h"
-#include "SCharacter.h"
-#include "SCharacterController.h"
+#include "AmmoPickup.h"
+#include "FPSCharacter.h"
+#include "FPSCharacterController.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 
