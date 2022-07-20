@@ -131,14 +131,14 @@ void ASCharacter::InteractionIndicator()
         {
             bCanInteract = true;
             const ASInteractionActor* InteractionActor = Cast<ASInteractionActor>(InteractionHit.GetActor());
-            ASAmmoPickup* AmmoPickup = Cast<ASAmmoPickup>(InteractionHit.GetActor());
+            AAmmoPickup* AmmoPickup = Cast<AAmmoPickup>(InteractionHit.GetActor());
             if (InteractionActor)
             {
                 InteractText = InteractionActor->PopupDescription;
             }
             else if (AmmoPickup)
             {
-                InteractText = *AmmoPickup->PickupName.Find(AmmoPickup->AmmoType);
+                InteractText = AmmoPickup->GetPickupName();
             }
             else
             {

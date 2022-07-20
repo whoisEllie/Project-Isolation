@@ -12,8 +12,7 @@ class UStaticMeshComponent;
 class USceneComponent;
 class USoundBase;
 
-
-// Keeping track of which asset to spawn
+/** Enum for the ammo amounts that a pickup can have */
 UENUM()
 enum class EAmmoAmount : uint8
 {
@@ -22,6 +21,7 @@ enum class EAmmoAmount : uint8
 	High 		UMETA(DisplayName="High Ammo"),
 };
 
+/** Struct that keeps track of all our data per ammo type */
 USTRUCT()
 struct FAmmoTypeData
 {
@@ -34,63 +34,72 @@ struct FAmmoTypeData
 	TMap<EAmmoAmount, UStaticMesh*> EmptyAmmoBoxes;
 
 	UPROPERTY(EditDefaultsOnly)
-	TMap<EAmmoAmount, int> AmmoCounts;
+	TMap<EAmmoAmount, int32> AmmoCounts;
 	
 };
 
 UCLASS()
-class ISOLATION_API ASAmmoPickup : public AActor, public ISInteractInterface
+class ISOLATION_API AAmmoPickup : public AActor, public ISInteractInterface
 {
 	GENERATED_BODY()
+
+public:
 	
-public:	
-	// Sets default values for this actor's properties
-	ASAmmoPickup();
+	FText GetPickupName() { return PickupName[AmmoType]; }
 
-	// Interface function
-	virtual void Interact() override;
+	EAmmoType GetAmmoType() const { return AmmoType; }
 
-	// Override construction script
-	virtual void OnConstruction(const FTransform& Transform) override;
-	
-	// The main mesh
-	UPROPERTY()
-	UStaticMeshComponent* MeshComp;
+protected:
 
-	// The Map keeping track of all values for the meshes and ammo counts
-	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
-	TMap<EAmmoType, FAmmoTypeData> AmmoData;
-
+	/** Map to keep track of the name showed to the player for each ammo type */
 	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 	TMap<EAmmoType, FText> PickupName;
-	
-	// The enum implementation for what amount of ammunition to spawn 
-	UPROPERTY(EditInstanceOnly, Category = "Properties")
-    EAmmoAmount AmmoAmount;
 
-	// The enum implementation for what type of ammo this pickup should spawn
+	/** Map to keep track of all values for the meshes and ammo counts */
+	UPROPERTY(EditDefaultsOnly, Category = "Meshes")
+	TMap<EAmmoType, FAmmoTypeData> AmmoData;
+	
+private:
+	
+	/** Interact function from Interact Interface */
+	virtual void Interact() override;
+	
+	/** Sets default values for this actor's properties */
+	AAmmoPickup();
+
+	/** Overriden construction script to display mesh preview in engine */
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+	/** Called when the game starts or when spawned */
+	virtual void BeginPlay() override;
+
+	/** Updates the pickup mesh from the full mesh to the empty one */
+	void SetEmptyMesh();
+	
+	/** Display mesh */
+	UPROPERTY()
+	UStaticMeshComponent* MeshComp;
+	
+	/** The amount of ammo (low/medium/high that this instance should have */
+	UPROPERTY(EditInstanceOnly, Category = "Properties")
+	EAmmoAmount AmmoAmount;
+
+	/** The type of ammo that this instance should have */
 	UPROPERTY(EditInstanceOnly, Category = "Properties")
 	EAmmoType AmmoType;
 
-	// Whether this is an infinite ammo box or not (used for demo level)
+	/** Whether this is an infinite ammo box or not (used for demo level) */
 	UPROPERTY(EditInstanceOnly, Category = "Properties")
 	bool bInfinite;
 	
-	// Whether the player can interact with this ammo pickup (whether it is full or empty, basically)
+	/** Whether the player can interact with this ammo pickup (whether it is full or empty, basically) */
 	bool bIsEmpty;
 
-	// Whether debug print statements should be shown
+	/** Whether debug print statements should be shown */
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bDrawDebug;
 
-	// The sound effect to play when ammunition is collected
+	/** The sound effect to play when ammunition is collected */
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases	")
 	USoundBase* PickupSFX;
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	// Updates the mesh from full to empty
-	void SetEmptyMesh();
 };

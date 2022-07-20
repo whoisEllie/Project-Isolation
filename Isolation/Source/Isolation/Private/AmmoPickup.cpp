@@ -8,7 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
-ASAmmoPickup::ASAmmoPickup()
+AAmmoPickup::AAmmoPickup()
 {
 	// Creating our mesh
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PreviewMeshComp"));
@@ -19,14 +19,13 @@ ASAmmoPickup::ASAmmoPickup()
 }
 
 // Called when the game starts or when spawned
-void ASAmmoPickup::BeginPlay()
+void AAmmoPickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Checking whether the desired mesh exists
+	// Updating MeshComp with the desired mesh if it exists
 	if (AmmoData[AmmoType].FullAmmoBoxes.Find(AmmoAmount) != nullptr)
 	{
-		// Updating MeshComp with the desired mesh
 		MeshComp->SetStaticMesh(AmmoData[AmmoType].FullAmmoBoxes[AmmoAmount]);
 	}
 	else
@@ -35,16 +34,15 @@ void ASAmmoPickup::BeginPlay()
 	}
 }
 
-void ASAmmoPickup::Interact()
+void AAmmoPickup::Interact()
 {
 	if (!bIsEmpty)
 	{
-		// Casting to the player controller (which stores all the ammunition and health variables)
 		const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 		ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
 
-		// Printing the ammo before pickup for debug reasons
+		// Debug print of the ammo before pickup
 		if (bDrawDebug)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Green, FString::FromInt(CharacterController->AmmoMap[AmmoType]));
@@ -54,7 +52,7 @@ void ASAmmoPickup::Interact()
 		// Adding ammo to our character's ammo map
 		CharacterController->AmmoMap[AmmoType] += AmmoData[AmmoType].AmmoCounts[AmmoAmount];
 
-		// Printing the ammo after pickup for debug reasons
+		// Debug print of the ammo after pickup
 		if (bDrawDebug)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(CharacterController->AmmoMap[AmmoType]));
@@ -64,36 +62,33 @@ void ASAmmoPickup::Interact()
 		// Spawning our pickup sound effect
 		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSFX, GetActorLocation());
 
-		// Switching the mesh to it's empty variant
+		// Switching the mesh to it's empty variant in the case that it is not infinite
 		if (!bInfinite)
 		{
 			SetEmptyMesh();
 		}
 	}
 }
-	
-void ASAmmoPickup::OnConstruction(const FTransform& Transform)
+
+void AAmmoPickup::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	// Checking whether the desired mesh exists in the editor
+	// Updating MeshComp with the desired mesh in editor if it exists
 	if (AmmoData[AmmoType].FullAmmoBoxes.Find(AmmoAmount) != nullptr)
 	{
-		// Updating MeshComp with the desired mesh in editor
 		MeshComp->SetStaticMesh(AmmoData[AmmoType].FullAmmoBoxes[AmmoAmount]);
 	}
 }
 
-void ASAmmoPickup::SetEmptyMesh()
+void AAmmoPickup::SetEmptyMesh()
 {
-	// Checking whether the desired empty mesh exists
+	// Updating MeshComp with the desired empty mesh if it exists
 	if (AmmoData[AmmoType].EmptyAmmoBoxes.Find(AmmoAmount) != nullptr)
 	{
-		// Updating MeshComp with the desired empty mesh
 		MeshComp->SetStaticMesh(AmmoData[AmmoType].EmptyAmmoBoxes[AmmoAmount]);
 	}
-
-	// Updating bIsEmpty
+	
 	bIsEmpty = true;
 }
 

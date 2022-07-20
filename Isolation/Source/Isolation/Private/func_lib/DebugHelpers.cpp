@@ -6,32 +6,32 @@
 
 void FDebugHelpers::PrintStrArray(TArray<FString> Arr, FColor Color, float DisplayTime)
 {
-	for (FString element: Arr)
+	for (FString Element: Arr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, element);
+		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, Element);
 	}
 }
 
 void FDebugHelpers::PrintNameArray(TArray<FName> Arr, FColor Color, float DisplayTime)
 {
-	for (FName element: Arr)
+	for (FName Element: Arr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, element.ToString());
+		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, Element.ToString());
 	}
 }
 
 void FDebugHelpers::PrintIntArray(TArray<int> Arr, FColor Color, float DisplayTime)
 {
-	for (int element: Arr)
+	for (const int Element: Arr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, FString::FromInt(element));
+		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, FString::FromInt(Element));
 	}
 }
 
 void FDebugHelpers::PrintFloatArray(TArray<float> Arr, FColor Color, float DisplayTime)
 {
-	for (float element: Arr)
+	for (const float Element: Arr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, FString::SanitizeFloat(element));
+		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, FString::SanitizeFloat(Element));
 	}
 }

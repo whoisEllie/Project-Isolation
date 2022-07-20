@@ -24,8 +24,7 @@ public:
 	 * @warning Make sure that AttachmentDataTable is of type FAttachmentData
 	 * @return A cleaned up array of weapon attachments with no incompatibilities
 	 */
-	UFUNCTION(BlueprintCallable)
-	TArray<FName> ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments);
+	TArray<FName> ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments) const;
 
 	/**
 	 * Collect all keys from a data table

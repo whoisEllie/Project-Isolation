@@ -51,7 +51,7 @@ TArray<FName> FAttachmentHelpers::RandomiseAllAttachments(UDataTable* Attachment
 }
 
 
-TArray<FName> FAttachmentHelpers::ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments)
+TArray<FName> FAttachmentHelpers::ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments) const
 {
 	TArray<FString> BarrelAttachments;
 	TArray<FString> MagazineAttachments;
@@ -186,7 +186,7 @@ TArray<FName> FAttachmentHelpers::ReplaceIncompatibleAttachments(UDataTable* Att
 
 
 	// Populating empty attachment slots with new, compatible attachments
-	for (EAttachmentType Type : TypesToReplace)
+	for (const EAttachmentType Type : TypesToReplace)
 	{
 		if (Type == EAttachmentType::Barrel)
 		{
