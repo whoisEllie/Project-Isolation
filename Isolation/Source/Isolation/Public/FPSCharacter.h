@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <unicode/platform.h>
+
 #include "CoreMinimal.h"
 #include "HUDWidget.h"
 #include "GameFramework/Character.h"
@@ -88,28 +90,42 @@ public:
 	// Switching to a new weapon
 	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct* OldDataStruct, bool bStatic, FTransform PickupTransform);
 
+	UFUNCTION(BlueprintCallable)
 	float GetForwardMovement() const { return ForwardMovement; }
 
+	UFUNCTION(BlueprintCallable)
 	float GetRightMovement() const { return RightMovement; }
 
+	UFUNCTION(BlueprintCallable)
 	float GetMouseY() const { return MouseY; }
 
+	UFUNCTION(BlueprintCallable)
 	float GetMouseX() const { return MouseX; }
 
+	UFUNCTION(BlueprintCallable)
 	float GetBaseFOV() const { return BaseFOV; }
 
+	UFUNCTION(BlueprintCallable)
+	void SetBaseFOV(const float NewFOV) { BaseFOV = NewFOV; }
+	
+	UFUNCTION(BlueprintCallable)
 	ASWeaponBase* GetCurrentWeapon() const {return CurrentWeapon; }
 
+	UFUNCTION(BlueprintCallable)
 	bool GetCrosshairVisibility() const { return bShowCrosshair; }
 
+	UFUNCTION(BlueprintCallable)
 	void SetCrosshairVisibility(const bool Visible) { bShowCrosshair = Visible; }
 
+	UFUNCTION(BlueprintCallable)
 	bool GetAimingStatus() const { return bIsAiming; }
 
+	UFUNCTION(BlueprintCallable)
 	bool GetSprintingStatus() const { return bIsSprinting; }
 
 	bool GetCrouchingStatus() const { return bIsCrouching; }
 
+	UFUNCTION(BlueprintCallable)
 	bool CanInteract() const { return bCanInteract; }
 
 	bool InteractionIsWeapon() const { return bInteractionIsWeapon; }
@@ -120,6 +136,7 @@ public:
 
 	EMovementState GetMovementState() const { return MovementState; }
 
+	UFUNCTION(BlueprintCallable)
 	FText GetInteractText() const { return InteractText; }
 
 	TSubclassOf<ASWeaponBase> GetPrimaryWeapon() const { return PrimaryWeapon; }
@@ -143,6 +160,21 @@ public:
 	USHUDWidget* GetUserWidget() const { return UserWidget; }
 
 	UCameraComponent* GetCameraComponent() const { return CameraComp; }
+
+	UFUNCTION(BlueprintCallable)
+	UBlendSpace* GetWalkBlendSpace() const { return BS_Walk; }
+
+	UFUNCTION(BlueprintCallable)
+	UBlendSpace* GetWalkAdsBlendSpace() const { return BS_ADS_Walk; }
+
+	UFUNCTION(BlueprintCallable)
+	UAnimSequence* GetIdleAnim() const { return Anim_Idle; }
+
+	UFUNCTION(BlueprintCallable)
+	UAnimSequence* GetAdsIdleAnim() const { return Anim_ADS_Idle; }
+
+	UFUNCTION(BlueprintCallable)
+	UAnimSequence* GetSprintAnim() const { return Anim_Sprint; }	
 	
 protected:
 
@@ -182,11 +214,11 @@ private:
 	
 	// Weapon classes
 	// A reference to the player's current primary weapon
-	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
+	UPROPERTY()
 	TSubclassOf<ASWeaponBase> PrimaryWeapon;
 	
 	// A reference to the player's current secondary weapon
-	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
+	UPROPERTY()
 	TSubclassOf<ASWeaponBase> SecondaryWeapon;
 
 	// The player's currently equipped weapon
@@ -231,9 +263,7 @@ private:
 	// keeps track of whether we're sprinting (for animations)
 	UPROPERTY()
 	bool bIsSprinting;
-
-
-
+	
 	// Getters + Setters
 	// keeps track of whether we're crouching (for animations)
 	UPROPERTY()
