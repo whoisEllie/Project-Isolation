@@ -23,7 +23,7 @@
 #include "Components/AudioComponent.h"
 
 // Sets default values
-ASCharacter::ASCharacter()
+AFPSCharacter::AFPSCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -53,7 +53,7 @@ ASCharacter::ASCharacter()
     QueryParams.bReturnPhysicalMaterial = true;
 }
 
-void ASCharacter::TimelineProgress(float value)
+void AFPSCharacter::TimelineProgress(float value)
 {
     const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), value);
     SetActorLocation(NewLocation);
@@ -68,7 +68,7 @@ void ASCharacter::TimelineProgress(float value)
 }
 
 // Called when the game starts or when spawned
-void ASCharacter::BeginPlay()
+void AFPSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -92,7 +92,7 @@ void ASCharacter::BeginPlay()
     }
 }
 
-void ASCharacter::WorldInteract()
+void AFPSCharacter::WorldInteract()
 {
     FCollisionQueryParams TraceParams;
     TraceParams.bTraceComplex = true;
@@ -112,7 +112,7 @@ void ASCharacter::WorldInteract()
 }
 
 // Performing logic for the interaction indicator at the center of the screen
-void ASCharacter::InteractionIndicator()
+void AFPSCharacter::InteractionIndicator()
 {
     bCanInteract = false;
     
@@ -160,7 +160,7 @@ void ASCharacter::InteractionIndicator()
     }
 }
 
-void ASCharacter::FootstepSounds()
+void AFPSCharacter::FootstepSounds()
 {
     const FVector TraceStart = GetActorLocation();
     FVector TraceEnd = TraceStart;
@@ -184,7 +184,7 @@ void ASCharacter::FootstepSounds()
 }
 
 // Swapping weapons with the scroll wheel
-void ASCharacter::ScrollWeapon()
+void AFPSCharacter::ScrollWeapon()
 {
     if (bIsPrimary)
     {
@@ -198,21 +198,21 @@ void ASCharacter::ScrollWeapon()
 
 
 // Built in UE function for moving forward/back
-void ASCharacter::MoveForward(float value)
+void AFPSCharacter::MoveForward(float value)
 {
     ForwardMovement = value;
 	AddMovementInput(GetActorForwardVector() * value);
 }
 
 // Built in UE function for moving left/right
-void ASCharacter::MoveRight(float value)
+void AFPSCharacter::MoveRight(float value)
 {
     RightMovement = value;
 	AddMovementInput(GetActorRightVector() * value);
 }
 
 // Built in UE function for looking up/down
-void ASCharacter::LookUp(float value)
+void AFPSCharacter::LookUp(float value)
 {
     MouseX = value;
 	AddControllerPitchInput(value);
@@ -225,7 +225,7 @@ void ASCharacter::LookUp(float value)
 }
 
 // Built in UE function for looking left/right
-void ASCharacter::LookRight(float value)
+void AFPSCharacter::LookRight(float value)
 {
     MouseY = value;
 	AddControllerYawInput(value);
@@ -238,7 +238,7 @@ void ASCharacter::LookRight(float value)
 }
 
 // Custom crouch function
-void ASCharacter::StartCrouch()
+void AFPSCharacter::StartCrouch()
 {
     bHoldingCrouch = true;
     if (GetCharacterMovement()->IsMovingOnGround())
@@ -263,7 +263,7 @@ void ASCharacter::StartCrouch()
     }
 }
 
-void ASCharacter::StopCrouch()
+void AFPSCharacter::StopCrouch()
 {
     bHoldingCrouch = false;
     bPerformedSlide = false;
@@ -273,7 +273,7 @@ void ASCharacter::StopCrouch()
     }
 }
 
-void ASCharacter::EndCrouch(bool bToSprint)
+void AFPSCharacter::EndCrouch(bool bToSprint)
 {
     if (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)
     {
@@ -301,7 +301,7 @@ void ASCharacter::EndCrouch(bool bToSprint)
 }
 
 // Starting to sprint (IE_Pressed)
-void ASCharacter::StartSprint()
+void AFPSCharacter::StartSprint()
 {
     bHoldingSprint = true;
     bPerformedSlide = false;
@@ -310,7 +310,7 @@ void ASCharacter::StartSprint()
 }
 
 // Stopping to sprint (IE_Released)
-void ASCharacter::StopSprint()
+void AFPSCharacter::StopSprint()
 {
     if (MovementState == EMovementState::State_Slide && bHoldingCrouch)
     {
@@ -324,14 +324,14 @@ void ASCharacter::StopSprint()
     bHoldingSprint = false;
 }
 
-void ASCharacter::StartSlide()
+void AFPSCharacter::StartSlide()
 {
     bPerformedSlide = true;
     UpdateMovementValues(EMovementState::State_Slide);
-    GetWorldTimerManager().SetTimer(SlideStop, this, &ASCharacter::StopSlide, SlideTime, false, SlideTime);
+    GetWorldTimerManager().SetTimer(SlideStop, this, &AFPSCharacter::StopSlide, SlideTime, false, SlideTime);
 }
 
-void ASCharacter::StopSlide()
+void AFPSCharacter::StopSlide()
 {
     if (MovementState == EMovementState::State_Slide && FloorAngle > -15.0f)
     {
@@ -352,11 +352,11 @@ void ASCharacter::StopSlide()
     }
     else if (FloorAngle < -15.0f)
     {
-        GetWorldTimerManager().SetTimer(SlideStop, this, &ASCharacter::StopSlide, 0.1f, false, 0.1f);
+        GetWorldTimerManager().SetTimer(SlideStop, this, &AFPSCharacter::StopSlide, 0.1f, false, 0.1f);
     }
 }
 
-void ASCharacter::CheckVault()
+void AFPSCharacter::CheckVault()
 {
     float ForwardVelocity = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
     // When you have a if statement, that end at the end of the function, just invert the statement and call return. Is way faster.
@@ -488,7 +488,7 @@ void ASCharacter::CheckVault()
     Vault(LocalTargetTransform);
 }
 
-void ASCharacter::CheckAngle()
+void AFPSCharacter::CheckAngle()
 {
     FCollisionQueryParams TraceParams;
     TraceParams.bTraceComplex = true;
@@ -511,7 +511,7 @@ void ASCharacter::CheckAngle()
     }
 }
 
-void ASCharacter::Vault(const FTransform TargetTransform)
+void AFPSCharacter::Vault(const FTransform TargetTransform)
 {
     VaultStartLocation = GetActorTransform();
     VaultEndLocation = TargetTransform;
@@ -521,7 +521,7 @@ void ASCharacter::Vault(const FTransform TargetTransform)
 }
 
 // Function that determines the player's maximum speed and other related variables based on movement state
-void ASCharacter::UpdateMovementValues(EMovementState NewMovementState)
+void AFPSCharacter::UpdateMovementValues(EMovementState NewMovementState)
 {
     bIsSprinting = false;
     bIsCrouching = false;
@@ -589,8 +589,8 @@ void ASCharacter::UpdateMovementValues(EMovementState NewMovementState)
 }
 
 // Spawns a new weapon (either from weapon swap or picking up a new weapon)
-void ASCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const bool bSpawnPickup,
-                               const FWeaponDataStruct OldDataStruct, const bool bStatic, const FTransform PickupTransform)
+void AFPSCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const bool bSpawnPickup,
+                                 FWeaponDataStruct* OldDataStruct, const bool bStatic, const FTransform PickupTransform)
 {
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
@@ -616,8 +616,8 @@ void ASCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const 
             NewPickup->bStatic = bStatic;
             NewPickup->bRuntimeSpawned = true;
             NewPickup->WeaponReference = CurrentWeapon->GetClass();
-            NewPickup->DataStruct = OldDataStruct;
-            NewPickup->AttachmentArray = OldDataStruct.WeaponAttachments;
+            NewPickup->DataStruct = *OldDataStruct;
+            NewPickup->AttachmentArray = OldDataStruct->WeaponAttachments;
             NewPickup->SpawnAttachmentMesh();
         }
         
@@ -633,12 +633,12 @@ void ASCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const 
     }
 }
 
-FText ASCharacter::GetCurrentWeaponLoadedAmmo() const
+FText AFPSCharacter::GetCurrentWeaponLoadedAmmo() const
 {
     return bIsPrimary? FText::AsNumber(PrimaryWeaponCacheMap.ClipSize) : FText::AsNumber(SecondaryWeaponCacheMap.ClipSize);
 }
 
-FText ASCharacter::GetCurrentWeaponRemainingAmmo() const
+FText AFPSCharacter::GetCurrentWeaponRemainingAmmo() const
 {
     ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
 
@@ -654,12 +654,12 @@ FText ASCharacter::GetCurrentWeaponRemainingAmmo() const
 
 
 // Spawning and equipping the primary weapon 
-void ASCharacter::SwapToPrimary()
+void AFPSCharacter::SwapToPrimary()
 {
     if (PrimaryWeapon && !bIsPrimary && !CurrentWeapon->bIsReloading)
     {
         // Calling UpdateWeapon with relevant variables
-        UpdateWeapon(PrimaryWeapon, false, SecondaryWeaponCacheMap, false, FTransform::Identity);
+        UpdateWeapon(PrimaryWeapon, false, &SecondaryWeaponCacheMap, false, FTransform::Identity);
 
         // Spawning attachments based on the local cache map
         CurrentWeapon->SpawnAttachments(PrimaryWeaponCacheMap.WeaponAttachments);
@@ -684,12 +684,12 @@ void ASCharacter::SwapToPrimary()
 }
 
 // Spawning and equipping the secondary weapon
-void ASCharacter::SwapToSecondary()
+void AFPSCharacter::SwapToSecondary()
 {
     if (SecondaryWeapon && bIsPrimary && !CurrentWeapon->bIsReloading)
     {
         // Calling UpdateWeapon with relevant variables
-        UpdateWeapon(SecondaryWeapon, false, PrimaryWeaponCacheMap, false, FTransform::Identity);
+        UpdateWeapon(SecondaryWeapon, false, &PrimaryWeaponCacheMap, false, FTransform::Identity);
 
         // Spawning attachments based on the local cache map
         CurrentWeapon->SpawnAttachments(SecondaryWeaponCacheMap.WeaponAttachments);
@@ -714,7 +714,7 @@ void ASCharacter::SwapToSecondary()
 }
 
 // Passing player inputs to SWeaponBase
-void ASCharacter::StartFire()
+void AFPSCharacter::StartFire()
 {
     if (CurrentWeapon)
     {
@@ -723,7 +723,7 @@ void ASCharacter::StartFire()
 }
 
 // Passing player inputs to SWeaponBase
-void ASCharacter::StopFire()
+void AFPSCharacter::StopFire()
 {
     if (CurrentWeapon)
     {
@@ -732,7 +732,7 @@ void ASCharacter::StopFire()
 }
 
 // Passing player inputs to SWeaponBase
-void ASCharacter::Reload()
+void AFPSCharacter::Reload()
 {
     if (CurrentWeapon)
     {
@@ -740,18 +740,18 @@ void ASCharacter::Reload()
     }
 }
 
-void ASCharacter::StartADS()
+void AFPSCharacter::StartADS()
 {
     bWantsToAim = true;
 }
 
-void ASCharacter::StopADS()
+void AFPSCharacter::StopADS()
 {
     bWantsToAim = false;
 }
 
 // Called every frame
-void ASCharacter::Tick(const float DeltaTime)
+void AFPSCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -840,45 +840,45 @@ void ASCharacter::Tick(const float DeltaTime)
 }
 
 // Called to bind functionality to input
-void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	
 	// Move forward/back + left/right inputs
-	PlayerInputComponent->BindAxis("MoveForward", this, &ASCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ASCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &AFPSCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AFPSCharacter::MoveRight);
 	
 	// Look up/down + left/right
-	PlayerInputComponent->BindAxis("LookUp", this, &ASCharacter::LookUp);
-	PlayerInputComponent->BindAxis("LookRight", this, &ASCharacter::LookRight);
+	PlayerInputComponent->BindAxis("LookUp", this, &AFPSCharacter::LookUp);
+	PlayerInputComponent->BindAxis("LookRight", this, &AFPSCharacter::LookRight);
 	
 	// Crouching
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASCharacter::StartCrouch);
-    PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ASCharacter::StopCrouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AFPSCharacter::StartCrouch);
+    PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AFPSCharacter::StopCrouch);
 	
 	// Sprinting
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ASCharacter::StartSprint);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ASCharacter::StopSprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AFPSCharacter::StartSprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AFPSCharacter::StopSprint);
 	
 	// Jumping
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASCharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFPSCharacter::Jump);
 
     // Weapon swap
-    PlayerInputComponent->BindAction("PrimaryWeapon", IE_Pressed, this, &ASCharacter::SwapToPrimary);
-    PlayerInputComponent->BindAction("SecondaryWeapon", IE_Pressed, this, &ASCharacter::SwapToSecondary);
+    PlayerInputComponent->BindAction("PrimaryWeapon", IE_Pressed, this, &AFPSCharacter::SwapToPrimary);
+    PlayerInputComponent->BindAction("SecondaryWeapon", IE_Pressed, this, &AFPSCharacter::SwapToSecondary);
 
     // Firing
-    PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::StartFire);
-    PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASCharacter::StopFire);
+    PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSCharacter::StartFire);
+    PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSCharacter::StopFire);
 
     // Reloading
-    PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ASCharacter::Reload);
+    PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AFPSCharacter::Reload);
 
     // Aiming Down Sights
-    PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &ASCharacter::StartADS);
-    PlayerInputComponent->BindAction("ADS", IE_Released, this, &ASCharacter::StopADS);
+    PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSCharacter::StartADS);
+    PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSCharacter::StopADS);
 
-    PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASCharacter::WorldInteract);
+    PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AFPSCharacter::WorldInteract);
 
-    PlayerInputComponent->BindAction("ScrollUp", IE_Pressed, this, &ASCharacter::ScrollWeapon);
+    PlayerInputComponent->BindAction("ScrollUp", IE_Pressed, this, &AFPSCharacter::ScrollWeapon);
 }

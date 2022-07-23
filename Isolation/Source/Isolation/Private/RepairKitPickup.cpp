@@ -10,7 +10,7 @@ void ASRepairKitPickup::Interact()
 {
 	Super::Interact();
 
-	const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
 	CharacterController->AmmoBoxCount += 1;
@@ -18,7 +18,7 @@ void ASRepairKitPickup::Interact()
 	// Spawning our pickup sound effect
 	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSFX, GetActorLocation());
 
-	PlayerCharacter->UserWidget->ShowRepairKitCount();
+	PlayerCharacter->GetUserWidget()->ShowRepairKitCount();
 	
 	Destroy();
 }

@@ -65,16 +65,15 @@ struct FWeaponDataStruct
 };
 
 UCLASS()
-class ISOLATION_API ASCharacter : public ACharacter	
+class ISOLATION_API AFPSCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
-	ASCharacter();
 
-	// Switching to a new weapon
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct OldDataStruct, bool bStatic, FTransform PickupTransform);
+	// Plays footstep sounds, called from animations with anim notify.
+	UFUNCTION(BlueprintCallable)
+	void FootstepSounds();
 
 	// Functions for UI
 	// Get the amount of ammunition currently loaded into the weapon
@@ -85,19 +84,102 @@ public:
 	// current weapon)
 	UFUNCTION(BlueprintCallable)
 	FText GetCurrentWeaponRemainingAmmo() const;
-		
-    //Hands mesh, assignable through blueprints
-    UPROPERTY(EditDefaultsOnly, Category = "Components")
-    USkeletalMeshComponent* HandsMeshComp;
+
+	// Switching to a new weapon
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct* OldDataStruct, bool bStatic, FTransform PickupTransform);
+
+	float GetForwardMovement() const { return ForwardMovement; }
+
+	float GetRightMovement() const { return RightMovement; }
+
+	float GetMouseY() const { return MouseY; }
+
+	float GetMouseX() const { return MouseX; }
+
+	float GetBaseFOV() const { return BaseFOV; }
+
+	ASWeaponBase* GetCurrentWeapon() const {return CurrentWeapon; }
+
+	bool GetCrosshairVisibility() const { return bShowCrosshair; }
+
+	void SetCrosshairVisibility(const bool Visible) { bShowCrosshair = Visible; }
+
+	bool GetAimingStatus() const { return bIsAiming; }
+
+	bool GetSprintingStatus() const { return bIsSprinting; }
+
+	bool GetCrouchingStatus() const { return bIsCrouching; }
+
+	bool CanInteract() const { return bCanInteract; }
+
+	bool InteractionIsWeapon() const { return bInteractionIsWeapon; }
+
+	bool IsPrimaryWeaponEquipped() const { return bIsPrimary; }
+
+	void SetPrimaryWeaponEquipped(bool const bIsPrimaryWeaponEquipped) { bIsPrimary = bIsPrimaryWeaponEquipped; } 
+
+	EMovementState GetMovementState() const { return MovementState; }
+
+	FText GetInteractText() const { return InteractText; }
+
+	TSubclassOf<ASWeaponBase> GetPrimaryWeapon() const { return PrimaryWeapon; }
+
+	void SetPrimaryWeapon(TSubclassOf<ASWeaponBase> const NewWeapon) { PrimaryWeapon = NewWeapon; }
+
+	void SetSecondaryWeapon(TSubclassOf<ASWeaponBase> const NewWeapon) { SecondaryWeapon = NewWeapon; }
+
+	TSubclassOf<ASWeaponBase> GetSecondaryWeapon() const { return SecondaryWeapon; }
+
+	USkeletalMeshComponent* GetHandsMesh() const { return HandsMeshComp; }
+
+	FWeaponDataStruct* GetPrimaryWeaponCacheMap() { return &PrimaryWeaponCacheMap; }
+
+	void SetPrimaryWeaponCacheMap(FWeaponDataStruct const NewWeaponDataStruct) { PrimaryWeaponCacheMap = NewWeaponDataStruct; }
+
+	FWeaponDataStruct* GetSecondaryWeaponCacheMap() { return &SecondaryWeaponCacheMap; }
+
+	void SetSecondaryWeaponCacheMap(FWeaponDataStruct const NewWeaponDataStruct) { SecondaryWeaponCacheMap = NewWeaponDataStruct; }
+
+	USHUDWidget* GetUserWidget() const { return UserWidget; }
+
+	UCameraComponent* GetCameraComponent() const { return CameraComp; }
 	
+protected:
+
 	//Camera Comp - component for the FPS camera
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Components")
 	UCameraComponent* CameraComp;
+
+	//Hands mesh, assignable through blueprints
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	USkeletalMeshComponent* HandsMeshComp;
 	
 	//Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation'
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USpringArmComponent* SpringArmComp;
+	
+	// Hand animations for when the player has no weapon 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UBlendSpace* BS_Walk;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UBlendSpace* BS_ADS_Walk;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UAnimSequence* Anim_Idle;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UAnimSequence* Anim_ADS_Idle;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UAnimSequence* Anim_Sprint;
+
+
+private:
+
+	// Sets default values for this character's properties
+	AFPSCharacter();
+	
 	// Weapon classes
 	// A reference to the player's current primary weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
@@ -106,23 +188,24 @@ public:
 	// A reference to the player's current secondary weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASWeaponBase> SecondaryWeapon;
-	
-	// The player's currently equipped weapon
-	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
-	ASWeaponBase* CurrentWeapon;
 
+	// The player's currently equipped weapon
+	UPROPERTY()
+	ASWeaponBase* CurrentWeapon;
 
 	// Booleans
 	
 	// The boolean holding whether the player wants to aim or not
 	bool bWantsToAim;
 
+	// Getters + Setters
 	// Whether we should render a crosshair or not
-	UPROPERTY(BlueprintReadWrite, Category = "Crosshair")
+	UPROPERTY()
 	bool bShowCrosshair;
 	
+	// Getters + Setters
 	// The boolean holding whether we are aiming or not
-	UPROPERTY(BlueprintReadOnly, Category = "Weapons")
+	UPROPERTY()
 	bool bIsAiming;
 	
 	// The boolean keeping track of whether we're vaulting or not
@@ -143,38 +226,46 @@ public:
 	// prints debug variables if enabled
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bDrawDebug;
-	
+
+	// Getters + Setters
 	// keeps track of whether we're sprinting (for animations)
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	UPROPERTY()
 	bool bIsSprinting;
-	
+
+
+
+	// Getters + Setters
 	// keeps track of whether we're crouching (for animations)
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	UPROPERTY()
 	bool bIsCrouching;
 	
+	// Getters + Setters
 	// keeps track of whether the object we are looking at is one we are able to interact with (used for UI)
-	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	UPROPERTY()
 	bool bCanInteract;
 	
+	// Getters + Setters
 	// keeps track of whether the interaction object is a weapon pickup (used for UI)
-	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	UPROPERTY()
 	bool bInteractionIsWeapon;
-
+	
 	// Whether the player is holding the primary weapon (or not, and are thus holding the secondary weapon)
 	bool bIsPrimary;
 
 	// Enumerators
 
+	// Getters + Setters
 	// Enumerator holding the 5 possible movement states defined above in EMovementState
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement State")
+	UPROPERTY()
     EMovementState MovementState;
 
 	// UI
 
+	// Getters + Setters
 	// The current message to be displayed above the screen (if any)
-	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	UPROPERTY()
 	FText InteractText;
-
+	
 	// Other
 	
 	// Name of the socket we attach our camera to
@@ -189,23 +280,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	FWeaponDataStruct SecondaryWeaponCacheMap;
-
-	// Hand animations for when the player has no weapon 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
-	UBlendSpace* BS_Walk;
-
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
-	UBlendSpace* BS_ADS_Walk;
-
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
-	UAnimSequence* Anim_Idle;
-
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
-	UAnimSequence* Anim_ADS_Idle;
-
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
-	UAnimSequence* Anim_Sprint;
-
+	
 	UPROPERTY()
 	USHUDWidget* UserWidget;
 
@@ -220,9 +295,6 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Materials")
 	FName OpacityParameterName;
-    
-protected:
-
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -304,10 +376,6 @@ protected:
 	// Displaying the indicator for interaction
 	void InteractionIndicator();
 
-	// Plays footstep sounds, called from animations with anim notify.
-	UFUNCTION(BlueprintCallable)
-	void FootstepSounds();
-
 	// collision parameters for spawning the line trace
 	FCollisionQueryParams QueryParams;
 
@@ -361,7 +429,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float SlideTime = 1.0f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
+	UPROPERTY()
 	float BaseFOV;
 	
 	// change speed for the fov
@@ -383,19 +451,19 @@ protected:
 	float MaxVaultHeight = 200.0f;
 	
 	// The forward movement value (used to drive animations)
-	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	UPROPERTY()
 	float ForwardMovement;
 	
 	// The right movement value (used to drive animations)
-	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	UPROPERTY()
 	float RightMovement;
 
 	// The look up value (used to drive procedural weapon sway)
-	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	UPROPERTY()
 	float MouseY;
 
 	// The right look value (used to drive procedural weapon sway)
-	UPROPERTY(BlueprintReadOnly, Category = "Variables")
+	UPROPERTY()
 	float MouseX;
 	
 	// The distance at which old weapons spawn during a weapon swap
@@ -435,8 +503,7 @@ protected:
 
 	// Timer managers
 	FTimerHandle SlideStop;
-    
-public:	
+		
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

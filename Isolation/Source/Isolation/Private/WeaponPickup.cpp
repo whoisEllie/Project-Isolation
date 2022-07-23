@@ -127,70 +127,70 @@ void ASWeaponPickup::Interact()
 {
 	// Casting to the player character 
 	DataStruct.WeaponAttachments = AttachmentArray;
-	ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
 	// Swapping weapons based on different situations
 	
 	// If the player has no weapons or only a primary weapon
-	if ((PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon == nullptr) || (PlayerCharacter->PrimaryWeapon == nullptr && PlayerCharacter->SecondaryWeapon != nullptr))
+	if ((PlayerCharacter->GetPrimaryWeapon() == nullptr && PlayerCharacter->GetSecondaryWeapon() == nullptr) || (PlayerCharacter->GetPrimaryWeapon() == nullptr && PlayerCharacter->GetSecondaryWeapon() != nullptr))
 	{
-		PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
+		PlayerCharacter->SetPrimaryWeaponCacheMap(DataStruct);
 		
-		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct, bStatic, FTransform::Identity);
-		if (PlayerCharacter->CurrentWeapon)
+		PlayerCharacter->UpdateWeapon(WeaponReference, false, &DataStruct, bStatic, FTransform::Identity);
+		if (PlayerCharacter->GetCurrentWeapon())
 		{
-			PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->PrimaryWeaponCacheMap.WeaponAttachments);
+			PlayerCharacter->GetCurrentWeapon()->SpawnAttachments(PlayerCharacter->GetPrimaryWeaponCacheMap()->WeaponAttachments);
 		}
-		PlayerCharacter->PrimaryWeapon = WeaponReference;
-		PlayerCharacter->bIsPrimary = true;
+		PlayerCharacter->SetPrimaryWeapon(WeaponReference);
+		PlayerCharacter->SetPrimaryWeaponEquipped(true);
 	}
 	// If the player has a primary weapon but no secondary weapon
-	else if (PlayerCharacter->SecondaryWeapon == nullptr && PlayerCharacter->PrimaryWeapon != nullptr)
+	else if (PlayerCharacter->GetSecondaryWeapon() == nullptr && PlayerCharacter->GetPrimaryWeapon() != nullptr)
 	{
-		PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
+		PlayerCharacter->SetSecondaryWeaponCacheMap(DataStruct);
 		
-		PlayerCharacter->UpdateWeapon(WeaponReference, false, DataStruct, bStatic, FTransform::Identity);
-		if (PlayerCharacter->CurrentWeapon)
+		PlayerCharacter->UpdateWeapon(WeaponReference, false, &DataStruct, bStatic, FTransform::Identity);
+		if (PlayerCharacter->GetCurrentWeapon())
 		{
-			PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->SecondaryWeaponCacheMap.WeaponAttachments);
+			PlayerCharacter->GetCurrentWeapon()->SpawnAttachments(PlayerCharacter->GetSecondaryWeaponCacheMap()->WeaponAttachments);
 		}
-		PlayerCharacter->SecondaryWeapon = WeaponReference;
-		PlayerCharacter->bIsPrimary = false;
+		PlayerCharacter->SetSecondaryWeapon(WeaponReference);
+		PlayerCharacter->SetPrimaryWeaponEquipped(false);
 	}
 	// If both weapon slots are occupied
 	else
 	{
 		// Swapping the primary weapon
-		if (PlayerCharacter->bIsPrimary)
+		if (PlayerCharacter->IsPrimaryWeaponEquipped())
 		{
-			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->PrimaryWeaponCacheMap, bStatic, GetTransform());
-			PlayerCharacter->PrimaryWeaponCacheMap = DataStruct;
+			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->GetPrimaryWeaponCacheMap(), bStatic, GetTransform());
+			PlayerCharacter->SetPrimaryWeaponCacheMap(DataStruct);
 			
-			if (PlayerCharacter->CurrentWeapon)
+			if (PlayerCharacter->GetCurrentWeapon())
 			{
-				PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->PrimaryWeaponCacheMap.WeaponAttachments);
+				PlayerCharacter->GetCurrentWeapon()->SpawnAttachments(PlayerCharacter->GetPrimaryWeaponCacheMap()->WeaponAttachments);
 			}
-			PlayerCharacter->PrimaryWeapon = WeaponReference;
+			PlayerCharacter->SetPrimaryWeapon(WeaponReference);
 		}
 		// Swapping the secondary weapon
 		else
 		{
-			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->SecondaryWeaponCacheMap, bStatic, GetTransform());
-			PlayerCharacter->SecondaryWeaponCacheMap = DataStruct;
+			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->GetSecondaryWeaponCacheMap(), bStatic, GetTransform());
+			PlayerCharacter->SetSecondaryWeaponCacheMap(DataStruct);
 			
-			if (PlayerCharacter->CurrentWeapon)
+			if (PlayerCharacter->GetCurrentWeapon())
 			{
-				PlayerCharacter->CurrentWeapon->SpawnAttachments(PlayerCharacter->SecondaryWeaponCacheMap.WeaponAttachments);
+				PlayerCharacter->GetCurrentWeapon()->SpawnAttachments(PlayerCharacter->GetSecondaryWeaponCacheMap()->WeaponAttachments);
 			}
-			PlayerCharacter->SecondaryWeapon = WeaponReference;
+			PlayerCharacter->SetSecondaryWeapon(WeaponReference);
 		}
 	}
 
-	if (PlayerCharacter->CurrentWeapon)
+	if (PlayerCharacter->GetCurrentWeapon())
 	{
-		if (PlayerCharacter->CurrentWeapon->WeaponData->WeaponEquip)
+		if (PlayerCharacter->GetCurrentWeapon()->WeaponData->WeaponEquip)
 		{
-			PlayerCharacter->HandsMeshComp->GetAnimInstance()->Montage_Play(PlayerCharacter->CurrentWeapon->WeaponEquip, 1.0f);
+			PlayerCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(PlayerCharacter->GetCurrentWeapon()->WeaponEquip, 1.0f);
 		}
 	}
 

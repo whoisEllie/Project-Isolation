@@ -38,7 +38,7 @@ void AAmmoPickup::Interact()
 {
 	if (!bIsEmpty)
 	{
-		const ASCharacter* PlayerCharacter = Cast<ASCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+		const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 		ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
 
