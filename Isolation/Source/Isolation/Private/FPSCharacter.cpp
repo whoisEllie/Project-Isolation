@@ -49,6 +49,7 @@ AFPSCharacter::AFPSCharacter()
     FootstepAudioComp->bAutoActivate = false;
     
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
+    //DefaultSpringArmHeight = SpringArmComp->GetComponentLocation(); // Setting the default location of the spring arm
     bIsPrimary = true;
 
     QueryParams.bReturnPhysicalMaterial = true;
@@ -275,20 +276,8 @@ void AFPSCharacter::StopCrouch()
 
 void AFPSCharacter::EndCrouch(const bool bToSprint)
 {
-    if (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)
+    if ((MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide) && HasSpaceToStandUp())
     {
-        FVector CenterVector = GetActorLocation();
-        CenterVector.Z += 46;
-
-        const FCollisionShape CollisionCapsule = FCollisionShape::MakeCapsule(34.0f, DefaultCapsuleHalfHeight);
-
-        DrawDebugCapsule(GetWorld(), CenterVector, DefaultCapsuleHalfHeight, 34.0f, FQuat::Identity, FColor::Red);
-
-        if (GetWorld()->SweepSingleByChannel(Hit, CenterVector, CenterVector, FQuat::Identity, ECC_WorldStatic, CollisionCapsule))
-        {
-            /* confetti or smth idk */
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
-        }
         if (bToSprint)
         {
             UpdateMovementValues(EMovementState::State_Sprint);
@@ -303,6 +292,10 @@ void AFPSCharacter::EndCrouch(const bool bToSprint)
 // Starting to sprint (IE_Pressed)
 void AFPSCharacter::StartSprint()
 {
+    if (!HasSpaceToStandUp())
+    {
+        return;
+    }
     bHoldingSprint = true;
     bPerformedSlide = false;
     // Updates the sprint speed
@@ -312,6 +305,11 @@ void AFPSCharacter::StartSprint()
 // Stopping to sprint (IE_Released)
 void AFPSCharacter::StopSprint()
 {
+    if (!HasSpaceToStandUp())
+    {
+        return;
+    }
+    
     if (MovementState == EMovementState::State_Slide && bHoldingCrouch)
     {
         UpdateMovementValues(EMovementState::State_Crouch);
@@ -335,7 +333,11 @@ void AFPSCharacter::StopSlide()
 {
     if (MovementState == EMovementState::State_Slide && FloorAngle > -15.0f)
     {
-        if (bHoldingSprint)
+        if (!HasSpaceToStandUp())
+        {
+            UpdateMovementValues(EMovementState::State_Crouch);
+        }
+        else if (bHoldingSprint)
         {
             EndCrouch(true);
         }
@@ -508,6 +510,34 @@ void AFPSCharacter::CheckAngle()
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%f"),FloorAngle), true);
         }
     }
+}
+
+bool AFPSCharacter::HasSpaceToStandUp()
+{
+    FVector CenterVector = GetActorLocation();
+    CenterVector.Z += 44;
+
+    const float CollisionCapsuleHeight = DefaultCapsuleHalfHeight - 17.0f;
+        
+    const FCollisionShape CollisionCapsule = FCollisionShape::MakeCapsule(30.0f, CollisionCapsuleHeight);
+
+    if (bDrawDebug)
+    {
+        DrawDebugCapsule(GetWorld(), CenterVector, CollisionCapsuleHeight, 30.0f, FQuat::Identity, FColor::Red, false, 5.0f, 0, 3);
+    }
+            
+    if (GetWorld()->SweepSingleByChannel(Hit, CenterVector, CenterVector, FQuat::Identity, STAND_UP_CHECK_COLLISION, CollisionCapsule))
+    {
+        /* confetti or smth idk */
+        if (bDrawDebug)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, Hit.Actor->GetName());
+        }
+        return false;
+    }
+
+    return true;
 }
 
 void AFPSCharacter::Vault(const FTransform TargetTransform)
@@ -756,12 +786,18 @@ void AFPSCharacter::Tick(const float DeltaTime)
 
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
-	const float TargetHalfHeight = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? FinalCapsuleHalfHeight : DefaultCapsuleHalfHeight;
-	// Interpolates between the current height and the target height
+	const float TargetHalfHeight = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? CrouchedCapsuleHalfHeight : DefaultCapsuleHalfHeight;
+    const float SpringArmTargetOffset = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? CrouchedSpringArmHeight : 0.0f;
+    // Interpolates between the current height and the target height
 	const float NewHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHalfHeight, DeltaTime, CrouchSpeed);
+    const float NewLocation = FMath::FInterpTo(CurrentSpringArmOffset, SpringArmTargetOffset, DeltaTime, CrouchSpeed);
+    CurrentSpringArmOffset = NewLocation;
 	// Sets the half height of the capsule component to the new interpolated half height
 	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
-
+    FVector NewSpringArmLocation = SpringArmComp->GetRelativeLocation();
+    NewSpringArmLocation.Z = NewLocation;
+    SpringArmComp->SetRelativeLocation(NewSpringArmLocation);
+    
     // FOV adjustments
     float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? (BaseFOV + FOVChangeAmount) : BaseFOV;
     if (CurrentWeapon)

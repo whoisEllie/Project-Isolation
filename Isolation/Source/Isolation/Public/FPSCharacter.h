@@ -281,6 +281,9 @@ private:
 	/** Checks the angle of the floor to determine slide behaviour */
 	void CheckAngle();
 
+	/** Trace above the player to make sure we have enough space to stand up */
+	bool HasSpaceToStandUp();
+
 	/** Ticks the timeline */
 	UFUNCTION()
 	void TimelineProgress(float value);
@@ -311,7 +314,13 @@ private:
 
 	/** Sets the height of the player when crouched */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float FinalCapsuleHalfHeight = 44.0f; // the desired final crouch height, can be overridden in BP_Character
+	float CrouchedCapsuleHalfHeight = 68.0f; // the desired final crouch height, can be overridden in BP_Character
+
+	/** Sets the height of the spring arm that the camera + hands rest on when the player is crouched */
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float CrouchedSpringArmHeight = -30.0f;
+	
+	float CurrentSpringArmOffset = 0.0f;
 	
 	/** Determines the rate at which the character crouches */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
@@ -489,6 +498,9 @@ private:
 		
 	/** Set in the default values, the base height of the capsule */
 	float DefaultCapsuleHalfHeight;
+
+	/** Set in the default values, the default relative location of the spring arm */
+	FVector DefaultSpringArmHeight = FVector(0.0f, 0.0f, 90.0f);
 	
 	float BaseFOV;
 	
