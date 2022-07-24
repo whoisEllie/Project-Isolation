@@ -21,6 +21,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Components/AudioComponent.h"
+#include "Isolation/Isolation.h"
 
 // Sets default values
 AFPSCharacter::AFPSCharacter()
@@ -144,7 +145,6 @@ void AFPSCharacter::InteractionIndicator()
             {
                 InteractText = FText::GetEmpty();
             }
-
             
             const ASWeaponPickup* InteractedPickup = Cast<ASWeaponPickup>(InteractionHit.GetActor());
             if (InteractedPickup)
@@ -160,6 +160,7 @@ void AFPSCharacter::InteractionIndicator()
     }
 }
 
+// Playing footstep sounds on FootstepAudioComp, called from animnotifies
 void AFPSCharacter::FootstepSounds()
 {
     const FVector TraceStart = GetActorLocation();
@@ -167,7 +168,7 @@ void AFPSCharacter::FootstepSounds()
     TraceEnd.Z -= 100.0f;
     
     FootstepAudioComp->SetIntParameter(FName("floor"), 0);
-    if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel3, QueryParams))
+    if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, FOOTSTEP_TRACE, QueryParams))
     {
         FootstepAudioComp->SetIntParameter(FName("floor"), SurfaceMaterialArray.Find(Hit.PhysMaterial.Get()));
         if (bDrawDebug)
@@ -196,28 +197,27 @@ void AFPSCharacter::ScrollWeapon()
     }
 }
 
-
 // Built in UE function for moving forward/back
-void AFPSCharacter::MoveForward(float value)
+void AFPSCharacter::MoveForward(float Value)
 {
-    ForwardMovement = value;
-	AddMovementInput(GetActorForwardVector() * value);
+    ForwardMovement = Value;
+	AddMovementInput(GetActorForwardVector() * Value);
 }
 
 // Built in UE function for moving left/right
-void AFPSCharacter::MoveRight(float value)
+void AFPSCharacter::MoveRight(float Value)
 {
-    RightMovement = value;
-	AddMovementInput(GetActorRightVector() * value);
+    RightMovement = Value;
+	AddMovementInput(GetActorRightVector() * Value);
 }
 
 // Built in UE function for looking up/down
-void AFPSCharacter::LookUp(float value)
+void AFPSCharacter::LookUp(float Value)
 {
-    MouseX = value;
-	AddControllerPitchInput(value);
+    MouseX = Value;
+	AddControllerPitchInput(Value);
     // checking mouse movement for recoil compensation logic
-    if (value != 0.0f && CurrentWeapon)
+    if (Value != 0.0f && CurrentWeapon)
     {
         CurrentWeapon->bShouldRecover = false;
         CurrentWeapon->RecoilRecoveryTimeline.Stop();
@@ -225,12 +225,12 @@ void AFPSCharacter::LookUp(float value)
 }
 
 // Built in UE function for looking left/right
-void AFPSCharacter::LookRight(float value)
+void AFPSCharacter::LookRight(float Value)
 {
-    MouseY = value;
-	AddControllerYawInput(value);
+    MouseY = Value;
+	AddControllerYawInput(Value);
     // checking mouse movement for recoil compensation logic
-    if (value != 0.0f && CurrentWeapon)
+    if (Value != 0.0f && CurrentWeapon)
     {
         CurrentWeapon->bShouldRecover = false;
         CurrentWeapon->RecoilRecoveryTimeline.Stop();
@@ -273,22 +273,22 @@ void AFPSCharacter::StopCrouch()
     }
 }
 
-void AFPSCharacter::EndCrouch(bool bToSprint)
+void AFPSCharacter::EndCrouch(const bool bToSprint)
 {
     if (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)
     {
-        //FVector centerVector = GetActorLocation();
-        //centerVector.Z += 46;
+        FVector CenterVector = GetActorLocation();
+        CenterVector.Z += 46;
 
-        //FCollisionShape CollisionCapsule = FCollisionShape::MakeCapsule(34.0f, defaultCapsuleHalfHeight);
+        const FCollisionShape CollisionCapsule = FCollisionShape::MakeCapsule(34.0f, DefaultCapsuleHalfHeight);
 
-        //DrawDebugCapsule(GetWorld(), centerVector, defaultCapsuleHalfHeight, 34.0f, FQuat::Identity, FColor::Red);
+        DrawDebugCapsule(GetWorld(), CenterVector, DefaultCapsuleHalfHeight, 34.0f, FQuat::Identity, FColor::Red);
 
-        //if (GetWorld()->SweepSingleByChannel(hit, centerVector, centerVector, FQuat::Identity, ECC_WorldStatic, CollisionCapsule))
-        //{
-        //    /* confetti or smth idk */
-        //    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
-        //}
+        if (GetWorld()->SweepSingleByChannel(Hit, CenterVector, CenterVector, FQuat::Identity, ECC_WorldStatic, CollisionCapsule))
+        {
+            /* confetti or smth idk */
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
+        }
         if (bToSprint)
         {
             UpdateMovementValues(EMovementState::State_Sprint);
@@ -359,10 +359,9 @@ void AFPSCharacter::StopSlide()
 void AFPSCharacter::CheckVault()
 {
     float ForwardVelocity = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
-    // When you have a if statement, that end at the end of the function, just invert the statement and call return. Is way faster.
     if (!(ForwardVelocity > 0 && !bIsVaulting && GetCharacterMovement()->IsFalling())) return;
 
-    // store those for future use.
+    // store these for future use.
     FVector ColliderLocation = GetCapsuleComponent()->GetComponentLocation();
     FRotator ColliderRotation = GetCapsuleComponent()->GetComponentRotation();
 
@@ -413,13 +412,13 @@ void AFPSCharacter::CheckVault()
 
     int i;
 
-    FVector forwardAddition = UKismetMathLibrary::GetForwardVector(ColliderRotation) * 5;
-    float calucationHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2;
-    float scaledCapsuleWthoutHemi = GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
+    FVector ForwardAddition = UKismetMathLibrary::GetForwardVector(ColliderRotation) * 5;
+    float CalculationHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2;
+    float ScaledCapsuleWithoutHemisphere = GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
     for (i = 0; i <= VaultTraceAmount; i++)
     {
-        SecondaryVaultStartLocation += forwardAddition;
-        SecondaryVaultEndLocation += forwardAddition;
+        SecondaryVaultStartLocation += ForwardAddition;
+        SecondaryVaultEndLocation += ForwardAddition;
         bVaultFailed = true;
         if (!GetWorld()->LineTraceSingleByChannel(VaultHit, SecondaryVaultStartLocation, SecondaryVaultEndLocation, ECC_WorldStatic, TraceParams)) continue;
         if (bDrawDebug)
@@ -445,12 +444,12 @@ void AFPSCharacter::CheckVault()
         //UPrimitiveComponent* hitComponent = hit.Component;
 
         FVector CalculationVector = FVector::ZeroVector;
-        CalculationVector.Z = calucationHeight;
+        CalculationVector.Z = CalculationHeight;
         DownTracePoint += CalculationVector;
         StartLocation = DownTracePoint;
-        StartLocation.Z += scaledCapsuleWthoutHemi;
+        StartLocation.Z += ScaledCapsuleWithoutHemisphere;
         EndLocation = DownTracePoint;
-        EndLocation.Z -= scaledCapsuleWthoutHemi;
+        EndLocation.Z -= ScaledCapsuleWithoutHemisphere;
 
         //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
         if (GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams)) continue;
@@ -740,12 +739,12 @@ void AFPSCharacter::Reload()
     }
 }
 
-void AFPSCharacter::StartADS()
+void AFPSCharacter::StartAds()
 {
     bWantsToAim = true;
 }
 
-void AFPSCharacter::StopADS()
+void AFPSCharacter::StopAds()
 {
     bWantsToAim = false;
 }
@@ -875,8 +874,8 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
     PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AFPSCharacter::Reload);
 
     // Aiming Down Sights
-    PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSCharacter::StartADS);
-    PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSCharacter::StopADS);
+    PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSCharacter::StartAds);
+    PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSCharacter::StopAds);
 
     PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AFPSCharacter::WorldInteract);
 

@@ -12,6 +12,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "func_lib/AttachmentHelpers.h"
+#include "Isolation/Isolation.h"
 #include "Particles/ParticleSystem.h"
 
 // Sets default values
@@ -370,7 +371,7 @@ void ASWeaponBase::Fire()
             FVector EndPoint = TraceEnd;
 
             // Drawing a line trace based on the parameters calculated previously 
-            if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_GameTraceChannel1, QueryParams))
+            if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, WEAPON_TRACE, QueryParams))
             {                
                 // Drawing debug line trace
                 if (bShowDebug)

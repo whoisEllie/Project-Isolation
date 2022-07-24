@@ -134,7 +134,7 @@ void ASWeaponPickup::Interact()
 	// If the player has no weapons or only a primary weapon
 	if ((PlayerCharacter->GetPrimaryWeapon() == nullptr && PlayerCharacter->GetSecondaryWeapon() == nullptr) || (PlayerCharacter->GetPrimaryWeapon() == nullptr && PlayerCharacter->GetSecondaryWeapon() != nullptr))
 	{
-		PlayerCharacter->SetPrimaryWeaponCacheMap(DataStruct);
+		PlayerCharacter->SetPrimaryWeaponCacheMap(&DataStruct);
 		
 		PlayerCharacter->UpdateWeapon(WeaponReference, false, &DataStruct, bStatic, FTransform::Identity);
 		if (PlayerCharacter->GetCurrentWeapon())
@@ -147,7 +147,7 @@ void ASWeaponPickup::Interact()
 	// If the player has a primary weapon but no secondary weapon
 	else if (PlayerCharacter->GetSecondaryWeapon() == nullptr && PlayerCharacter->GetPrimaryWeapon() != nullptr)
 	{
-		PlayerCharacter->SetSecondaryWeaponCacheMap(DataStruct);
+		PlayerCharacter->SetSecondaryWeaponCacheMap(&DataStruct);
 		
 		PlayerCharacter->UpdateWeapon(WeaponReference, false, &DataStruct, bStatic, FTransform::Identity);
 		if (PlayerCharacter->GetCurrentWeapon())
@@ -164,7 +164,7 @@ void ASWeaponPickup::Interact()
 		if (PlayerCharacter->IsPrimaryWeaponEquipped())
 		{
 			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->GetPrimaryWeaponCacheMap(), bStatic, GetTransform());
-			PlayerCharacter->SetPrimaryWeaponCacheMap(DataStruct);
+			PlayerCharacter->SetPrimaryWeaponCacheMap(&DataStruct);
 			
 			if (PlayerCharacter->GetCurrentWeapon())
 			{
@@ -176,7 +176,7 @@ void ASWeaponPickup::Interact()
 		else
 		{
 			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->GetSecondaryWeaponCacheMap(), bStatic, GetTransform());
-			PlayerCharacter->SetSecondaryWeaponCacheMap(DataStruct);
+			PlayerCharacter->SetSecondaryWeaponCacheMap(&DataStruct);
 			
 			if (PlayerCharacter->GetCurrentWeapon())
 			{
