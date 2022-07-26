@@ -357,6 +357,7 @@ private:
 	bool HasSpaceToStandUp();
 
 	/** Ticks the timeline */
+	UFUNCTION()
 	void TimelineProgress(float Value);
 
 	/** Interaction with the world using SInteractInterface */

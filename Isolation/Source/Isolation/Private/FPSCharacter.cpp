@@ -56,9 +56,7 @@ AFPSCharacter::AFPSCharacter()
 }
 
 void AFPSCharacter::TimelineProgress(float Value)
-{
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("ticked timeline"));
-    
+{    
     const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), Value);
     SetActorLocation(NewLocation);
     if (Value == 1)
@@ -384,9 +382,6 @@ void AFPSCharacter::CheckVault()
 
     if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50), TraceParams)) return;
     if (!Hit.bBlockingHit) return;
-
-
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("1"));
     
     FVector ForwardImpactPoint = Hit.ImpactPoint;
     FVector ForwardImpactNormal = Hit.ImpactNormal;
@@ -400,8 +395,6 @@ void AFPSCharacter::CheckVault()
 
     if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams)) return;
     if (!GetCharacterMovement()->IsWalkable(Hit)) return;
-
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("2"));
     
     FVector SecondaryVaultStartLocation = Hit.ImpactPoint;
     SecondaryVaultStartLocation.Z += 5;
@@ -424,8 +417,6 @@ void AFPSCharacter::CheckVault()
     FVector ForwardAddition = UKismetMathLibrary::GetForwardVector(ColliderRotation) * 5;
     float CalculationHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2;
     float ScaledCapsuleWithoutHemisphere = GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
-
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("3"));
     
     for (i = 0; i <= VaultTraceAmount; i++)
     {
@@ -463,8 +454,6 @@ void AFPSCharacter::CheckVault()
         EndLocation = DownTracePoint;
         EndLocation.Z -= ScaledCapsuleWithoutHemisphere;
 
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("4"));
-
         if (bDrawDebug)
         {
             DrawDebugSphere(GetWorld(), StartLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
@@ -481,8 +470,6 @@ void AFPSCharacter::CheckVault()
     }
 
     if (!bVaultFailed) return;
-
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("5"));
     
     FVector DownTracePoint = Hit.Location;
     DownTracePoint.Z = Hit.ImpactPoint.Z;
@@ -503,8 +490,6 @@ void AFPSCharacter::CheckVault()
     ForwardImpactNormal.Y -= 1;
     LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
     bIsVaulting = true;
-
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("6"));
     
     Vault(LocalTargetTransform);
 }
@@ -566,7 +551,6 @@ void AFPSCharacter::Vault(const FTransform TargetTransform)
     VaultEndLocation = TargetTransform;
     UpdateMovementValues(EMovementState::State_Vault);
     HandsMeshComp->GetAnimInstance()->Montage_Play(VaultMontage, 1.0f);
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("7"));
     VaultTimeline.PlayFromStart();
 }
 
