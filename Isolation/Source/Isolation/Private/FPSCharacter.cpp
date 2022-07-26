@@ -55,11 +55,13 @@ AFPSCharacter::AFPSCharacter()
     QueryParams.bReturnPhysicalMaterial = true;
 }
 
-void AFPSCharacter::TimelineProgress(float value)
+void AFPSCharacter::TimelineProgress(float Value)
 {
-    const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), value);
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("ticked timeline"));
+    
+    const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), Value);
     SetActorLocation(NewLocation);
-    if (value == 1)
+    if (Value == 1)
     {
         bIsVaulting = false;
         if (bHoldingSprint)
@@ -76,10 +78,10 @@ void AFPSCharacter::BeginPlay()
 
     if (IsValid(HUDWidget))
     {
-        UserWidget = Cast<USHUDWidget>(CreateWidget(GetWorld(), HUDWidget));
-        if (UserWidget != nullptr)
+        PlayerHudWidget = Cast<USHUDWidget>(CreateWidget(GetWorld(), HUDWidget));
+        if (PlayerHudWidget != nullptr)
         {
-            UserWidget->AddToViewport();
+            PlayerHudWidget->AddToViewport();
         }
     }
 	
@@ -88,6 +90,7 @@ void AFPSCharacter::BeginPlay()
 
     if (CurveFloat)
     {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Bound timelineprogress"));
         FOnTimelineFloat TimelineProgress;
         TimelineProgress.BindUFunction(this, FName("TimelineProgress"));
         VaultTimeline.AddInterpFloat(CurveFloat, TimelineProgress);
@@ -246,7 +249,7 @@ void AFPSCharacter::StartCrouch()
     {
         if (MovementState == EMovementState::State_Crouch)
         {
-            EndCrouch(false);
+            StopCrouch(false);
             //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
         }
         else if (MovementState == EMovementState::State_Sprint && !bPerformedSlide)
@@ -264,7 +267,7 @@ void AFPSCharacter::StartCrouch()
     }
 }
 
-void AFPSCharacter::StopCrouch()
+void AFPSCharacter::ReleaseCrouch()
 {
     bHoldingCrouch = false;
     bPerformedSlide = false;
@@ -274,7 +277,7 @@ void AFPSCharacter::StopCrouch()
     }
 }
 
-void AFPSCharacter::EndCrouch(const bool bToSprint)
+void AFPSCharacter::StopCrouch(const bool bToSprint)
 {
     if ((MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide) && HasSpaceToStandUp())
     {
@@ -326,7 +329,7 @@ void AFPSCharacter::StartSlide()
 {
     bPerformedSlide = true;
     UpdateMovementValues(EMovementState::State_Slide);
-    GetWorldTimerManager().SetTimer(SlideStop, this, &AFPSCharacter::StopSlide, SlideTime, false, SlideTime);
+    GetWorldTimerManager().SetTimer(SlideStop, this, &AFPSCharacter::ReleaseCrouch, SlideTime, false, SlideTime);
 }
 
 void AFPSCharacter::StopSlide()
@@ -339,7 +342,7 @@ void AFPSCharacter::StopSlide()
         }
         else if (bHoldingSprint)
         {
-            EndCrouch(true);
+            StopCrouch(true);
         }
         else if (bHoldingCrouch)
         {
@@ -354,12 +357,12 @@ void AFPSCharacter::StopSlide()
     }
     else if (FloorAngle < -15.0f)
     {
-        GetWorldTimerManager().SetTimer(SlideStop, this, &AFPSCharacter::StopSlide, 0.1f, false, 0.1f);
+        GetWorldTimerManager().SetTimer(SlideStop, this, &AFPSCharacter::ReleaseCrouch, 0.1f, false, 0.1f);
     }
 }
 
 void AFPSCharacter::CheckVault()
-{
+{    
     float ForwardVelocity = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
     if (!(ForwardVelocity > 0 && !bIsVaulting && GetCharacterMovement()->IsFalling())) return;
 
@@ -383,6 +386,8 @@ void AFPSCharacter::CheckVault()
     if (!Hit.bBlockingHit) return;
 
 
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("1"));
+    
     FVector ForwardImpactPoint = Hit.ImpactPoint;
     FVector ForwardImpactNormal = Hit.ImpactNormal;
     FVector CapsuleLocation = ForwardImpactPoint;
@@ -396,6 +401,8 @@ void AFPSCharacter::CheckVault()
     if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams)) return;
     if (!GetCharacterMovement()->IsWalkable(Hit)) return;
 
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("2"));
+    
     FVector SecondaryVaultStartLocation = Hit.ImpactPoint;
     SecondaryVaultStartLocation.Z += 5;
     FVector SecondaryVaultEndLocation = SecondaryVaultStartLocation;
@@ -417,6 +424,9 @@ void AFPSCharacter::CheckVault()
     FVector ForwardAddition = UKismetMathLibrary::GetForwardVector(ColliderRotation) * 5;
     float CalculationHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2;
     float ScaledCapsuleWithoutHemisphere = GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
+
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("3"));
+    
     for (i = 0; i <= VaultTraceAmount; i++)
     {
         SecondaryVaultStartLocation += ForwardAddition;
@@ -453,7 +463,12 @@ void AFPSCharacter::CheckVault()
         EndLocation = DownTracePoint;
         EndLocation.Z -= ScaledCapsuleWithoutHemisphere;
 
-        //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("4"));
+
+        if (bDrawDebug)
+        {
+            DrawDebugSphere(GetWorld(), StartLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
+        }
         if (GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams)) continue;
 
         ForwardImpactNormal.X -= 1;
@@ -467,13 +482,15 @@ void AFPSCharacter::CheckVault()
 
     if (!bVaultFailed) return;
 
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("5"));
+    
     FVector DownTracePoint = Hit.Location;
     DownTracePoint.Z = Hit.ImpactPoint.Z;
     //UPrimitiveComponent* hitComponent = hit.Component;
 
-    FVector calculationVector = FVector::ZeroVector;
-    calculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
-    DownTracePoint += calculationVector;
+    FVector CalculationVector = FVector::ZeroVector;
+    CalculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
+    DownTracePoint += CalculationVector;
     StartLocation = DownTracePoint;
     StartLocation.Z += (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
     EndLocation = DownTracePoint;
@@ -486,10 +503,13 @@ void AFPSCharacter::CheckVault()
     ForwardImpactNormal.Y -= 1;
     LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
     bIsVaulting = true;
+
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("6"));
+    
     Vault(LocalTargetTransform);
 }
 
-void AFPSCharacter::CheckAngle()
+void AFPSCharacter::CheckAngle(float DeltaTime)
 {
     FCollisionQueryParams TraceParams;
     TraceParams.bTraceComplex = true;
@@ -507,7 +527,7 @@ void AFPSCharacter::CheckAngle()
         FloorAngle = FinalRotation.Pitch;
         if (bDrawDebug)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::Printf(TEXT("%f"),FloorAngle), true);
+            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::Printf(TEXT("Current floor angle = %f"),FloorAngle), true);
         }
     }
 }
@@ -546,11 +566,12 @@ void AFPSCharacter::Vault(const FTransform TargetTransform)
     VaultEndLocation = TargetTransform;
     UpdateMovementValues(EMovementState::State_Vault);
     HandsMeshComp->GetAnimInstance()->Montage_Play(VaultMontage, 1.0f);
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("7"));
     VaultTimeline.PlayFromStart();
 }
 
 // Function that determines the player's maximum speed and other related variables based on movement state
-void AFPSCharacter::UpdateMovementValues(EMovementState NewMovementState)
+void AFPSCharacter::UpdateMovementValues(const EMovementState NewMovementState)
 {
     bIsSprinting = false;
     bIsCrouching = false;
@@ -619,7 +640,7 @@ void AFPSCharacter::UpdateMovementValues(EMovementState NewMovementState)
 
 // Spawns a new weapon (either from weapon swap or picking up a new weapon)
 void AFPSCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const bool bSpawnPickup,
-                                 FWeaponDataStruct* OldDataStruct, const bool bStatic, const FTransform PickupTransform)
+                                 FWeaponDataStruct* CurrentDataStruct, const bool bStatic, const FTransform PickupTransform)
 {
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
@@ -645,8 +666,8 @@ void AFPSCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, cons
             NewPickup->bStatic = bStatic;
             NewPickup->bRuntimeSpawned = true;
             NewPickup->WeaponReference = CurrentWeapon->GetClass();
-            NewPickup->DataStruct = *OldDataStruct;
-            NewPickup->AttachmentArray = OldDataStruct->WeaponAttachments;
+            NewPickup->DataStruct = *CurrentDataStruct;
+            NewPickup->AttachmentArray = CurrentDataStruct->WeaponAttachments;
             NewPickup->SpawnAttachmentMesh();
         }
         
@@ -742,7 +763,7 @@ void AFPSCharacter::SwapToSecondary()
     }
 }
 
-// Passing player inputs to SWeaponBase
+// Passing player inputs to WeaponBase
 void AFPSCharacter::StartFire()
 {
     if (CurrentWeapon)
@@ -751,7 +772,7 @@ void AFPSCharacter::StartFire()
     }
 }
 
-// Passing player inputs to SWeaponBase
+// Passing player inputs to WeaponBase
 void AFPSCharacter::StopFire()
 {
     if (CurrentWeapon)
@@ -760,7 +781,7 @@ void AFPSCharacter::StopFire()
     }
 }
 
-// Passing player inputs to SWeaponBase
+// Passing player inputs to WeaponBase
 void AFPSCharacter::Reload()
 {
     if (CurrentWeapon)
@@ -784,10 +805,13 @@ void AFPSCharacter::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+    // Timeline tick
+    VaultTimeline.TickTimeline(DeltaTime);
+
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
 	const float TargetHalfHeight = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? CrouchedCapsuleHalfHeight : DefaultCapsuleHalfHeight;
-    const float SpringArmTargetOffset = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? CrouchedSpringArmHeight : 0.0f;
+    const float SpringArmTargetOffset = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? CrouchedSpringArmHeightDelta : 0.0f;
     // Interpolates between the current height and the target height
 	const float NewHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHalfHeight, DeltaTime, CrouchSpeed);
     const float NewLocation = FMath::FInterpTo(CurrentSpringArmOffset, SpringArmTargetOffset, DeltaTime, CrouchSpeed);
@@ -832,10 +856,7 @@ void AFPSCharacter::Tick(const float DeltaTime)
 
     CheckVault();
 
-    // Timeline tick
-    VaultTimeline.TickTimeline(DeltaTime);
-
-    CheckAngle();
+    CheckAngle(DeltaTime);
 
 
     if (bDrawDebug)
@@ -889,7 +910,7 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	
 	// Crouching
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AFPSCharacter::StartCrouch);
-    PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AFPSCharacter::StopCrouch);
+    PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AFPSCharacter::ReleaseCrouch);
 	
 	// Sprinting
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AFPSCharacter::StartSprint);

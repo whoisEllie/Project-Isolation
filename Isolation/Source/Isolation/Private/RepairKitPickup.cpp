@@ -18,7 +18,7 @@ void ASRepairKitPickup::Interact()
 	// Spawning our pickup sound effect
 	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSFX, GetActorLocation());
 
-	PlayerCharacter->GetUserWidget()->ShowRepairKitCount();
+	PlayerCharacter->GetPlayerHud()->ShowRepairKitCount();
 	
 	Destroy();
 }

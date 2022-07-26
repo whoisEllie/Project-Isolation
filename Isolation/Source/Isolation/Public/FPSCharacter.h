@@ -2,14 +2,11 @@
 
 #pragma once
 
-#include <unicode/platform.h>
-
 #include "CoreMinimal.h"
 #include "HUDWidget.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
 #include "FPSCharacter.generated.h"
-
 
 class UCameraComponent;
 class USpringArmComponent;
@@ -19,7 +16,7 @@ class UAnimMontage;
 class UCurveFloat;
 class UBlendSpace;
 
-/** Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FsingleWeaponParams struct)
+/** Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FSingleWeaponParams struct)
  * and to keep track of the total ammo the player has (ammoMap) */
 UENUM(BlueprintType)
 enum class EAmmoType : uint8
@@ -30,6 +27,7 @@ enum class EAmmoType : uint8
 	Special		 UMETA(DisplayName = "Special Ammo"),
 };
 
+/** Movement state enumerator holding all possible movement states */
 UENUM(BlueprintType)
 enum class EMovementState : uint8
 {
@@ -40,6 +38,7 @@ enum class EMovementState : uint8
 	State_Vault	    UMETA(DisplayName = "Vaulting")
 };
 
+/** Struct keeping track of important weapon variables for the primary/secondary weapons */
 USTRUCT(BlueprintType)
 struct FWeaponDataStruct
 {
@@ -77,131 +76,196 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FootstepSounds();
 
-	/** Functions for UI
-	 *  Get the amount of ammunition currently loaded into the weapon  */
+	/**  Returns the amount of ammunition currently loaded into the weapon  */
 	UFUNCTION(BlueprintCallable)
 	FText GetCurrentWeaponLoadedAmmo() const;
 
-	/** Get the amount of ammunition remaining for the current weapon */
+	/** Returns the amount of ammunition remaining for the current weapon */
 	UFUNCTION(BlueprintCallable)
 	FText GetCurrentWeaponRemainingAmmo() const;
 
-	/** Switching to a new weapon */
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct* OldDataStruct, bool bStatic, FTransform PickupTransform);
+	/** Switching to a new weapon
+	 * @param NewWeapon The new weapon which to spawn
+	 * @param bSpawnPickup Whether to spawn a pickup of CurrentWeapon (can be false if player has an empty weapon slot)
+	 * @param CurrentDataStruct The current struct of weapon data, used to assign data to the pickup
+	 * @param bStatic Whether the spawned pickup should implement a physics simulation or not
+	 * @param PickupTransform The position at which to spawn the new pickup, in the case that it is static (bStatic)
+	 */
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct* CurrentDataStruct,
+	                  bool bStatic, FTransform PickupTransform);
 
+	/** Returns the character's forward movement (from 0 to 1) */
 	UFUNCTION(BlueprintCallable)
 	float GetForwardMovement() const { return ForwardMovement; }
 
+	/** Returns the character's sideways movement (from 0 to 1) */
 	UFUNCTION(BlueprintCallable)
 	float GetRightMovement() const { return RightMovement; }
 
+	/** Returns the character's vertical mouse position (from 0 to 1) */
 	UFUNCTION(BlueprintCallable)
 	float GetMouseY() const { return MouseY; }
 
+	/** Returns the character's horizontal mouse position (from 0 to 1) */
 	UFUNCTION(BlueprintCallable)
 	float GetMouseX() const { return MouseX; }
 
+	/** Returns the current base FOV (without temporary modifications such as ADS or Sprint) */
 	UFUNCTION(BlueprintCallable)
 	float GetBaseFOV() const { return BaseFOV; }
 
+	/** Update the base FOV
+	 * @param NewFOV The FOV to use as a new BaseFOV
+	 */
 	UFUNCTION(BlueprintCallable)
 	void SetBaseFOV(const float NewFOV) { BaseFOV = NewFOV; }
-	
+
+	/** Returns the current weapon equipped by the player */
 	UFUNCTION(BlueprintCallable)
 	ASWeaponBase* GetCurrentWeapon() const {return CurrentWeapon; }
 
+	/** Returns the current visibility of the crosshair */
 	UFUNCTION(BlueprintCallable)
-	bool GetCrosshairVisibility() const { return bShowCrosshair; }
+	bool IsCrosshairVisible() const { return bShowCrosshair; }
 
+	/** Update the visibility of the crosshair in HUD UI component
+	 * @param bVisible The new visibility of the crosshair
+	 */
 	UFUNCTION(BlueprintCallable)
-	void SetCrosshairVisibility(const bool Visible) { bShowCrosshair = Visible; }
+	void SetCrosshairVisibility(const bool bVisible) { bShowCrosshair = bVisible; }
 
+	/** Returns whether the player is currently aiming or not */
 	UFUNCTION(BlueprintCallable)
-	bool GetAimingStatus() const { return bIsAiming; }
+	bool IsPlayerAiming() const { return bIsAiming; }
 
+	/** Returns whether the player is sprinting or not */
 	UFUNCTION(BlueprintCallable)
-	bool GetSprintingStatus() const { return bIsSprinting; }
+	bool IsPlayerSprinting() const { return bIsSprinting; }
 
-	bool GetCrouchingStatus() const { return bIsCrouching; }
+	/** Returns whether the player is crouching or not */
+	bool IsPlayerCrouching() const { return bIsCrouching; }
 
+	/** Returns the result of the interaction trace, which is true if the object that we are looking at is able to be
+	 *  interacted with */
 	UFUNCTION(BlueprintCallable)
 	bool CanInteract() const { return bCanInteract; }
 
+	/** Returns true if the interaction trace is hitting a weapon pickup */
 	bool InteractionIsWeapon() const { return bInteractionIsWeapon; }
 
+	/** Returns true if the current weapon is the primary weapon */
 	bool IsPrimaryWeaponEquipped() const { return bIsPrimary; }
 
+	/** Updates the weapon the player is holding, where true = primary weapon and false = secondary weapon
+	 *  @param bIsPrimaryWeaponEquipped Whether the equipped weapon should be the primary weapon
+	 */
 	void SetPrimaryWeaponEquipped(bool const bIsPrimaryWeaponEquipped) { bIsPrimary = bIsPrimaryWeaponEquipped; } 
 
+	/** Returns the character's current movement state */
 	EMovementState GetMovementState() const { return MovementState; }
 
+	/** Returns the display text of the current interactable object that the player is looking at */
 	UFUNCTION(BlueprintCallable)
 	FText& GetInteractText() { return InteractText; }
 
+	/** Returns the current primary weapon */
 	TSubclassOf<ASWeaponBase> GetPrimaryWeapon() const { return PrimaryWeapon; }
 
+	/** Updates the reference to the primary weapon
+	 *  @param NewWeapon The new primary weapon
+	 */
 	void SetPrimaryWeapon(TSubclassOf<ASWeaponBase> const NewWeapon) { PrimaryWeapon = NewWeapon; }
 
-	void SetSecondaryWeapon(TSubclassOf<ASWeaponBase> const NewWeapon) { SecondaryWeapon = NewWeapon; }
-
+	/** Returns the current secondary weapon */
 	TSubclassOf<ASWeaponBase> GetSecondaryWeapon() const { return SecondaryWeapon; }
 
+	/** Updates the reference to the secondary weapon
+	 *  @param NewWeapon The new secondary weapon
+	 */
+	void SetSecondaryWeapon(TSubclassOf<ASWeaponBase> const NewWeapon) { SecondaryWeapon = NewWeapon; }
+
+	/** Returns the character's hands mesh */
 	USkeletalMeshComponent* GetHandsMesh() const { return HandsMeshComp; }
 
+	/** Returns a reference to the primary weapon's cached data map */
 	FWeaponDataStruct* GetPrimaryWeaponCacheMap() { return &PrimaryWeaponCacheMap; }
 
-	void SetPrimaryWeaponCacheMap(const FWeaponDataStruct* const NewWeaponDataStruct) { PrimaryWeaponCacheMap = *NewWeaponDataStruct; }
+	/** Updates the primary weapon's cached data map
+	 *	@param NewWeaponDataStruct The new FWeaponDataStruct
+	 */
+	void SetPrimaryWeaponCacheMap(const FWeaponDataStruct* const NewWeaponDataStruct)
+	{
+		PrimaryWeaponCacheMap = *NewWeaponDataStruct;
+	}
 
+	/** Returns a reference to the secondary weapon's cached data map */
 	FWeaponDataStruct* GetSecondaryWeaponCacheMap() { return &SecondaryWeaponCacheMap; }
 
-	void SetSecondaryWeaponCacheMap(const FWeaponDataStruct* const NewWeaponDataStruct) { SecondaryWeaponCacheMap = *NewWeaponDataStruct; }
+	/** Updates the secondary weapon's cached data map
+	 *	@param NewWeaponDataStruct The new FWeaponDataStruct
+	 */
+	void SetSecondaryWeaponCacheMap(const FWeaponDataStruct* const NewWeaponDataStruct)
+	{
+		SecondaryWeaponCacheMap = *NewWeaponDataStruct;
+	}
 
-	USHUDWidget* GetUserWidget() const { return UserWidget; }
+	/** Returns a reference to the player's heads up display */
+	USHUDWidget* GetPlayerHud() const { return PlayerHudWidget; }
 
+	/** Returns a reference to the player's camera component */
 	UCameraComponent* GetCameraComponent() const { return CameraComp; }
 
+	/** Returns the character's empty-handed walking blend space */
 	UFUNCTION(BlueprintCallable)
 	UBlendSpace* GetWalkBlendSpace() const { return BS_Walk; }
 
+	/** Returns the character's empty-handed walking blend space for use in the aiming state */
 	UFUNCTION(BlueprintCallable)
 	UBlendSpace* GetWalkAdsBlendSpace() const { return BS_Ads_Walk; }
 
+	/** Returns the character's empty-handed idle animation */
 	UFUNCTION(BlueprintCallable)
 	UAnimSequence* GetIdleAnim() const { return Anim_Idle; }
 
+	/** Returns the character's empty handed idle animation for use in the aiming state */
 	UFUNCTION(BlueprintCallable)
 	UAnimSequence* GetAdsIdleAnim() const { return Anim_Ads_Idle; }
 
+	/** Returns the character's empty handed sprinting animation */
 	UFUNCTION(BlueprintCallable)
 	UAnimSequence* GetSprintAnim() const { return Anim_Sprint; }	
 	
 protected:
 
-	/**Camera Comp - component for the FPS camera */
+	/** The character's FPS camera component */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Components")
 	UCameraComponent* CameraComp;
 
-	/**Hands mesh, assignable through blueprints */
+	/**  The character's hands mesh component */
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USkeletalMeshComponent* HandsMeshComp;
 	
-	/**Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation' */
+	/** Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation' */
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USpringArmComponent* SpringArmComp;
 	
-	/** Hand animations for when the player has no weapon  */
+	/** Hand animation blend space for when the player has no weapon  */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
 	UBlendSpace* BS_Walk;
 
+	/** Hand animation blend space for then the player has no weapon and is aiming down sights */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
 	UBlendSpace* BS_Ads_Walk;
 
+	/** Hand animation for when the player has no weapon and is idle */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
 	UAnimSequence* Anim_Idle;
 
+	/** Hand animation for when the player has no weapon, is idle, and is aiming down sights */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
 	UAnimSequence* Anim_Ads_Idle;
 
+	/** Hand animation for when the player has no weapon and is sprinting */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
 	UAnimSequence* Anim_Sprint;
 
@@ -226,15 +290,19 @@ private:
 	/** Looking left/right (takes axis as input from CharacterMovementComponent.h) */
 	void LookRight(float Value);
 
-	/** Alternative to the built in Crouch function */
+	/** Alternative to the built in Crouch function
+	 *  Handles crouch input and decides what action to perform based on the character's current state
+	 */
 	void StartCrouch();
+	
+	/** Transitions the character out of the crouched state
+	 *	@param bToSprint Whether to transition into a sprint state
+	 */
+	void StopCrouch(bool bToSprint);
 
-	/** Alternative to the built in UnCrouch function */
-	void StopCrouch();
-
-	/** We do this so that we can perform checks based on the height above the player (can they even stand up?) and to handle sliding */
-	void EndCrouch(bool bToSprint);
-
+	/** Exits the character from the slide state if they are sliding and updates bHoldingCrouch */
+	void ReleaseCrouch();
+	
 	/** Starting to sprint */
 	void StartSprint();
 
@@ -253,14 +321,18 @@ private:
 	/** Function that actually executes the Vault */
 	void Vault(FTransform TargetTransform);
 	
-	/** Global system to update movement speed */
+	/** A global system that handles updates to the movement state and changes relevant values accordingly
+	 *	@param NewMovementState The new movement state of the player
+	 */
 	void UpdateMovementValues(EMovementState NewMovementState);
 
+	/** Temp function for swap to primary */
 	void SwapToPrimary();
 
+	/** Temp function for swap to secondary */
 	void SwapToSecondary();
 	
-	/** Changing the weapon with the scroll wheel */
+	/** Swaps between the primary and secondary weapon using the scroll wheel */
 	void ScrollWeapon();
 
 	/** Fires the weapon */
@@ -279,20 +351,25 @@ private:
 	void StopAds();
 
 	/** Checks the angle of the floor to determine slide behaviour */
-	void CheckAngle();
+	void CheckAngle(float DeltaTime);
 
 	/** Trace above the player to make sure we have enough space to stand up */
 	bool HasSpaceToStandUp();
 
 	/** Ticks the timeline */
-	UFUNCTION()
-	void TimelineProgress(float value);
+	void TimelineProgress(float Value);
 
 	/** Interaction with the world using SInteractInterface */
 	void WorldInteract();
 
 	/** Displaying the indicator for interaction */
 	void InteractionIndicator();
+
+	/** Debug */
+	
+	/** Prints debug variables if true */
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	bool bDrawDebug;
 
 	/** Variables for movement */
 	
@@ -312,13 +389,17 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float SlideSpeed = 1000.0f;
 
-	/** Sets the height of the player when crouched */
+	/** Sets the height of the player's capsule component when crouched */	
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float CrouchedCapsuleHalfHeight = 68.0f; // the desired final crouch height, can be overridden in BP_Character
+	float CrouchedCapsuleHalfHeight = 58.0f;
 
-	/** Sets the height of the spring arm that the camera + hands rest on when the player is crouched */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float CrouchedSpringArmHeight = -30.0f;
+	/** The change in height of the spring arm that the camera + hands rest on when the player is crouched
+	 *	@warning { In order to best line up with the crouched height, this should be equal to the
+	 *	CrouchedCapsuleHalfHeight minus the capsule's default height. For example, if the default capsule half height
+	 *	is 88.0f, and the crouched half height is 58.0f, then the crouched spring arm height delta should be -30 }
+	 */
+	float CrouchedSpringArmHeightDelta = -30.0f;
 	
 	float CurrentSpringArmOffset = 0.0f;
 	
@@ -396,10 +477,6 @@ private:
 	/** wants to slide? (is holding the crouch/slide key, but not on the ground) */
 	bool bWantsToSlide;
 	
-	/** prints debug variables if enabled */
-	UPROPERTY(EditDefaultsOnly, Category = "Debug")
-	bool bDrawDebug;
-
 	/** Getters + Setters
 	 *  keeps track of whether we're sprinting (for animations) */
 	bool bIsSprinting;
@@ -447,7 +524,7 @@ private:
 	FWeaponDataStruct SecondaryWeaponCacheMap;
 	
 	UPROPERTY()
-	USHUDWidget* UserWidget;
+	USHUDWidget* PlayerHudWidget;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	UAudioComponent* FootstepAudioComp;
@@ -473,6 +550,7 @@ private:
 	UCurveFloat* CurveFloat;
 	
 	/** The timeline for vaulting (generated from the curve) */
+	UPROPERTY()
 	FTimeline VaultTimeline;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "UI")

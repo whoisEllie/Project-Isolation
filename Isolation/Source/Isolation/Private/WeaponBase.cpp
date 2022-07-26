@@ -348,7 +348,7 @@ void ASWeaponBase::Fire()
             TraceStartRotation = PlayerCharacter->GetCameraComponent()->GetComponentRotation();
 
             float AccuracyMultiplier = 1.0f;
-            if (!PlayerCharacter->GetAimingStatus())
+            if (!PlayerCharacter->IsPlayerAiming())
             {
                 AccuracyMultiplier = WeaponData->AccuracyDebuff;
             }
@@ -670,7 +670,7 @@ float ASWeaponBase::FOVFromMagnification() const
 void ASWeaponBase::RenderScope() const
 {
     const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-    if (PlayerCharacter->GetAimingStatus())
+    if (PlayerCharacter->IsPlayerAiming())
     {
         ScopeCaptureComponent->CaptureScene();
     }

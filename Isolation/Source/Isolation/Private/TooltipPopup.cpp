@@ -84,7 +84,7 @@ void ASTooltipPopup::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Confirmed Playercharacter overlap"));
 			}
 
-			PlayerCharacter->GetUserWidget()->ReceiveTooltipInput(TooltipTitle, TooltipDescription);
+			PlayerCharacter->GetPlayerHud()->ReceiveTooltipInput(TooltipTitle, TooltipDescription);
 			ShouldDisplay = false;
 			GetWorldTimerManager().SetTimer(DisplayDelayHandle, this, &ASTooltipPopup::ResetDisplay, 300.0f, false, 300.0f);
 		}
