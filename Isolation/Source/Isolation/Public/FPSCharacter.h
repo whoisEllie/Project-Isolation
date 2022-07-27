@@ -269,6 +269,10 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
 	UAnimSequence* Anim_Sprint;
 
+	/** Hand montage, played during vault */
+	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
+	UAnimMontage* VaultMontage;
+
 
 private:
 
@@ -385,7 +389,7 @@ private:
 	/** Determines the speed of the character when crouched */
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float CrouchMovementSpeed = 250.0f;
-	
+		
 	/** Determines the speed of the character when sliding */
 	UPROPERTY(EditDefaultsOnly, Category = "Movement")
 	float SlideSpeed = 1000.0f;
@@ -393,38 +397,43 @@ private:
 	/** Sets the height of the player's capsule component when crouched */	
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float CrouchedCapsuleHalfHeight = 58.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	/** The change in height of the spring arm that the camera + hands rest on when the player is crouched
-	 *	@warning { In order to best line up with the crouched height, this should be equal to the
-	 *	CrouchedCapsuleHalfHeight minus the capsule's default height. For example, if the default capsule half height
-	 *	is 88.0f, and the crouched half height is 58.0f, then the crouched spring arm height delta should be -30 }
-	 */
-	float CrouchedSpringArmHeightDelta = -30.0f;
 	
+	/** The change in height of the spring arm that the camera + hands rest on when the player is crouched
+	 *
+	 *	In order to best line up with the crouched height, this should be equal to the
+	 *	CrouchedCapsuleHalfHeight minus the capsule's default height. For example, if the default capsule half height
+	 *	is 88.0f, and the crouched half height is 58.0f, then the crouched spring arm height delta should be -30
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	float CrouchedSpringArmHeightDelta = -30.0f;
+
+	/** The default offset of the spring arm from a Z position of 0, set automatically on BeginPlay */
+	float DefaultSpringArmOffset;
+	
+	//* The current offset of the spring arm */
 	float CurrentSpringArmOffset = 0.0f;
 	
-	/** Determines the rate at which the character crouches */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	/** The rate at which the character crouches */
+	UPROPERTY(EditDefaultsOnly, Category = "Variables") 
 	float CrouchSpeed = 10.0f;
 	
-	/** Slide time */
+	/** The time between the beginning of a slide and when it is ended */;
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float SlideTime = 1.0f;
 
-	/** change speed for the fov */
+	/** The speed at which FOV changes occur */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float FOVChangeSpeed = 2.0f;
 	
-	/** amount for FOV to increase */
+	/** The increase in FOV during fast actions, such as sprinting and sliding */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float FOVChangeAmount = 5.0f;
+	float SpeedFOVChange = 5.0f;
 
 	/** The height of the highest surface that the player can mantle up onto */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float MaxVaultHeight = 200.0f;
+	float MaxMantleHeight = 200.0f;
 	
-	/** The distance at which old weapons spawn during a weapon swap */
+	/** The distance at which pickups for old weapons spawn during a weapon swap */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float WeaponSpawnDistance = 100.0f;
 	
@@ -432,17 +441,17 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float InteractDistance = 400.0f;
 
-	/** amount of traces to draw for vault calculations, to get distance in unreal units, multiply by 5 */
+	/** The amount of traces to draw for vault collision checks, to get distance in unreal units, multiply by 5 */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	int VaultTraceAmount = 25.0f;
 	
 	/** Weapon classes */
 	
-	/** A reference to the player's current primary weapon */
+	/** The player's current primary weapon */
 	UPROPERTY()
 	TSubclassOf<ASWeaponBase> PrimaryWeapon;
 	
-	/** A reference to the player's current secondary weapon */
+	/** The player's current secondary weapon */
 	UPROPERTY()
 	TSubclassOf<ASWeaponBase> SecondaryWeapon;
 
@@ -454,13 +463,11 @@ private:
 	
 	/** The boolean holding whether the player wants to aim or not */
 	bool bWantsToAim;
-
-	/** Getters + Setters
-	 *  Whether we should render a crosshair or not */
+	
+	/** Whether we should render a crosshair or not */
 	bool bShowCrosshair;
 	
-	/** Getters + Setters
-	 *  The boolean holding whether we are aiming or not */
+	/** The boolean holding whether we are aiming or not */
 	bool bIsAiming;
 	
 	/** The boolean keeping track of whether we're vaulting or not */
@@ -478,20 +485,16 @@ private:
 	/** wants to slide? (is holding the crouch/slide key, but not on the ground) */
 	bool bWantsToSlide;
 	
-	/** Getters + Setters
-	 *  keeps track of whether we're sprinting (for animations) */
+	/** keeps track of whether we're sprinting (for animations) */
 	bool bIsSprinting;
 	
-	/** Getters + Setters
-	 *  keeps track of whether we're crouching (for animations) */
+	/** Keeps track of whether we're crouching (for animations) */
 	bool bIsCrouching;
 	
-	/** Getters + Setters
-	 *  keeps track of whether the object we are looking at is one we are able to interact with (used for UI) */
+	/** Keeps track of whether the object we are looking at is one we are able to interact with (used for UI) */
 	bool bCanInteract;
 	
-	/** Getters + Setters
-	 *  keeps track of whether the interaction object is a weapon pickup (used for UI) */
+	/** Keeps track of whether the interaction object is a weapon pickup (used for UI) */
 	bool bInteractionIsWeapon;
 	
 	/** Whether the player is holding the primary weapon (or not, and are thus holding the secondary weapon) */
@@ -530,7 +533,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	UAudioComponent* FootstepAudioComp;
 
-	/** keeps track of the opacity of scopes */
+	/** Keeps track of the opacity of scopes */
 	float ScopeBlend;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Materials")
@@ -569,17 +572,9 @@ private:
 	FTransform VaultStartLocation;
 
 	FTransform VaultEndLocation;
-
-	/** The montage for the hands vault animation  */
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
-	UAnimMontage* VaultMontage;
 	
-		
 	/** Set in the default values, the base height of the capsule */
 	float DefaultCapsuleHalfHeight;
-
-	/** Set in the default values, the default relative location of the spring arm */
-	FVector DefaultSpringArmHeight = FVector(0.0f, 0.0f, 90.0f);
 	
 	float BaseFOV;
 	

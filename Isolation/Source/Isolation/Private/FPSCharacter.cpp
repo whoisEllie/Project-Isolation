@@ -49,30 +49,15 @@ AFPSCharacter::AFPSCharacter()
     FootstepAudioComp->bAutoActivate = false;
     
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
-    //DefaultSpringArmHeight = SpringArmComp->GetComponentLocation(); // Setting the default location of the spring arm
     bIsPrimary = true;
 
     QueryParams.bReturnPhysicalMaterial = true;
 }
 
-void AFPSCharacter::TimelineProgress(float Value)
-{    
-    const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), Value);
-    SetActorLocation(NewLocation);
-    if (Value == 1)
-    {
-        bIsVaulting = false;
-        if (bHoldingSprint)
-        {
-            UpdateMovementValues(EMovementState::State_Sprint);
-        }
-    }
-}
-
 // Called when the game starts or when spawned
 void AFPSCharacter::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
     if (IsValid(HUDWidget))
     {
@@ -84,14 +69,29 @@ void AFPSCharacter::BeginPlay()
     }
 	
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    DefaultSpringArmOffset = SpringArmComp->GetRelativeLocation().Z; // Setting the default location of the spring arm
     BaseFOV = CameraComp->FieldOfView;
 
     if (CurveFloat)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Bound timelineprogress"));
         FOnTimelineFloat TimelineProgress;
         TimelineProgress.BindUFunction(this, FName("TimelineProgress"));
         VaultTimeline.AddInterpFloat(CurveFloat, TimelineProgress);
+    }
+}
+
+/** Progresses the timeline that is used to vault the character */
+void AFPSCharacter::TimelineProgress(const float Value)
+{    
+    const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), Value);
+    SetActorLocation(NewLocation);
+    if (Value == 1)
+    {
+        bIsVaulting = false;
+        if (bHoldingSprint)
+        {
+            UpdateMovementValues(EMovementState::State_Sprint);
+        }
     }
 }
 
@@ -293,7 +293,8 @@ void AFPSCharacter::StopCrouch(const bool bToSprint)
 // Starting to sprint (IE_Pressed)
 void AFPSCharacter::StartSprint()
 {
-    if (!HasSpaceToStandUp())
+    if (!HasSpaceToStandUp() && (MovementState == EMovementState::State_Crouch || MovementState ==
+        EMovementState::State_Slide))
     {
         return;
     }
@@ -306,16 +307,11 @@ void AFPSCharacter::StartSprint()
 // Stopping to sprint (IE_Released)
 void AFPSCharacter::StopSprint()
 {
-    if (!HasSpaceToStandUp())
-    {
-        return;
-    }
-    
     if (MovementState == EMovementState::State_Slide && bHoldingCrouch)
     {
         UpdateMovementValues(EMovementState::State_Crouch);
     }
-    else
+    else if (MovementState == EMovementState::State_Sprint)
     {
         UpdateMovementValues(EMovementState::State_Walk);
     }
@@ -438,7 +434,7 @@ void AFPSCharacter::CheckVault()
 
         PreviousTraceHeight = CurrentTraceHeight;
         CurrentTraceHeight = TraceLength;
-        if (!(!(FMath::IsNearlyEqual(CurrentTraceHeight, InitialTraceHeight, 20.0f)) && CurrentTraceHeight < MaxVaultHeight)) continue;
+        if (!(!(FMath::IsNearlyEqual(CurrentTraceHeight, InitialTraceHeight, 20.0f)) && CurrentTraceHeight < MaxMantleHeight)) continue;
 
         if (!FMath::IsNearlyEqual(PreviousTraceHeight, CurrentTraceHeight, 3.0f)) continue;
 
@@ -795,7 +791,7 @@ void AFPSCharacter::Tick(const float DeltaTime)
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
 	const float TargetHalfHeight = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? CrouchedCapsuleHalfHeight : DefaultCapsuleHalfHeight;
-    const float SpringArmTargetOffset = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? CrouchedSpringArmHeightDelta : 0.0f;
+    const float SpringArmTargetOffset = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? (DefaultSpringArmOffset + CrouchedSpringArmHeightDelta) : DefaultSpringArmOffset;
     // Interpolates between the current height and the target height
 	const float NewHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHalfHeight, DeltaTime, CrouchSpeed);
     const float NewLocation = FMath::FInterpTo(CurrentSpringArmOffset, SpringArmTargetOffset, DeltaTime, CrouchSpeed);
@@ -807,7 +803,7 @@ void AFPSCharacter::Tick(const float DeltaTime)
     SpringArmComp->SetRelativeLocation(NewSpringArmLocation);
     
     // FOV adjustments
-    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? (BaseFOV + FOVChangeAmount) : BaseFOV;
+    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? (BaseFOV + SpeedFOVChange) : BaseFOV;
     if (CurrentWeapon)
     {
         if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)
@@ -831,15 +827,17 @@ void AFPSCharacter::Tick(const float DeltaTime)
         bIsAiming = false;
     }
 
-    // 
+    // Slide performed check, so that if the player is in the air and presses the slide key, they slide when they land
     if (GetCharacterMovement()->IsMovingOnGround() && !bPerformedSlide && bWantsToSlide)
     {
         StartSlide();
         bWantsToSlide = false;
     }
 
+    // Checks whether we can vault every frame
     CheckVault();
 
+    // Checks the floor angle to determine whether we should keep sliding or not
     CheckAngle(DeltaTime);
 
 
@@ -855,12 +853,12 @@ void AFPSCharacter::Tick(const float DeltaTime)
         GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.WeaponHealth));
         GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Primary"));
     }
-    
+
+    // Checks to see if we are facing something to interact with, and updates the interaction indicator accordingly
     InteractionIndicator();
 
 
-    //Updating material parameters for    
-
+    //Updating the scope's material parameter collection
     if (CurrentWeapon)
     {
         if (CurrentWeapon->WeaponData)
@@ -868,12 +866,14 @@ void AFPSCharacter::Tick(const float DeltaTime)
             if (bIsAiming)
             {
                 ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 1, DeltaTime, 8.0f);
-                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection, OpacityParameterName,ScopeBlend);
+                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
+                                                                OpacityParameterName, ScopeBlend);
             }
             else
             {
                 ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 0, DeltaTime, 8.0f);
-                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection, OpacityParameterName,ScopeBlend);
+                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
+                                                                OpacityParameterName, ScopeBlend);
             }
         }
     }
