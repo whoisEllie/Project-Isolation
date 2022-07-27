@@ -458,9 +458,9 @@ void AFPSCharacter::CheckVault()
 
         ForwardImpactNormal.X -= 1;
         ForwardImpactNormal.Y -= 1;
-        LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
+        VaultTargetLocation = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
         bIsVaulting = true;
-        Vault(LocalTargetTransform);
+        Vault(VaultTargetLocation);
         bVaultFailed = false;
         break;
     }
@@ -480,14 +480,16 @@ void AFPSCharacter::CheckVault()
     EndLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
 
     //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
-    if (GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams)) return;
+    if (GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic,
+                                         FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()),
+                                         TraceParams)) return;
 
     ForwardImpactNormal.X -= 1;
     ForwardImpactNormal.Y -= 1;
-    LocalTargetTransform = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
+    VaultTargetLocation = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
     bIsVaulting = true;
     
-    Vault(LocalTargetTransform);
+    Vault(VaultTargetLocation);
 }
 
 void AFPSCharacter::CheckAngle(float DeltaTime)
@@ -503,12 +505,13 @@ void AFPSCharacter::CheckAngle(float DeltaTime)
     AngleEndTrace.Z -= 50;
     if (GetWorld()->LineTraceSingleByChannel(AngleHit, AngleStartTrace, AngleEndTrace, ECC_WorldStatic, TraceParams))
     {
-        FloorVector = AngleHit.ImpactNormal;
+        const FVector FloorVector = AngleHit.ImpactNormal;
         const FRotator FinalRotation = UKismetMathLibrary::MakeRotFromZX(FloorVector, GetActorForwardVector());
         FloorAngle = FinalRotation.Pitch;
         if (bDrawDebug)
         {
-            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::Printf(TEXT("Current floor angle = %f"),FloorAngle), true);
+            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red,
+                                             FString::Printf(TEXT("Current floor angle = %f"), FloorAngle), true);
         }
     }
 }

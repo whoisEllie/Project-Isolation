@@ -110,10 +110,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetMouseX() const { return MouseX; }
 
-	/** Returns the current base FOV (without temporary modifications such as ADS or Sprint) */
-	UFUNCTION(BlueprintCallable)
-	float GetBaseFOV() const { return BaseFOV; }
-
 	/** Update the base FOV
 	 * @param NewFOV The FOV to use as a new BaseFOV
 	 */
@@ -241,13 +237,17 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Components")
 	UCameraComponent* CameraComp;
 
-	/**  The character's hands mesh component */
+	/** The character's hands mesh component */
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USkeletalMeshComponent* HandsMeshComp;
 	
-	/** Spring Arm Comp - component for the spring arm, which is required to enable 'use control rotation' */
+	/** The spring arm component, which is required to enable 'use control rotation' */
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USpringArmComponent* SpringArmComp;
+
+	/** The component used to play audio for footsteps */
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UAudioComponent* FootstepAudioComp;
 	
 	/** Hand animation blend space for when the player has no weapon  */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
@@ -461,95 +461,88 @@ private:
 
 	/** Booleans */
 	
-	/** The boolean holding whether the player wants to aim or not */
+	/** Whether the player is holding down the aim down sights button */
 	bool bWantsToAim;
 	
-	/** Whether we should render a crosshair or not */
+	/** Whether we should display a crosshair or not */
 	bool bShowCrosshair;
 	
-	/** The boolean holding whether we are aiming or not */
+	/** Whether the player is actually aiming down sights */
 	bool bIsAiming;
 	
-	/** The boolean keeping track of whether we're vaulting or not */
+	/** Whether we are currently vaulting or not */
 	bool bIsVaulting;
 	
-	/** Keeps track whether the player is holding the Crouch button */
+	/** Whether the player is holding the crouch button */
 	bool bHoldingCrouch;
 	
-	/** Have we performed a slide yet? */
+	/** Whether the character has performed a slide yet? */
 	bool bPerformedSlide;
 	
-	/** Is holding the sprint key */
+	/** Whether the player is holding the sprint key */
 	bool bHoldingSprint;
 	
-	/** wants to slide? (is holding the crouch/slide key, but not on the ground) */
+	/** Whether the player wants to slide (is holding the crouch/slide key, but not on the ground) */
 	bool bWantsToSlide;
 	
-	/** keeps track of whether we're sprinting (for animations) */
+	/** Whether the character is sprinting */
 	bool bIsSprinting;
 	
-	/** Keeps track of whether we're crouching (for animations) */
+	/** Whether the character is crouching */
 	bool bIsCrouching;
 	
-	/** Keeps track of whether the object we are looking at is one we are able to interact with (used for UI) */
+	/** Whether the object we are looking at is one we are able to interact with (used for UI) */
 	bool bCanInteract;
 	
-	/** Keeps track of whether the interaction object is a weapon pickup (used for UI) */
+	/** Whether the interaction object the character is looking at is a weapon pickup (used for UI) */
 	bool bInteractionIsWeapon;
 	
 	/** Whether the player is holding the primary weapon (or not, and are thus holding the secondary weapon) */
 	bool bIsPrimary;
-
-	/** Enumerators */
 	
 	/** Enumerator holding the 5 possible movement states defined above in EMovementState */
 	UPROPERTY()
     EMovementState MovementState;
-
-	/** UI */
-
+	
 	/** The current message to be displayed above the screen (if any) */
 	UPROPERTY()
 	FText InteractText;
-	
-	/** Other */
 	
 	/** Name of the socket we attach our camera to */
 	UPROPERTY(EditDefaultsOnly, Category = "Other")
 	FName CameraSocketName;
 
-	/** Weapon variables */
-
-	/** Weapon cache maps */
+	/** The primary weapon's cached data map */
 	UPROPERTY()
 	FWeaponDataStruct PrimaryWeaponCacheMap;
 
+	/** The secondary weapon's cached data map */
 	UPROPERTY()
 	FWeaponDataStruct SecondaryWeaponCacheMap;
-	
+
+	/** A reference to the player's main HUD widget */
 	UPROPERTY()
 	USHUDWidget* PlayerHudWidget;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
-	UAudioComponent* FootstepAudioComp;
 
 	/** Keeps track of the opacity of scopes */
 	float ScopeBlend;
 
+	/** The material parameter collection that stores the scope opacity parameter to be changed */
 	UPROPERTY(EditDefaultsOnly, Category = "Materials")
 	UMaterialParameterCollection* ScopeOpacityParameterCollection;
 
+	/** The name of the parameter to modify in the material parameter collection */
 	UPROPERTY(EditDefaultsOnly, Category = "Materials")
 	FName OpacityParameterName;
 
-	/** collision parameters for spawning the line trace */
+	/** Query parameters for the interaction line trace */
 	FCollisionQueryParams QueryParams;
 
 	/** Array of physical materials for footsteps */
 	UPROPERTY(EditDefaultsOnly, Category = "Footsteps")
 	TArray<UPhysicalMaterial*> SurfaceMaterialArray;
 
-	/** The curve for vaulting */
+	/** Curve that controls motion during vault */
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 	UCurveFloat* CurveFloat;
 	
@@ -569,20 +562,21 @@ private:
 
 	FHitResult InteractionHit;
 
+	/** The start location of a vaulting or mantle */
 	FTransform VaultStartLocation;
 
+	/** The end location of a vault or mantle */
 	FTransform VaultEndLocation;
 	
-	/** Set in the default values, the base height of the capsule */
+	/** Set automatically, the base height of the capsule */
 	float DefaultCapsuleHalfHeight;
-	
+
+	/** The game's default FOV */
+	UPROPERTY(EditDefaultsOnly, Category = "Variables")
 	float BaseFOV;
 	
-	/** current angle of floor */
+	/** The current angle of the floor beneath the player */
 	float FloorAngle;
-	
-	/** vector of floor */
-	FVector FloorVector;
 	
 	/** The forward movement value (used to drive animations) */
 	float ForwardMovement;
@@ -596,10 +590,10 @@ private:
 	/** The right look value (used to drive procedural weapon sway) */
 	float MouseX;
 	
-	/** Vault transforms */
-	FTransform LocalTargetTransform;
+	/** The target location of a vault or mantle */
+	FTransform VaultTargetLocation;
 
-	/** Timer managers */
+	/** Timer manager for sliding */
 	FTimerHandle SlideStop;
 		
 	/** Called every frame */
