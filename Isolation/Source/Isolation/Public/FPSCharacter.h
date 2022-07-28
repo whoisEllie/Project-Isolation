@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "HUDWidget.h"
+#include "Widgets/HUDWidget.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
+#include "Widgets/PauseWidget.h"
+#include "Widgets/SettingsWidget.h"
 #include "FPSCharacter.generated.h"
 
 class UCameraComponent;
@@ -370,6 +372,13 @@ private:
 	/** Displaying the indicator for interaction */
 	void InteractionIndicator();
 
+	//void RemapInput(FKey key);
+
+	/** Updates widgets */
+	void ManageOnScreenWidgets();
+
+	FName NewActionName;
+	
 	/** Debug */
 	
 	/** Prints debug variables if true */
@@ -499,6 +508,9 @@ private:
 	
 	/** Whether the player is holding the primary weapon (or not, and are thus holding the secondary weapon) */
 	bool bIsPrimary;
+
+	/** Whether the player is waiting for an input update */
+	bool bWaitingForInput;
 	
 	/** Enumerator holding the 5 possible movement states defined above in EMovementState */
 	UPROPERTY()
@@ -524,6 +536,15 @@ private:
 	UPROPERTY()
 	USHUDWidget* PlayerHudWidget;
 
+	UPROPERTY()
+	UPauseWidget* PlayerPauseWidget;
+
+	UPROPERTY()
+	USettingsWidget* PlayerSettingsWidget;
+
+	UPROPERTY()
+	UUserWidget* CurrentWidget;
+	
 	/** Keeps track of the opacity of scopes */
 	float ScopeBlend;
 
@@ -551,7 +572,13 @@ private:
 	FTimeline VaultTimeline;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<USHUDWidget> HUDWidget;	
+	TSubclassOf<USHUDWidget> HUDWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UPauseWidget> PauseWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<USettingsWidget> SettingsWidget;
 	
 	/** Hit results for various line traces */
 	FHitResult Hit;

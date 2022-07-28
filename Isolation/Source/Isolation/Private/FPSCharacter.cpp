@@ -18,10 +18,16 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "WeaponBase.h"
 #include "WeaponPickup.h"
+#include "BehaviorTree/BehaviorTreeTypes.h"
 #include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Components/AudioComponent.h"
+#include "GameFramework/InputSettings.h"
 #include "Isolation/Isolation.h"
+#include "Misc/AssetRegistryInterface.h"
+#include "Sequencer/Public/ISequencerHotspot.h"
+#include "Widgets/HUDWidget.h"
 
 // Sets default values
 AFPSCharacter::AFPSCharacter()
@@ -67,7 +73,15 @@ void AFPSCharacter::BeginPlay()
             PlayerHudWidget->AddToViewport();
         }
     }
-	
+    if (IsValid(PauseWidget))
+    {
+        PlayerPauseWidget = Cast<UPauseWidget>(CreateWidget(GetWorld(), PauseWidget));
+    }
+    if (IsValid(SettingsWidget))
+    {
+        PlayerSettingsWidget = Cast<USettingsWidget>(CreateWidget(GetWorld(), SettingsWidget));
+    }
+    
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     DefaultSpringArmOffset = SpringArmComp->GetRelativeLocation().Z; // Setting the default location of the spring arm
     BaseFOV = CameraComp->FieldOfView;
@@ -159,6 +173,68 @@ void AFPSCharacter::InteractionIndicator()
                 bInteractionIsWeapon = false;
             }
         }
+    }
+}
+
+/*
+void AFPSCharacter::RemapInput(FKey key)
+{
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, key.ToString());
+    
+    if (bWaitingForInput)
+    {
+        UInputSettings* InputSettings = UInputSettings::GetInputSettings();
+
+        FInputActionKeyMapping* NewAction = new FInputActionKeyMapping;
+        NewAction->ActionName = NewActionName;
+        NewAction->Key = key;
+
+        InputSettings->AddActionMapping(*NewAction, true);
+        
+        InputSettings->SaveKeyMappings();
+
+        bWaitingForInput = false;
+    }
+}
+*/
+
+void AFPSCharacter::ManageOnScreenWidgets()
+{
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("called function"));
+
+    ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
+    
+    if (IsValid(CurrentWidget))
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Currentwidget is valid"));
+        if (CurrentWidget == PlayerPauseWidget)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Current widget is pause widget"));
+            
+            PlayerPauseWidget->RemoveFromParent();
+            PlayerHudWidget->AddToViewport();
+            CharacterController->SetInputMode(FInputModeGameOnly());
+            CharacterController->SetShowMouseCursor(false);
+            UGameplayStatics::SetGamePaused(GetWorld(), false);
+            CurrentWidget == nullptr;
+        }
+        else
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Removing settings froms screen"));
+            PlayerSettingsWidget->RemoveFromParent();
+            PlayerPauseWidget->AddToViewport();
+            CurrentWidget = PlayerPauseWidget;
+        }
+    }
+    else
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Adding pause widget to screen"));
+        PlayerHudWidget->RemoveFromParent();
+        PlayerPauseWidget->AddToViewport();
+        CurrentWidget = PlayerPauseWidget;
+        CharacterController->SetInputMode(FInputModeGameAndUI());
+        CharacterController->SetShowMouseCursor(true);
+        UGameplayStatics::SetGamePaused(GetWorld(), true);
     }
 }
 
@@ -921,7 +997,11 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
     PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSCharacter::StartAds);
     PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSCharacter::StopAds);
 
+    // Interaction
     PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AFPSCharacter::WorldInteract);
 
+    // Scrolling weapon swap
     PlayerInputComponent->BindAction("ScrollUp", IE_Pressed, this, &AFPSCharacter::ScrollWeapon);
+
+    PlayerInputComponent->BindAction("PauseMenu", IE_Pressed, this, &AFPSCharacter::ManageOnScreenWidgets);
 }

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "HUDWidget.h"
+#include "Widgets/HUDWidget.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
 
