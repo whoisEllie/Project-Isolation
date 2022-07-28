@@ -2,6 +2,9 @@
 
 #include "FPSCharacter.h"
 #include <string>
+
+#include "AmmoPickup.h"
+#include "AmmoPickup.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -27,6 +30,8 @@
 #include "Isolation/Isolation.h"
 #include "Misc/AssetRegistryInterface.h"
 #include "Sequencer/Public/ISequencerHotspot.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Widgets/HUDWidget.h"
 
 // Sets default values
@@ -91,6 +96,25 @@ void AFPSCharacter::BeginPlay()
         FOnTimelineFloat TimelineProgress;
         TimelineProgress.BindUFunction(this, FName("TimelineProgress"));
         VaultTimeline.AddInterpFloat(CurveFloat, TimelineProgress);
+    }
+}
+
+void AFPSCharacter::PawnClientRestart()
+{
+    Super::PawnClientRestart();
+
+    // Make sure that we have a valid PlayerController.
+    if (APlayerController* PlayerController = Cast<ASCharacterController>(GetController()))
+    {
+        // Get the Enhanced Input Local Player Subsystem from the Local Player related to our Player Controller.
+        if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+        {
+            // PawnClientRestart can run more than once in an Actor's lifetime, so start by clearing out any leftover mappings.
+            Subsystem->ClearAllMappings();
+
+            // Add each mapping context, along with their priority values. Higher values outprioritize lower values.
+            Subsystem->AddMappingContext(BaseMappingContext, BaseMappingPriority);
+        }
     }
 }
 
@@ -272,46 +296,6 @@ void AFPSCharacter::ScrollWeapon()
     else
     {
         SwapToPrimary();
-    }
-}
-
-// Built in UE function for moving forward/back
-void AFPSCharacter::MoveForward(float Value)
-{
-    ForwardMovement = Value;
-	AddMovementInput(GetActorForwardVector() * Value);
-}
-
-// Built in UE function for moving left/right
-void AFPSCharacter::MoveRight(float Value)
-{
-    RightMovement = Value;
-	AddMovementInput(GetActorRightVector() * Value);
-}
-
-// Built in UE function for looking up/down
-void AFPSCharacter::LookUp(float Value)
-{
-    MouseX = Value;
-	AddControllerPitchInput(Value);
-    // checking mouse movement for recoil compensation logic
-    if (Value != 0.0f && CurrentWeapon)
-    {
-        CurrentWeapon->bShouldRecover = false;
-        CurrentWeapon->RecoilRecoveryTimeline.Stop();
-    }
-}
-
-// Built in UE function for looking left/right
-void AFPSCharacter::LookRight(float Value)
-{
-    MouseY = Value;
-	AddControllerYawInput(Value);
-    // checking mouse movement for recoil compensation logic
-    if (Value != 0.0f && CurrentWeapon)
-    {
-        CurrentWeapon->bShouldRecover = false;
-        CurrentWeapon->RecoilRecoveryTimeline.Stop();
     }
 }
 
@@ -958,50 +942,123 @@ void AFPSCharacter::Tick(const float DeltaTime)
     }
 }
 
+void AFPSCharacter::EnhancedMove(const FInputActionValue& Value)
+{
+    ForwardMovement = Value[1];
+    RightMovement = Value[0];
+    
+    if (Value.GetMagnitude() != 0.0f)
+    {
+        AddMovementInput(GetActorForwardVector(), Value[1]);
+        AddMovementInput(GetActorRightVector(), Value[0]);
+    }
+}
+
+void AFPSCharacter::EnhancedLook(const FInputActionValue& Value)
+{
+    MouseX = Value[1];
+    MouseY = Value[0];
+    
+    AddControllerPitchInput(Value[1] * -1);
+    AddControllerYawInput(Value[0]);
+
+    if (Value.GetMagnitude() != 0.0f && CurrentWeapon)
+    {
+        CurrentWeapon->bShouldRecover = false;
+        CurrentWeapon->RecoilRecoveryTimeline.Stop();
+    }
+}
+
 // Called to bind functionality to input
 void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
-	// Move forward/back + left/right inputs
-	PlayerInputComponent->BindAxis("MoveForward", this, &AFPSCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &AFPSCharacter::MoveRight);
-	
-	// Look up/down + left/right
-	PlayerInputComponent->BindAxis("LookUp", this, &AFPSCharacter::LookUp);
-	PlayerInputComponent->BindAxis("LookRight", this, &AFPSCharacter::LookRight);
-	
-	// Crouching
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AFPSCharacter::StartCrouch);
-    PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AFPSCharacter::ReleaseCrouch);
-	
-	// Sprinting
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AFPSCharacter::StartSprint);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AFPSCharacter::StopSprint);
-	
-	// Jumping
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AFPSCharacter::Jump);
 
-    // Weapon swap
-    PlayerInputComponent->BindAction("PrimaryWeapon", IE_Pressed, this, &AFPSCharacter::SwapToPrimary);
-    PlayerInputComponent->BindAction("SecondaryWeapon", IE_Pressed, this, &AFPSCharacter::SwapToSecondary);
+    // Make sure that we are using a UEnhancedInputComponent; if not, the project is not configured correctly.
+    if (UEnhancedInputComponent* PlayerEnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+    {
+        // There are ways to bind a UInputAction* to a handler function and multiple types of ETriggerEvent that may be of interest.
+        
+        if (JumpAction)
+        {
+            // Jumping
+            PlayerEnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AFPSCharacter::Jump);
+        }
+        
+        if (SprintAction)
+        {
+            // Sprinting
+            PlayerEnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AFPSCharacter::StartSprint);
+            PlayerEnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AFPSCharacter::StopSprint);
+        }
 
-    // Firing
-    PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSCharacter::StartFire);
-    PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSCharacter::StopFire);
+        if (MovementAction)
+        {
+            // Move forward/back + left/right inputs
+            PlayerEnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AFPSCharacter::EnhancedMove);
+        }
 
-    // Reloading
-    PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AFPSCharacter::Reload);
+        if (LookAction)
+        {
+            // Look up/down + left/right
+            PlayerEnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFPSCharacter::EnhancedLook);
+        }
 
-    // Aiming Down Sights
-    PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSCharacter::StartAds);
-    PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSCharacter::StopAds);
+        if (CrouchAction)
+        {
+            // Crouching
+            PlayerEnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &AFPSCharacter::StartCrouch);
+            PlayerEnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &AFPSCharacter::ReleaseCrouch);
+        }
 
-    // Interaction
-    PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AFPSCharacter::WorldInteract);
+        if (FiringAction)
+        {
+            // Firing
+            PlayerEnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Started, this, &AFPSCharacter::StartFire);
+            PlayerEnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Completed, this, &AFPSCharacter::StopFire);
+        }
 
-    // Scrolling weapon swap
-    PlayerInputComponent->BindAction("ScrollUp", IE_Pressed, this, &AFPSCharacter::ScrollWeapon);
+        if (PrimaryWeaponAction)
+        {
+            // Switching to the primary weapon
+            PlayerEnhancedInputComponent->BindAction(PrimaryWeaponAction, ETriggerEvent::Started, this, &AFPSCharacter::SwapToPrimary);
+        }
 
-    PlayerInputComponent->BindAction("PauseMenu", IE_Pressed, this, &AFPSCharacter::ManageOnScreenWidgets);
+        if (SecondaryWeaponAction)
+        {
+            // Switching to the secondary weapon
+            PlayerEnhancedInputComponent->BindAction(SecondaryWeaponAction, ETriggerEvent::Started, this, &AFPSCharacter::SwapToSecondary);
+        }
+
+        if (ReloadAction)
+        {
+            // Reloading
+            PlayerEnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AFPSCharacter::Reload);
+        }
+
+        if (AimAction)
+        {
+            // Aiming
+            PlayerEnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &AFPSCharacter::StartAds);
+            PlayerEnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AFPSCharacter::StopAds);
+        }
+
+        if (InteractAction)
+        {
+            // Interacting with the world
+            PlayerEnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AFPSCharacter::WorldInteract);
+        }
+
+        if (ScrollAction)
+        {
+            // Scrolling through weapons
+            PlayerEnhancedInputComponent->BindAction(ScrollAction, ETriggerEvent::Started, this, &AFPSCharacter::ScrollWeapon);
+        }
+
+        if (PauseAction)
+        {
+            // Pausing the game
+            PlayerEnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &AFPSCharacter::ManageOnScreenWidgets);
+        }
+    }
 }

@@ -8,6 +8,9 @@
 #include "Components/TimelineComponent.h"
 #include "Widgets/PauseWidget.h"
 #include "Widgets/SettingsWidget.h"
+#include "InputActionValue.h"
+#include "InputAction.h"
+#include "InputMappingContext.h"
 #include "FPSCharacter.generated.h"
 
 class UCameraComponent;
@@ -17,6 +20,8 @@ class ASWeaponBase;
 class UAnimMontage;
 class UCurveFloat;
 class UBlendSpace;
+class UInputAction;
+class UInputMappingContext;
 
 /** Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FSingleWeaponParams struct)
  * and to keep track of the total ammo the player has (ammoMap) */
@@ -283,6 +288,8 @@ private:
 
 	/** Called when the game starts or when spawned */
 	virtual void BeginPlay() override;
+
+	virtual void PawnClientRestart() override;
 
 	/** Moving forward/backwards (takes axis as input from CharacterMovementComponent.h) */
 	void MoveForward(float Value);
@@ -625,6 +632,62 @@ private:
 		
 	/** Called every frame */
 	virtual void Tick(float DeltaTime) override;
+
+#pragma region INPUT
+
+	/** Input actions */
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* MovementAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* LookAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* JumpAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* SprintAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* CrouchAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* FiringAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* PrimaryWeaponAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* SecondaryWeaponAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* ReloadAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* AimAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* InteractAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* ScrollAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputAction* PauseAction;
+
+	/** Input Mappings */
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UInputMappingContext* BaseMappingContext;
+	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	int32 BaseMappingPriority = 0;
+
+	void EnhancedMove(const FInputActionValue& Value);
+	void EnhancedLook(const FInputActionValue& Value);
+
+#pragma endregion 
+
 
 	/** Called to bind functionality to input */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
