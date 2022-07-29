@@ -13,7 +13,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
-#include "AmmoPickup.h"
 #include "FPSCharacterController.h"
 #include "InteractInterface.h"
 #include "Kismet/GameplayStatics.h"
@@ -23,16 +22,26 @@
 #include "WeaponPickup.h"
 #include "BehaviorTree/BehaviorTreeTypes.h"
 #include "Blueprint/UserWidget.h"
-#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Components/AudioComponent.h"
 #include "GameFramework/InputSettings.h"
 #include "Isolation/Isolation.h"
-#include "Misc/AssetRegistryInterface.h"
-#include "Sequencer/Public/ISequencerHotspot.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Widgets/HUDWidget.h"
+
+void AFPSCharacter::CreateSettingsMenu()
+{
+    if (PlayerPauseWidget)
+    {
+        PlayerPauseWidget->RemoveFromParent();
+        if (PlayerSettingsWidget)
+        {
+            PlayerSettingsWidget->AddToViewport();
+            CurrentWidget = PlayerSettingsWidget;
+        }
+    }
+}
 
 // Sets default values
 AFPSCharacter::AFPSCharacter()
@@ -104,7 +113,7 @@ void AFPSCharacter::PawnClientRestart()
     Super::PawnClientRestart();
 
     // Make sure that we have a valid PlayerController.
-    if (APlayerController* PlayerController = Cast<ASCharacterController>(GetController()))
+    if (const ASCharacterController* PlayerController = Cast<ASCharacterController>(GetController()))
     {
         // Get the Enhanced Input Local Player Subsystem from the Local Player related to our Player Controller.
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -200,35 +209,13 @@ void AFPSCharacter::InteractionIndicator()
     }
 }
 
-/*
-void AFPSCharacter::RemapInput(FKey key)
-{
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, key.ToString());
-    
-    if (bWaitingForInput)
-    {
-        UInputSettings* InputSettings = UInputSettings::GetInputSettings();
-
-        FInputActionKeyMapping* NewAction = new FInputActionKeyMapping;
-        NewAction->ActionName = NewActionName;
-        NewAction->Key = key;
-
-        InputSettings->AddActionMapping(*NewAction, true);
-        
-        InputSettings->SaveKeyMappings();
-
-        bWaitingForInput = false;
-    }
-}
-*/
-
 void AFPSCharacter::ManageOnScreenWidgets()
 {
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("called function"));
 
     ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
     
-    if (IsValid(CurrentWidget))
+    if (CurrentWidget != nullptr)
     {
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Currentwidget is valid"));
         if (CurrentWidget == PlayerPauseWidget)
@@ -240,11 +227,11 @@ void AFPSCharacter::ManageOnScreenWidgets()
             CharacterController->SetInputMode(FInputModeGameOnly());
             CharacterController->SetShowMouseCursor(false);
             UGameplayStatics::SetGamePaused(GetWorld(), false);
-            CurrentWidget == nullptr;
+            CurrentWidget = nullptr;
         }
         else
         {
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Removing settings froms screen"));
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Removing settings from screen"));
             PlayerSettingsWidget->RemoveFromParent();
             PlayerPauseWidget->AddToViewport();
             CurrentWidget = PlayerPauseWidget;
@@ -967,6 +954,15 @@ void AFPSCharacter::EnhancedLook(const FInputActionValue& Value)
         CurrentWeapon->bShouldRecover = false;
         CurrentWeapon->RecoilRecoveryTimeline.Stop();
     }
+}
+
+
+
+void AFPSCharacter::RemapBinding(const FInputActionInstance& ActionInstance)
+{
+    FVector AVectorValue = FVector::OneVector;
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Called remap"));
+    MyAwesomeDelegateExecFunc.Execute(AVectorValue);
 }
 
 // Called to bind functionality to input

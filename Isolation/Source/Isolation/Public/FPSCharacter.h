@@ -236,7 +236,14 @@ public:
 
 	/** Returns the character's empty handed sprinting animation */
 	UFUNCTION(BlueprintCallable)
-	UAnimSequence* GetSprintAnim() const { return Anim_Sprint; }	
+	UAnimSequence* GetSprintAnim() const { return Anim_Sprint; }
+
+	UFUNCTION(BlueprintCallable)
+	void CreateSettingsMenu();
+
+	/** Returns the character's current input mapping context */
+	UFUNCTION(BlueprintCallable)
+	UInputMappingContext* GetBaseMappingContext() const { return BaseMappingContext; }
 	
 protected:
 
@@ -290,18 +297,7 @@ private:
 	virtual void BeginPlay() override;
 
 	virtual void PawnClientRestart() override;
-
-	/** Moving forward/backwards (takes axis as input from CharacterMovementComponent.h) */
-	void MoveForward(float Value);
-
-	/** Moving left/right (takes axis as input from CharacterMovementComponent.h) */
-	void MoveRight(float Value);
-
-	/** Looking up/down (takes axis as input from CharacterMovementComponent.h) */
-	void LookUp(float Value);
-
-	/** Looking left/right (takes axis as input from CharacterMovementComponent.h) */
-	void LookRight(float Value);
+	
 
 	/** Alternative to the built in Crouch function
 	 *  Handles crouch input and decides what action to perform based on the character's current state
@@ -518,6 +514,8 @@ private:
 
 	/** Whether the player is waiting for an input update */
 	bool bWaitingForInput;
+
+	bool bPauseWidgetActive;
 	
 	/** Enumerator holding the 5 possible movement states defined above in EMovementState */
 	UPROPERTY()
@@ -543,13 +541,13 @@ private:
 	UPROPERTY()
 	USHUDWidget* PlayerHudWidget;
 
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly, Category = "UI | Widgets")
 	UPauseWidget* PlayerPauseWidget;
 
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly, Category = "UI | Widgets")
 	USettingsWidget* PlayerSettingsWidget;
 
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly, Category = "UI | Widgets")
 	UUserWidget* CurrentWidget;
 	
 	/** Keeps track of the opacity of scopes */
@@ -637,57 +635,72 @@ private:
 
 	/** Input actions */
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* MovementAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* LookAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* JumpAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* SprintAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* CrouchAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* FiringAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* PrimaryWeaponAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* SecondaryWeaponAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* ReloadAction;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* AimAction;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* InteractAction;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* ScrollAction;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* PauseAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
+	UInputAction* RemapAction;
 
 	/** Input Mappings */
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Mappings")
 	UInputMappingContext* BaseMappingContext;
-	UPROPERTY(EditDefaultsOnly, Category = "Input Actions")
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Input | Mappings")
 	int32 BaseMappingPriority = 0;
 
 	void EnhancedMove(const FInputActionValue& Value);
+	
 	void EnhancedLook(const FInputActionValue& Value);
 
-#pragma endregion 
+	void RemapBinding(const FInputActionInstance& ActionInstance);
+	
+	//TODO: Research saving/loading mapping contexts
 
+#pragma endregion
+	
+	DECLARE_DELEGATE_OneParam(MyAwesomeDelegate, FVector)
+ 
+	/** The actual delegate declaration */
+	MyAwesomeDelegate MyAwesomeDelegateExecFunc;
+
+private:
 
 	/** Called to bind functionality to input */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
