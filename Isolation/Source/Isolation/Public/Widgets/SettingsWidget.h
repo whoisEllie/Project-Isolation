@@ -3,25 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InputAction.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/BackgroundBlur.h"
 #include "SettingsWidget.generated.h"
-
-class AFPSCharacter;
 
 UCLASS()
 class ISOLATION_API USettingsWidget : public UUserWidget
 {
 	GENERATED_BODY()
-
-	virtual void NativeConstruct() override;
-
-	UPROPERTY()
-	AFPSCharacter* PlayerCharacter;
 	
-	UFUNCTION(BlueprintCallable)
-	void ClearActionMappings(const UInputAction* InputAction) const;
+public:
+
+	UPROPERTY(Transient, meta = ( BindWidget ))
+	UBackgroundBlur* PressAnyKeyBlur;
 
 	UFUNCTION(BlueprintCallable)
-	void RemapKey(UInputAction* InputAction, FKey Key);
+	void SwitchKeySelectPopupVisibility();
 };

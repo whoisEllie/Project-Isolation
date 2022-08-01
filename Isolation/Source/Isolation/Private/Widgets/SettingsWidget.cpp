@@ -3,22 +3,22 @@
 
 #include "Widgets/SettingsWidget.h"
 
-#include "FPSCharacter.h"
-#include "Kismet/GameplayStatics.h"
-
-void USettingsWidget::NativeConstruct()
+void USettingsWidget::SwitchKeySelectPopupVisibility()
 {
-	Super::NativeConstruct();
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Swapping visibility"));
 	
-	PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-}
+	switch (PressAnyKeyBlur->GetVisibility())
+	{
+	case ESlateVisibility::Hidden:
+		PressAnyKeyBlur->SetVisibility(ESlateVisibility::HitTestInvisible);
+		PressAnyKeyBlur->SetIsEnabled(true);
+		return;
 
-void USettingsWidget::ClearActionMappings(const UInputAction* InputAction) const
-{
-	PlayerCharacter->GetBaseMappingContext()->UnmapAction(InputAction);
-}
-
-void USettingsWidget::RemapKey(UInputAction* InputAction, FKey Key)
-{
-	PlayerCharacter->GetBaseMappingContext()->MapKey(InputAction, Key);
+	case ESlateVisibility::HitTestInvisible:
+		PressAnyKeyBlur->SetVisibility(ESlateVisibility::Hidden);
+		PressAnyKeyBlur->SetIsEnabled(false);
+		return;
+		
+	default: return;
+	}
 }
