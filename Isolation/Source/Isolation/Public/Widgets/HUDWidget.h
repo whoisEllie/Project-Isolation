@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputAction.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/MultiLineEditableTextBox.h"
 #include "Components/RichTextBlock.h"
@@ -39,6 +40,9 @@ public:
 	UPROPERTY(Transient, meta = ( BindWidget ))
 	URichTextBlock* TooltipDescription;
 
+	UPROPERTY(Transient, meta = ( BindWidget ))
+	URichTextBlock* InteractRichTextBlock;
+
 	FText LocalMainText;
 	
 	FText LocalDescriptionText;
@@ -48,6 +52,12 @@ public:
 	bool TooltipVisible = false;
 
 	void ShowRepairKitCount();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateInteractKeyIndicator();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* InteractAction;
 
 private:
 

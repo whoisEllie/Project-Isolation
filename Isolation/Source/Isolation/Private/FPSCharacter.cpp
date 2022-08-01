@@ -211,17 +211,12 @@ void AFPSCharacter::InteractionIndicator()
 
 void AFPSCharacter::ManageOnScreenWidgets()
 {
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("called function"));
-
     ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
     
     if (CurrentWidget != nullptr)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Currentwidget is valid"));
         if (CurrentWidget == PlayerPauseWidget)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Current widget is pause widget"));
-            
             PlayerPauseWidget->RemoveFromParent();
             PlayerHudWidget->AddToViewport();
             CharacterController->SetInputMode(FInputModeGameOnly());
@@ -231,7 +226,6 @@ void AFPSCharacter::ManageOnScreenWidgets()
         }
         else
         {
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Removing settings from screen"));
             PlayerSettingsWidget->RemoveFromParent();
             PlayerPauseWidget->AddToViewport();
             CurrentWidget = PlayerPauseWidget;
@@ -239,7 +233,6 @@ void AFPSCharacter::ManageOnScreenWidgets()
     }
     else
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Adding pause widget to screen"));
         PlayerHudWidget->RemoveFromParent();
         PlayerPauseWidget->AddToViewport();
         CurrentWidget = PlayerPauseWidget;

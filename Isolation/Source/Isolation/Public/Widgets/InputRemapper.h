@@ -5,11 +5,12 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "InputAction.h"
-#include "Components/Button.h"
-#include "Components/InputKeySelector.h"
-#include "Components/TextBlock.h"
 #include "InputRemapper.generated.h"
 
+class UButton;
+class UInputKeySelector;
+class UTextBlock;
+class URichTextBlock;
 class AFPSCharacter;
 
 UCLASS()
@@ -28,7 +29,11 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void SelectedKeyChanged();
 
+	void UpdateMappings() const;
+
 	virtual void NativePreConstruct() override;
+
+	virtual void NativeConstruct() override;
 	
 	UPROPERTY(EditInstanceOnly, Category = "Settings")
 	UInputAction* InputAction;
@@ -47,7 +52,9 @@ private:
 	UPROPERTY(Transient, meta = ( BindWidget ))
 	UButton* ClearMappingsButton;
 
+	UPROPERTY(Transient, meta = ( BindWidget ))
+	URichTextBlock* InputDisplayTextBlock;
+	
 	UPROPERTY()
 	AFPSCharacter* PlayerCharacter;
-	
 };

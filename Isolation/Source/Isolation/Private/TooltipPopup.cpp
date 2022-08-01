@@ -4,6 +4,7 @@
 #include "TooltipPopup.h"
 #include "FPSCharacter.h"
 #include "Components/BoxComponent.h"
+#include "func_lib/InputHelper.h"
 #include "GameFramework/InputSettings.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -37,26 +38,27 @@ void ASTooltipPopup::GenerateText()
 		{
 			case ETextType::Text:
 				Result.Append(TEXT("<Text>"));
-				Result += TextStruct.Input;
+				Result += TextStruct.Text;
 				Result.Append(TEXT("</>"));
 				break;
 
 		case ETextType::KeyInput:
-				OutMappings.Empty();
-				Settings->GetInputSettings()->GetActionMappingByName(FName(*TextStruct.Input), OutMappings);
-				for (FInputActionKeyMapping KeyMapping : OutMappings)
+
+				const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+				TArray<FEnhancedActionKeyMapping> Mappings = PlayerCharacter->GetBaseMappingContext()->GetMappings();
+
+				FString InputDisplayText = "";
+		
+				for (FEnhancedActionKeyMapping Mapping : Mappings)
 				{
-					if (KeyConversionMap.Contains(KeyMapping.Key.ToString()))
+					if (Mapping.Action == TextStruct.InputAction)
 					{
-						Result.Append(TEXT("<img id=\""));
-						Result += FString(KeyConversionMap[KeyMapping.Key.ToString()]);
-						Result.Append(TEXT("\"/>"));
-					}
-					else
-					{
-						Result += KeyMapping.Key.ToString();
+						InputDisplayText.Append("<img id=\"" + InputHelper::KeyConversionMap[Mapping.Key.GetDisplayName().ToString()] + "\"/> ");
 					}
 				}
+
+				Result.Append(InputDisplayText);
+
 				break;
 		}
 	}

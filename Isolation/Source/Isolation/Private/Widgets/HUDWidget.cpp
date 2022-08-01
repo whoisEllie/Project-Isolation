@@ -2,8 +2,12 @@
 
 
 #include "Widgets/HUDWidget.h"
+
+#include "FPSCharacter.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
+#include "func_lib/InputHelper.h"
+#include "Kismet/GameplayStatics.h"
 
 void USHUDWidget::ReceiveTooltipInput(FText MainText, FText DescriptionText)
 {
@@ -27,6 +31,24 @@ void USHUDWidget::ShowRepairKitCount()
 	PlayAnimation(RepairKitSlideIn);
 	GetWorld()->GetTimerManager().SetTimer(RepairKitTimerHandle, this, &USHUDWidget::HideRapirKitCount, 5.0f, false, 5.0f);
 
+}
+
+void USHUDWidget::UpdateInteractKeyIndicator()
+{
+	const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	TArray<FEnhancedActionKeyMapping> Mappings = PlayerCharacter->GetBaseMappingContext()->GetMappings();
+
+	FString InputDisplayText = "";
+	
+	for (FEnhancedActionKeyMapping Mapping : Mappings)
+	{
+		if (Mapping.Action == InteractAction)
+		{
+			InputDisplayText.Append("<img id=\"" + InputHelper::KeyConversionMap[Mapping.Key.GetDisplayName().ToString()] + "\"/> ");
+		}
+	}
+
+	InteractRichTextBlock->SetText(FText::FromString(InputDisplayText));
 }
 
 void USHUDWidget::ShowToolTip()

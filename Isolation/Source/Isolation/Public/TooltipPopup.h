@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputAction.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
 #include "TooltipPopup.generated.h"
@@ -20,7 +21,10 @@ struct FTextStruct
 	GENERATED_BODY()
 
 	UPROPERTY(EditInstanceOnly, Category = "Default")
-	FString Input;
+	FString Text;
+
+	UPROPERTY(EditInstanceOnly, Category = "Default")
+	UInputAction* InputAction;
 
 	UPROPERTY(EditInstanceOnly, Category = "Default")
 	ETextType TextType;
@@ -63,9 +67,4 @@ protected:
 	FTimerHandle DisplayDelayHandle;
 
 	bool ShouldDisplay = true;
-
-	// Converts UE input names to Decorator key names
-	UPROPERTY(EditDefaultsOnly, Category = "KeyMap")
-	TMap<FString, FString> KeyConversionMap;
-
 };
