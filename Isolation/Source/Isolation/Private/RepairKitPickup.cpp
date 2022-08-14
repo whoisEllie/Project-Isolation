@@ -2,6 +2,8 @@
 
 
 #include "RepairKitPickup.h"
+
+#include "FPSCharacter.h"
 #include "FPSCharacterController.h"
 #include "Kismet/GameplayStatics.h"
 

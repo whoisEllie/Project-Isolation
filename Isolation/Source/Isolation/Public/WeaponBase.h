@@ -3,13 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FPSCharacter.h"
-#include "WeaponPickup.h"
 #include "Components/TimelineComponent.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+class ASWeaponBase;
 class USkeletalMeshComponent;
 class USkeletalMesh;
 class UStaticMesh;
@@ -21,6 +20,17 @@ class UPhysicalMaterial;
 class UDataTable;
 class ASWeaponPickup;
 
+/** Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FSingleWeaponParams struct)
+ * and to keep track of the total ammo the player has (ammoMap) */
+UENUM(BlueprintType)
+enum class EAmmoType : uint8
+{
+	Pistol       UMETA(DisplayName = "Pistol Ammo"),
+	Rifle        UMETA(DisplayName = "Rifle Ammo"),
+	Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
+	Special		 UMETA(DisplayName = "Special Ammo"),
+};
+
 UENUM()
 enum class EAttachmentType : uint8
 {
@@ -29,6 +39,37 @@ enum class EAttachmentType : uint8
 	Sights		UMETA(DisplayName = "Sights Attachment"),
 	Stock		UMETA(DispayName = "Stock Attachment"),
 	Grip		UMETA(DispayName = "Grip Attachment"),
+};
+
+/** Struct keeping track of important weapon variables modified at runtime */
+USTRUCT(BlueprintType)
+struct FRuntimeWeaponData
+{
+	GENERATED_BODY()
+
+	/** A reference to the weapon class of the given weapon */
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon Data")
+	TSubclassOf<ASWeaponBase> WeaponClassReference;
+
+	/** The maximum size of the player's magazine */
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon Data")
+	int ClipCapacity; 
+
+	/** The amount of ammunition currently in the magazine */
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon Data")
+	int ClipSize;
+
+	/** Enumerator holding the 4 possible ammo types defined above */
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon Data")
+	EAmmoType AmmoType;
+
+	/** The current health of the weapon (degradation values are in the weapon class) */
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon Data")
+	float WeaponHealth;
+
+	/** The attachments used in the current weapon */
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon Data")
+	TArray<FName> WeaponAttachments;
 };
 
 USTRUCT(BlueprintType)
@@ -372,10 +413,6 @@ struct FWeaponData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
 	int ClipSize;
 
-	// The weapon's default health (Spawned on the pickup)
-	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
-	float WeaponHealth = 100.0f;
-
 	// The rate of fire of the weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)")
 	float RateOfFire;
@@ -499,7 +536,7 @@ public:
 	void EnableFire();
 
 	// Spawns the weapons attachments and applies their data/modifications to the weapon's statistics 
-	void SpawnAttachments(TArray<FName> AttachmentsArray);
+	void SpawnAttachments();
 
 	// Begins applying recoil to the weapon
 	void StartRecoil();
@@ -516,7 +553,10 @@ public:
 	void RenderScope() const;
 
 	UFUNCTION(BlueprintCallable)
-	void SetShowDebug(bool IsVisible);
+	void SetShowDebug(bool IsVisible)
+	{
+		bShowDebug = IsVisible;
+	};
 
 	UPROPERTY(EditDefaultsOnly, Category = "Default")
 	float ScopeFrameRate = 60.0f;
@@ -541,7 +581,8 @@ public:
 	// Debug boolean, toggle for debug strings and line traces to be shown
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bShowDebug = false;
-	
+
+	FRuntimeWeaponData GeneralWeaponData;
 
 	// Components
 	
@@ -681,8 +722,6 @@ public:
 	// The ejected casing particle effect to be played after each shot
 	UPROPERTY(EditDefaultsOnly, Category = "Particles")
 	UNiagaraSystem* EjectedCasing;
-	
-	
 	
 	// Animation
 

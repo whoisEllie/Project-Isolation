@@ -3,13 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FPSCharacter.h"
 #include "InteractionActor.h"
+#include "WeaponBase.h"
 #include "WeaponPickup.generated.h"
 
 class UStaticMeshComponent;
 class UDataTable;
 class ASWeaponBase;
+class AFPSCharacter;
 
 UCLASS()
 class ISOLATION_API ASWeaponPickup : public AActor, public ISInteractInterface
@@ -23,6 +24,8 @@ public:
 	// Interface function
 	virtual void Interact() override;
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+	
 	// Spawns attachment meshes from data table
 	UFUNCTION(BlueprintCallable)
 	void SpawnAttachmentMesh();
@@ -33,7 +36,7 @@ public:
 
 	// Local weapon data struct to keep track of ammo amounts and weapon health
 	UPROPERTY()
-	FWeaponDataStruct DataStruct;
+	FRuntimeWeaponData DataStruct;
 
 	// Data table reference for weapon (used to see if the weapon has attachments)
 	UPROPERTY(EditDefaultsOnly, Category = "Data Table")
@@ -53,7 +56,7 @@ public:
 
 	// The array of attachments to spawn (usually inherited, can be set by instance)
 	UPROPERTY(BlueprintReadWrite, EditInstanceOnly, Category = "Data")
-	TArray<FName> AttachmentArray;
+	TArray<FName> AttachmentArrayOverride;
 
 	// Whether this weapon will become the primary or secondary weapon
 	bool bIsNewPrimary;

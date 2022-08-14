@@ -2,8 +2,9 @@
 
 
 #include "WeaponPickup.h"
+
+#include "FPSCharacter.h"
 #include "WeaponBase.h"
-#include "func_lib/AttachmentHelpers.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -46,6 +47,11 @@ void ASWeaponPickup::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (AttachmentArrayOverride.Num() > 0)
+	{
+		DataStruct.WeaponAttachments = AttachmentArrayOverride;
+	}
+
 	// Spawning attachments on begin play
 	SpawnAttachmentMesh();
 
@@ -54,12 +60,22 @@ void ASWeaponPickup::BeginPlay()
 	{
 		MainMesh->SetSimulatePhysics(true);
 	}
-
-	if (bRuntimeSpawned)
-	{
-		
-	}
 }
+
+// Updating the appearance of the pickup in the editor
+void ASWeaponPickup::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	if (AttachmentArrayOverride.Num() > 0)
+	{
+		DataStruct.WeaponAttachments = AttachmentArrayOverride;
+	}
+
+	// Spawning attachments on begin play
+	SpawnAttachmentMesh();
+}
+
 
 void ASWeaponPickup::SpawnAttachmentMesh()
 {
@@ -71,7 +87,7 @@ void ASWeaponPickup::SpawnAttachmentMesh()
 	if (WeaponData->bHasAttachments && AttachmentsDataTable)
 	{
 		// Iterating through all the attachments in AttachmentArray
-		for (FName RowName : AttachmentArray)
+		for (FName RowName : DataStruct.WeaponAttachments)
 		{
 			// Searching the data table for the attachment
 			const FAttachmentData* AttachmentData = AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
@@ -125,75 +141,26 @@ void ASWeaponPickup::SpawnAttachmentMesh()
 
 void ASWeaponPickup::Interact()
 {
-	// Casting to the player character 
-	DataStruct.WeaponAttachments = AttachmentArray;
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Testing!"));
+
+	// Getting a reference to the Character Controller
 	AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
-	// Swapping weapons based on different situations
+	int InventoryPosition = PlayerCharacter->GetCurrentWeaponSlot();
+	bool SpawnPickup = true;
+
+	for (int Index = 0; Index < PlayerCharacter->GetNumberOfWeaponSlots(); Index++)
+	{
+		if (PlayerCharacter->GetEquippedWeapons().Find(Index) == nullptr)
+		{
+			InventoryPosition = Index;
+			SpawnPickup = false;
+			break;
+		}	
+	}
+		
+	PlayerCharacter->UpdateWeapon(WeaponReference, InventoryPosition, SpawnPickup, bStatic, GetActorTransform(),  DataStruct);
 	
-	// If the player has no weapons or only a primary weapon
-	if ((PlayerCharacter->GetPrimaryWeapon() == nullptr && PlayerCharacter->GetSecondaryWeapon() == nullptr) || (PlayerCharacter->GetPrimaryWeapon() == nullptr && PlayerCharacter->GetSecondaryWeapon() != nullptr))
-	{
-		PlayerCharacter->SetPrimaryWeaponCacheMap(&DataStruct);
-		
-		PlayerCharacter->UpdateWeapon(WeaponReference, false, &DataStruct, bStatic, FTransform::Identity);
-		if (PlayerCharacter->GetCurrentWeapon())
-		{
-			PlayerCharacter->GetCurrentWeapon()->SpawnAttachments(PlayerCharacter->GetPrimaryWeaponCacheMap()->WeaponAttachments);
-		}
-		PlayerCharacter->SetPrimaryWeapon(WeaponReference);
-		PlayerCharacter->SetPrimaryWeaponEquipped(true);
-	}
-	// If the player has a primary weapon but no secondary weapon
-	else if (PlayerCharacter->GetSecondaryWeapon() == nullptr && PlayerCharacter->GetPrimaryWeapon() != nullptr)
-	{
-		PlayerCharacter->SetSecondaryWeaponCacheMap(&DataStruct);
-		
-		PlayerCharacter->UpdateWeapon(WeaponReference, false, &DataStruct, bStatic, FTransform::Identity);
-		if (PlayerCharacter->GetCurrentWeapon())
-		{
-			PlayerCharacter->GetCurrentWeapon()->SpawnAttachments(PlayerCharacter->GetSecondaryWeaponCacheMap()->WeaponAttachments);
-		}
-		PlayerCharacter->SetSecondaryWeapon(WeaponReference);
-		PlayerCharacter->SetPrimaryWeaponEquipped(false);
-	}
-	// If both weapon slots are occupied
-	else
-	{
-		// Swapping the primary weapon
-		if (PlayerCharacter->IsPrimaryWeaponEquipped())
-		{
-			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->GetPrimaryWeaponCacheMap(), bStatic, GetTransform());
-			PlayerCharacter->SetPrimaryWeaponCacheMap(&DataStruct);
-			
-			if (PlayerCharacter->GetCurrentWeapon())
-			{
-				PlayerCharacter->GetCurrentWeapon()->SpawnAttachments(PlayerCharacter->GetPrimaryWeaponCacheMap()->WeaponAttachments);
-			}
-			PlayerCharacter->SetPrimaryWeapon(WeaponReference);
-		}
-		// Swapping the secondary weapon
-		else
-		{
-			PlayerCharacter->UpdateWeapon(WeaponReference, true, PlayerCharacter->GetSecondaryWeaponCacheMap(), bStatic, GetTransform());
-			PlayerCharacter->SetSecondaryWeaponCacheMap(&DataStruct);
-			
-			if (PlayerCharacter->GetCurrentWeapon())
-			{
-				PlayerCharacter->GetCurrentWeapon()->SpawnAttachments(PlayerCharacter->GetSecondaryWeaponCacheMap()->WeaponAttachments);
-			}
-			PlayerCharacter->SetSecondaryWeapon(WeaponReference);
-		}
-	}
-
-	if (PlayerCharacter->GetCurrentWeapon())
-	{
-		if (PlayerCharacter->GetCurrentWeapon()->WeaponData->WeaponEquip)
-		{
-			PlayerCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(PlayerCharacter->GetCurrentWeapon()->WeaponEquip, 1.0f);
-		}
-	}
-
 	// Destroying the pickup
 	Destroy();
 }

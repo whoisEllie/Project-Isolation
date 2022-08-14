@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WeaponBase.h"
 
 /**
  * 
@@ -42,4 +43,5 @@ public:
 	 * @param DisplayTime The display time in seconds
 	 */
 	static void PrintFloatArray(TArray<float> Arr, FColor Color, float DisplayTime);
-};
+
+	static void PrintTMap(TMap<int, ASWeaponBase*> Map, FColor Color, float DisplayTime);

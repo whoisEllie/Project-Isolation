@@ -1,9 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "FPSCharacter.h"
-#include <string>
-
-#include "AmmoPickup.h"
 #include "AmmoPickup.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
@@ -79,6 +76,7 @@ void AFPSCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
+    // Initialising our widgets, and adding the HUD widget to the screen
     if (IsValid(HUDWidget))
     {
         PlayerHudWidget = Cast<USHUDWidget>(CreateWidget(GetWorld(), HUDWidget));
@@ -98,14 +96,16 @@ void AFPSCharacter::BeginPlay()
     
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     DefaultSpringArmOffset = SpringArmComp->GetRelativeLocation().Z; // Setting the default location of the spring arm
-    BaseFOV = CameraComp->FieldOfView;
 
-    if (CurveFloat)
+    // Binding a timeline to our vaulting curve
+    if (VaultTimelineCurve)
     {
         FOnTimelineFloat TimelineProgress;
         TimelineProgress.BindUFunction(this, FName("TimelineProgress"));
-        VaultTimeline.AddInterpFloat(CurveFloat, TimelineProgress);
+        VaultTimeline.AddInterpFloat(VaultTimelineCurve, TimelineProgress);
     }
+
+    EquippedWeapons.Reserve(NumberOfWeaponSlots);
 }
 
 void AFPSCharacter::PawnClientRestart()
@@ -267,15 +267,46 @@ void AFPSCharacter::FootstepSounds()
 }
 
 // Swapping weapons with the scroll wheel
-void AFPSCharacter::ScrollWeapon()
+void AFPSCharacter::ScrollWeapon(const FInputActionValue& Value)
 {
-    if (bIsPrimary)
+    int NewID;
+    
+    if (Value[0] < 0)
     {
-        SwapToSecondary();
+        NewID = FMath::Clamp(CurrentWeaponSlot + 1, 0, NumberOfWeaponSlots - 1);
     }
     else
     {
-        SwapToPrimary();
+        NewID = FMath::Clamp(CurrentWeaponSlot - 1, 0, NumberOfWeaponSlots - 1);
+    }
+
+    SwapWeapon(NewID);
+}
+
+void AFPSCharacter::EnhancedMove(const FInputActionValue& Value)
+{
+    ForwardMovement = Value[1];
+    RightMovement = Value[0];
+    
+    if (Value.GetMagnitude() != 0.0f)
+    {
+        AddMovementInput(GetActorForwardVector(), Value[1]);
+        AddMovementInput(GetActorRightVector(), Value[0]);
+    }
+}
+
+void AFPSCharacter::EnhancedLook(const FInputActionValue& Value)
+{
+    MouseX = Value[1];
+    MouseY = Value[0];
+    
+    AddControllerPitchInput(Value[1] * -1);
+    AddControllerYawInput(Value[0]);
+
+    if (Value.GetMagnitude() != 0.0f && CurrentWeapon)
+    {
+        CurrentWeapon->bShouldRecover = false;
+        CurrentWeapon->RecoilRecoveryTimeline.Stop();
     }
 }
 
@@ -661,9 +692,36 @@ void AFPSCharacter::UpdateMovementValues(const EMovementState NewMovementState)
     }
 }
 
+void AFPSCharacter::SwapWeapon(int SlotId)
+{
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, FString::FromInt(SlotId));
+
+    if (CurrentWeaponSlot == SlotId) { return; }
+    if (!EquippedWeapons.Contains(SlotId)) { return; }
+    
+    CurrentWeaponSlot = SlotId;
+    
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->PrimaryActorTick.bCanEverTick = false;
+        CurrentWeapon->SetActorHiddenInGame(true);
+    }
+    
+    CurrentWeapon = EquippedWeapons[SlotId];
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->PrimaryActorTick.bCanEverTick = true;
+        CurrentWeapon->SetActorHiddenInGame(false);
+        if (CurrentWeapon->WeaponData->WeaponEquip)
+        {
+            HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
+        }
+    }
+}
+
 // Spawns a new weapon (either from weapon swap or picking up a new weapon)
-void AFPSCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, const bool bSpawnPickup,
-                                 FWeaponDataStruct* CurrentDataStruct, const bool bStatic, const FTransform PickupTransform)
+void AFPSCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int InventoryPosition, bool bSpawnPickup,
+                      bool bStatic, FTransform PickupTransform, FRuntimeWeaponData DataStruct)
 {
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
@@ -689,13 +747,12 @@ void AFPSCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, cons
             NewPickup->bStatic = bStatic;
             NewPickup->bRuntimeSpawned = true;
             NewPickup->WeaponReference = CurrentWeapon->GetClass();
-            NewPickup->DataStruct = *CurrentDataStruct;
-            NewPickup->AttachmentArray = CurrentDataStruct->WeaponAttachments;
+            NewPickup->DataStruct = CurrentWeapon->GeneralWeaponData;
             NewPickup->SpawnAttachmentMesh();
         }
         
         // Destroys the current weapon, if it exists
-        CurrentWeapon->K2_DestroyActor();
+        CurrentWeapon->Destroy();
     }
     // Spawns the new weapon and sets the player as it's owner
     CurrentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
@@ -703,86 +760,9 @@ void AFPSCharacter::UpdateWeapon(const TSubclassOf<ASWeaponBase> NewWeapon, cons
     {
         CurrentWeapon->SetOwner(this);
         CurrentWeapon->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->WeaponData->WeaponAttachmentSocketName);
-    }
-}
-
-FText AFPSCharacter::GetCurrentWeaponLoadedAmmo() const
-{
-    return bIsPrimary? FText::AsNumber(PrimaryWeaponCacheMap.ClipSize) : FText::AsNumber(SecondaryWeaponCacheMap.ClipSize);
-}
-
-FText AFPSCharacter::GetCurrentWeaponRemainingAmmo() const
-{
-    ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
-
-    if (CharacterController)
-    {
-        return bIsPrimary? FText::AsNumber(CharacterController->AmmoMap[PrimaryWeaponCacheMap.AmmoType]) : FText::AsNumber(CharacterController->AmmoMap[SecondaryWeaponCacheMap.AmmoType]);
-    }
-    else
-    {
-        return FText::FromString("No Character Controller found");
-    }
-}
-
-
-// Spawning and equipping the primary weapon 
-void AFPSCharacter::SwapToPrimary()
-{
-    if (PrimaryWeapon && !bIsPrimary && !CurrentWeapon->bIsReloading)
-    {
-        // Calling UpdateWeapon with relevant variables
-        UpdateWeapon(PrimaryWeapon, false, &SecondaryWeaponCacheMap, false, FTransform::Identity);
-
-        // Spawning attachments based on the local cache map
-        CurrentWeapon->SpawnAttachments(PrimaryWeaponCacheMap.WeaponAttachments);
-
-        if (CurrentWeapon)
-        {
-            if (CurrentWeapon->WeaponData->WeaponEquip)
-            {
-                HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
-            }
-        }
-
-        if (bDrawDebug)
-        {
-            for (const FName Attachment: PrimaryWeaponCacheMap.WeaponAttachments)
-            {
-                GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, Attachment.ToString());
-            }
-        }
-        bIsPrimary = true;
-    }
-}
-
-// Spawning and equipping the secondary weapon
-void AFPSCharacter::SwapToSecondary()
-{
-    if (SecondaryWeapon && bIsPrimary && !CurrentWeapon->bIsReloading)
-    {
-        // Calling UpdateWeapon with relevant variables
-        UpdateWeapon(SecondaryWeapon, false, &PrimaryWeaponCacheMap, false, FTransform::Identity);
-
-        // Spawning attachments based on the local cache map
-        CurrentWeapon->SpawnAttachments(SecondaryWeaponCacheMap.WeaponAttachments);
-
-        if (CurrentWeapon)
-        {
-            if (CurrentWeapon->WeaponData->WeaponEquip)
-            {
-                HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
-            }
-        }
-
-        if (bDrawDebug)
-        {
-            for (const FName Attachment: SecondaryWeaponCacheMap.WeaponAttachments)
-            {
-                GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, Attachment.ToString());
-            }
-        }
-        bIsPrimary = false;
+        CurrentWeapon->GeneralWeaponData = DataStruct;
+        CurrentWeapon->SpawnAttachments();
+        EquippedWeapons.Add(InventoryPosition, CurrentWeapon);
     }
 }
 
@@ -886,15 +866,13 @@ void AFPSCharacter::Tick(const float DeltaTime)
 
     if (bDrawDebug)
     {
-        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.ClipSize));
-        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.ClipCapacity));
-        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(SecondaryWeaponCacheMap.WeaponHealth));
-        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Secondary"));
-
-        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.ClipSize));
-        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.ClipCapacity));
-        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(PrimaryWeaponCacheMap.WeaponHealth));
-        GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("Primary"));
+        for ( int Index = 0; Index < NumberOfWeaponSlots; Index++ )
+        {
+            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.ClipSize));
+            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.ClipCapacity));
+            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.WeaponHealth));
+            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::FromInt(Index));
+        }
     }
 
     // Checks to see if we are facing something to interact with, and updates the interaction indicator accordingly
@@ -922,42 +900,6 @@ void AFPSCharacter::Tick(const float DeltaTime)
     }
 }
 
-void AFPSCharacter::EnhancedMove(const FInputActionValue& Value)
-{
-    ForwardMovement = Value[1];
-    RightMovement = Value[0];
-    
-    if (Value.GetMagnitude() != 0.0f)
-    {
-        AddMovementInput(GetActorForwardVector(), Value[1]);
-        AddMovementInput(GetActorRightVector(), Value[0]);
-    }
-}
-
-void AFPSCharacter::EnhancedLook(const FInputActionValue& Value)
-{
-    MouseX = Value[1];
-    MouseY = Value[0];
-    
-    AddControllerPitchInput(Value[1] * -1);
-    AddControllerYawInput(Value[0]);
-
-    if (Value.GetMagnitude() != 0.0f && CurrentWeapon)
-    {
-        CurrentWeapon->bShouldRecover = false;
-        CurrentWeapon->RecoilRecoveryTimeline.Stop();
-    }
-}
-
-
-
-void AFPSCharacter::RemapBinding(const FInputActionInstance& ActionInstance)
-{
-    FVector AVectorValue = FVector::OneVector;
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Called remap"));
-    MyAwesomeDelegateExecFunc.Execute(AVectorValue);
-}
-
 // Called to bind functionality to input
 void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -965,9 +907,7 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
     // Make sure that we are using a UEnhancedInputComponent; if not, the project is not configured correctly.
     if (UEnhancedInputComponent* PlayerEnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
-    {
-        // There are ways to bind a UInputAction* to a handler function and multiple types of ETriggerEvent that may be of interest.
-        
+    {        
         if (JumpAction)
         {
             // Jumping
@@ -1006,17 +946,17 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
             PlayerEnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Started, this, &AFPSCharacter::StartFire);
             PlayerEnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Completed, this, &AFPSCharacter::StopFire);
         }
-
+        
         if (PrimaryWeaponAction)
         {
             // Switching to the primary weapon
-            PlayerEnhancedInputComponent->BindAction(PrimaryWeaponAction, ETriggerEvent::Started, this, &AFPSCharacter::SwapToPrimary);
+            PlayerEnhancedInputComponent->BindAction(PrimaryWeaponAction, ETriggerEvent::Started, this, &AFPSCharacter::SwapWeapon<0>);
         }
 
         if (SecondaryWeaponAction)
-        {
+        {            
             // Switching to the secondary weapon
-            PlayerEnhancedInputComponent->BindAction(SecondaryWeaponAction, ETriggerEvent::Started, this, &AFPSCharacter::SwapToSecondary);
+            PlayerEnhancedInputComponent->BindAction(SecondaryWeaponAction, ETriggerEvent::Started, this, &AFPSCharacter::SwapWeapon<1>);
         }
 
         if (ReloadAction)

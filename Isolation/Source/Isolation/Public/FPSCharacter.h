@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FPSCharacterController.h"
 #include "Widgets/HUDWidget.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
@@ -11,6 +12,7 @@
 #include "InputActionValue.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
+#include "WeaponBase.h"
 #include "FPSCharacter.generated.h"
 
 class UCameraComponent;
@@ -20,19 +22,6 @@ class ASWeaponBase;
 class UAnimMontage;
 class UCurveFloat;
 class UBlendSpace;
-class UInputAction;
-class UInputMappingContext;
-
-/** Enumerator holding the 4 types of ammunition that weapons can use (used as part of the FSingleWeaponParams struct)
- * and to keep track of the total ammo the player has (ammoMap) */
-UENUM(BlueprintType)
-enum class EAmmoType : uint8
-{
-	Pistol       UMETA(DisplayName = "Pistol Ammo"),
-	Rifle        UMETA(DisplayName = "Rifle Ammo"),
-	Shotgun      UMETA(DisplayName = "Shotgun Ammo"),
-	Special		 UMETA(DisplayName = "Special Ammo"),
-};
 
 /** Movement state enumerator holding all possible movement states */
 UENUM(BlueprintType)
@@ -43,33 +32,6 @@ enum class EMovementState : uint8
 	State_Crouch    UMETA(DisplayName = "Crouching"),
 	State_Slide		UMETA(DisplayName = "Sliding"),
 	State_Vault	    UMETA(DisplayName = "Vaulting")
-};
-
-/** Struct keeping track of important weapon variables for the primary/secondary weapons */
-USTRUCT(BlueprintType)
-struct FWeaponDataStruct
-{
-	GENERATED_BODY()
-
-	/** The maximum size of the player's magazine */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
-	int ClipCapacity; 
-
-	/** The amount of ammunition currently in the magazine */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
-	int ClipSize;
-
-	/** Enumerator holding the 4 possible ammo types defined above */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo Type")
-	EAmmoType AmmoType;
-
-	/** The current health of the weapon (degradation values are in the weapon class) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
-	float WeaponHealth;
-
-	/** The attachments used in the current weapon */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
-	TArray<FName> WeaponAttachments;
 };
 
 UCLASS()
@@ -85,21 +47,43 @@ public:
 
 	/**  Returns the amount of ammunition currently loaded into the weapon  */
 	UFUNCTION(BlueprintCallable)
-	FText GetCurrentWeaponLoadedAmmo() const;
+	FText GetCurrentWeaponLoadedAmmo() const
+	{
+		if (CurrentWeapon != nullptr)
+		{
+			return FText::AsNumber(CurrentWeapon->GeneralWeaponData.ClipSize);
+		}
+		return FText::AsNumber(0);
+	} 
 
 	/** Returns the amount of ammunition remaining for the current weapon */
 	UFUNCTION(BlueprintCallable)
-	FText GetCurrentWeaponRemainingAmmo() const;
+	FText GetCurrentWeaponRemainingAmmo() const
+	{
+		ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
+
+		if (CharacterController)
+		{
+			if (CurrentWeapon != nullptr)
+			{
+				return FText::AsNumber(CharacterController->AmmoMap[CurrentWeapon->GeneralWeaponData.AmmoType]);
+			}
+			return FText::AsNumber(0);
+		}
+		return FText::FromString("No Character Controller found");
+	}
 
 	/** Switching to a new weapon
 	 * @param NewWeapon The new weapon which to spawn
+	 * @param InventoryPosition The position in the player's inventory in which to place the weapon
 	 * @param bSpawnPickup Whether to spawn a pickup of CurrentWeapon (can be false if player has an empty weapon slot)
-	 * @param CurrentDataStruct The current struct of weapon data, used to assign data to the pickup
 	 * @param bStatic Whether the spawned pickup should implement a physics simulation or not
 	 * @param PickupTransform The position at which to spawn the new pickup, in the case that it is static (bStatic)
+	 * @param DataStruct The FRuntimeWeaponData struct for this newly equipped weapon
+	 * 
 	 */
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, bool bSpawnPickup, FWeaponDataStruct* CurrentDataStruct,
-	                  bool bStatic, FTransform PickupTransform);
+	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int InventoryPosition, bool bSpawnPickup,
+	                  bool bStatic, FTransform PickupTransform, FRuntimeWeaponData DataStruct);
 
 	/** Returns the character's forward movement (from 0 to 1) */
 	UFUNCTION(BlueprintCallable)
@@ -171,45 +155,24 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FText& GetInteractText() { return InteractText; }
 
-	/** Returns the current primary weapon */
-	TSubclassOf<ASWeaponBase> GetPrimaryWeapon() const { return PrimaryWeapon; }
-
-	/** Updates the reference to the primary weapon
-	 *  @param NewWeapon The new primary weapon
+	/** Returns the current primary weapon
+	 *	@param WeaponID The ID of the weapon to get
 	 */
-	void SetPrimaryWeapon(TSubclassOf<ASWeaponBase> const NewWeapon) { PrimaryWeapon = NewWeapon; }
-
-	/** Returns the current secondary weapon */
-	TSubclassOf<ASWeaponBase> GetSecondaryWeapon() const { return SecondaryWeapon; }
-
-	/** Updates the reference to the secondary weapon
-	 *  @param NewWeapon The new secondary weapon
-	 */
-	void SetSecondaryWeapon(TSubclassOf<ASWeaponBase> const NewWeapon) { SecondaryWeapon = NewWeapon; }
+	ASWeaponBase* GetWeaponByID(const int WeaponID) const { return EquippedWeapons[WeaponID]; }
 
 	/** Returns the character's hands mesh */
 	USkeletalMeshComponent* GetHandsMesh() const { return HandsMeshComp; }
 
 	/** Returns a reference to the primary weapon's cached data map */
-	FWeaponDataStruct* GetPrimaryWeaponCacheMap() { return &PrimaryWeaponCacheMap; }
+	FRuntimeWeaponData* GetCurrentWeaponData() const { return &CurrentWeapon->GeneralWeaponData; }
 
 	/** Updates the primary weapon's cached data map
 	 *	@param NewWeaponDataStruct The new FWeaponDataStruct
+	 *	@param WeaponSlot The slot which to update
 	 */
-	void SetPrimaryWeaponCacheMap(const FWeaponDataStruct* const NewWeaponDataStruct)
+	void SetCurrentWeaponData(const FRuntimeWeaponData* NewWeaponDataStruct, const int WeaponSlot)
 	{
-		PrimaryWeaponCacheMap = *NewWeaponDataStruct;
-	}
-
-	/** Returns a reference to the secondary weapon's cached data map */
-	FWeaponDataStruct* GetSecondaryWeaponCacheMap() { return &SecondaryWeaponCacheMap; }
-
-	/** Updates the secondary weapon's cached data map
-	 *	@param NewWeaponDataStruct The new FWeaponDataStruct
-	 */
-	void SetSecondaryWeaponCacheMap(const FWeaponDataStruct* const NewWeaponDataStruct)
-	{
-		SecondaryWeaponCacheMap = *NewWeaponDataStruct;
+		EquippedWeapons[WeaponSlot]->GeneralWeaponData = *NewWeaponDataStruct;
 	}
 
 	/** Returns a reference to the player's heads up display */
@@ -244,6 +207,13 @@ public:
 	/** Returns the character's current input mapping context */
 	UFUNCTION(BlueprintCallable)
 	UInputMappingContext* GetBaseMappingContext() const { return BaseMappingContext; }
+
+	/** Returns the number of weapon slots */
+	int GetNumberOfWeaponSlots() const { return NumberOfWeaponSlots; }
+
+	int GetCurrentWeaponSlot() const { return CurrentWeaponSlot; }
+	
+	TMap<int, ASWeaponBase*> GetEquippedWeapons() const { return EquippedWeapons; }
 	
 protected:
 
@@ -298,7 +268,6 @@ private:
 
 	virtual void PawnClientRestart() override;
 	
-
 	/** Alternative to the built in Crouch function
 	 *  Handles crouch input and decides what action to perform based on the character's current state
 	 */
@@ -335,14 +304,14 @@ private:
 	 */
 	void UpdateMovementValues(EMovementState NewMovementState);
 
-	/** Temp function for swap to primary */
-	void SwapToPrimary();
+		
+	void SwapWeapon(int SlotId);
 
-	/** Temp function for swap to secondary */
-	void SwapToSecondary();
+	template <int SlotID>
+	void SwapWeapon() { SwapWeapon(SlotID); }
 	
 	/** Swaps between the primary and secondary weapon using the scroll wheel */
-	void ScrollWeapon();
+	void ScrollWeapon(const FInputActionValue& Value);
 
 	/** Fires the weapon */
 	void StartFire();
@@ -380,8 +349,6 @@ private:
 	/** Updates widgets */
 	void ManageOnScreenWidgets();
 
-	FName NewActionName;
-	
 	/** Debug */
 	
 	/** Prints debug variables if true */
@@ -458,14 +425,10 @@ private:
 	int VaultTraceAmount = 25.0f;
 	
 	/** Weapon classes */
-	
-	/** The player's current primary weapon */
+
+	/** A Map storing the player's current weapons and the slot that they correspond to */
 	UPROPERTY()
-	TSubclassOf<ASWeaponBase> PrimaryWeapon;
-	
-	/** The player's current secondary weapon */
-	UPROPERTY()
-	TSubclassOf<ASWeaponBase> SecondaryWeapon;
+	TMap<int, ASWeaponBase*> EquippedWeapons;
 
 	/** The player's currently equipped weapon */
 	UPROPERTY()
@@ -529,14 +492,13 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Other")
 	FName CameraSocketName;
 
-	/** The primary weapon's cached data map */
-	UPROPERTY()
-	FWeaponDataStruct PrimaryWeaponCacheMap;
+	/** The integer that keeps track of which weapon slot ID is currently active */
+	int CurrentWeaponSlot;
 
-	/** The secondary weapon's cached data map */
-	UPROPERTY()
-	FWeaponDataStruct SecondaryWeaponCacheMap;
-
+	/** THe Number of slots for Weapons that this player has */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapons | Inventory")
+	int NumberOfWeaponSlots;
+	
 	/** A reference to the player's main HUD widget */
 	UPROPERTY()
 	USHUDWidget* PlayerHudWidget;
@@ -570,7 +532,7 @@ private:
 
 	/** Curve that controls motion during vault */
 	UPROPERTY(EditAnywhere, Category = "Timeline")
-	UCurveFloat* CurveFloat;
+	UCurveFloat* VaultTimelineCurve;
 	
 	/** The timeline for vaulting (generated from the curve) */
 	UPROPERTY()
@@ -605,7 +567,7 @@ private:
 
 	/** The game's default FOV */
 	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float BaseFOV;
+	float BaseFOV = 77.0f;
 	
 	/** The current angle of the floor beneath the player */
 	float FloorAngle;
@@ -688,8 +650,6 @@ private:
 	void EnhancedMove(const FInputActionValue& Value);
 	
 	void EnhancedLook(const FInputActionValue& Value);
-
-	void RemapBinding(const FInputActionInstance& ActionInstance);
 	
 	//TODO: Research saving/loading mapping contexts
 

@@ -11,7 +11,6 @@
 #include "FPSCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
-#include "func_lib/AttachmentHelpers.h"
 #include "Isolation/Isolation.h"
 #include "Particles/ParticleSystem.h"
 
@@ -168,12 +167,21 @@ void ASWeaponBase::BeginPlay()
 
 
 
-void ASWeaponBase::SpawnAttachments(TArray<FName> AttachmentsArray)
+void ASWeaponBase::SpawnAttachments()
 {
+
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("1"));
+    
     if (WeaponData->bHasAttachments)
-    {        
-        for (FName RowName : AttachmentsArray)
+    {
+
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("2"));
+        
+        for (FName RowName : GeneralWeaponData.WeaponAttachments)
         {
+
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("3"));
+            
             AttachmentData = WeaponData->AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
 
             if (AttachmentData)
@@ -290,13 +298,13 @@ void ASWeaponBase::StartFire()
 
 void ASWeaponBase::StartRecoil()
 {
-    AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     const ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     ShotsFired = 0;
     
 
-    if (bCanFire && (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) > 0 && !bIsReloading && CharacterController)
+    if (bCanFire && GeneralWeaponData.ClipSize > 0 && !bIsReloading && CharacterController)
     {
         VerticalRecoilTimeline.PlayFromStart();
         HorizontalRecoilTimeline.PlayFromStart();
@@ -324,21 +332,21 @@ void ASWeaponBase::StopFire()
 void ASWeaponBase::Fire()
 {    
     // Casting to the game instance (which stores all the ammunition and health variables)
-    AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     
     // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
-    if(bCanFire && (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) > 0 && !bIsReloading)
+    if(bCanFire && GeneralWeaponData.ClipSize > 0 && !bIsReloading)
     {
         // Printing debug strings
         if(bShowDebug)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Fire", true);
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt((PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) > 0 && !bIsReloading), true);
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt(GeneralWeaponData.ClipSize > 0 && !bIsReloading), true);
         }
         
 
         // Subtracting from the ammunition count of the weapon
-        (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) -= 1;
+       GeneralWeaponData.ClipSize -= 1;
 
         const int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPellets : 1;
         for (int i = 0; i < NumberOfShots; i++)
@@ -516,7 +524,7 @@ void ASWeaponBase::Reload()
 {
     
     // Casting to the game instance (which stores all the ammunition and health variables)
-    AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     // Changing the maximum ammunition based on if the weapon can hold a bullet in the chamber
@@ -527,10 +535,10 @@ void ASWeaponBase::Reload()
     }
 
     // Checking if we are not reloading, if a reloading montage exists, and if there is any point in reloading (current ammunition does not match maximum magazine capacity and there is spare ammunition to load into the gun)
-    if(!bIsReloading && CharacterController->AmmoMap[(PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->AmmoType : PlayerCharacter->GetSecondaryWeaponCacheMap()->AmmoType)] > 0 && (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) != (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipCapacity : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipCapacity) + Value)
+    if(!bIsReloading && CharacterController->AmmoMap[GeneralWeaponData.AmmoType] > 0 && (GeneralWeaponData.ClipSize != (GeneralWeaponData.ClipCapacity + Value)))
     {
          // Differentiating between having no ammunition in the magazine (having to chamber a round after reloading) or not, and playing an animation relevant to that
-        if ((PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) <= 0 && WeaponData->EmptyPlayerReload)
+        if (GeneralWeaponData.ClipSize <= 0 && WeaponData->EmptyPlayerReload)
         {
             if (WeaponData->bHasAttachments)
             {
@@ -585,14 +593,14 @@ void ASWeaponBase::UpdateAmmo()
     }
 
     // Casting to the game instance (which stores all the ammunition and health variables)
-    AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+    const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
     
     // value system to reload the correct amount of bullets if the weapon is using a chambered reloading system
     int value = 0;
 
     // Checking to see if there is already ammunition within the gun and that this particular gun supports chambered rounds
-    if ((PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) > 0 && WeaponData->bCanBeChambered)
+    if (GeneralWeaponData.ClipSize > 0 && WeaponData->bCanBeChambered)
     {
         value = 1;
 
@@ -603,27 +611,27 @@ void ASWeaponBase::UpdateAmmo()
     }
     
     // First, we set Temp, which keeps track of the difference between the maximum ammunition and the amount that there is currently loaded (i.e. how much ammunition we need to reload into the gun)
-    const int Temp = (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipCapacity : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipCapacity) - (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize);
+    const int Temp = GeneralWeaponData.ClipCapacity - GeneralWeaponData.ClipSize;
     // Making sure we have enough ammunition to reload
-    if (CharacterController->AmmoMap[(PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->AmmoType : PlayerCharacter->GetSecondaryWeaponCacheMap()->AmmoType)] >= Temp + value)
+    if (CharacterController->AmmoMap[GeneralWeaponData.AmmoType] >= Temp + value)
     {
         // Then, we update the weapon to have full ammunition, plus the value (1 if there is a bullet in the chamber, 0 if not)
-        (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) = (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipCapacity : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipCapacity) + value;
+        GeneralWeaponData.ClipSize = GeneralWeaponData.ClipCapacity + value;
         // Finally, we remove temp (and an extra bullet, if one is chambered) from the player's ammunition store
-        CharacterController->AmmoMap[(PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->AmmoType : PlayerCharacter->GetSecondaryWeaponCacheMap()->AmmoType)] -= (Temp + value);
+        CharacterController->AmmoMap[GeneralWeaponData.AmmoType] -= (Temp + value);
     }
     // If we don't, add the remaining ammunition to the clip, and set the remaining ammunition to 0
     else
     {
-        (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) = (PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize) + CharacterController->AmmoMap[(PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->AmmoType : PlayerCharacter->GetSecondaryWeaponCacheMap()->AmmoType)];
-        CharacterController->AmmoMap[(PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->AmmoType : PlayerCharacter->GetSecondaryWeaponCacheMap()->AmmoType)] = 0;
+        GeneralWeaponData.ClipSize = GeneralWeaponData.ClipSize + CharacterController->AmmoMap[GeneralWeaponData.AmmoType];
+        CharacterController->AmmoMap[GeneralWeaponData.AmmoType] = 0;
     }
 
     // Print debug strings
     if(bShowDebug)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt((PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->ClipSize : PlayerCharacter->GetSecondaryWeaponCacheMap()->ClipSize)), true);
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->AmmoMap[(PlayerCharacter->IsPrimaryWeaponEquipped()? PlayerCharacter->GetPrimaryWeaponCacheMap()->AmmoType : PlayerCharacter->GetSecondaryWeaponCacheMap()->AmmoType)]), true);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(GeneralWeaponData.ClipSize), true);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->AmmoMap[GeneralWeaponData.AmmoType]), true);
     }
 
     // Resetting bIsReloading and allowing the player to fire the gun again
@@ -674,11 +682,6 @@ void ASWeaponBase::RenderScope() const
     {
         ScopeCaptureComponent->CaptureScene();
     }
-}
-
-void ASWeaponBase::SetShowDebug(bool IsVisible)
-{
-    bShowDebug = IsVisible;
 }
 
 

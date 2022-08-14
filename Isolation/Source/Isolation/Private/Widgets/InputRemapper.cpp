@@ -30,7 +30,7 @@ void UInputRemapper::ClearActionMappings()
 	UpdateMappings();
 }
 
-void UInputRemapper::RemapKey(FInputChord InSelectedKey)
+void UInputRemapper::RemapKey(const FInputChord InSelectedKey)
 {
 	PlayerCharacter->GetBaseMappingContext()->MapKey(InputAction, InSelectedKey.Key);
 
