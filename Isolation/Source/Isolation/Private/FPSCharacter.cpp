@@ -712,7 +712,8 @@ void AFPSCharacter::SwapWeapon(int SlotId)
     {
         CurrentWeapon->PrimaryActorTick.bCanEverTick = true;
         CurrentWeapon->SetActorHiddenInGame(false);
-        if (CurrentWeapon->WeaponData->WeaponEquip)
+        // CurrentWeapon->SpawnAttachments();
+        if (CurrentWeapon->WeaponData.WeaponEquip)
         {
             HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
         }
@@ -726,7 +727,7 @@ void AFPSCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int Invent
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
     SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    if (CurrentWeapon)
+    if (InventoryPosition == CurrentWeaponSlot && EquippedWeapons.Contains(InventoryPosition))
     {
         if (bSpawnPickup)
         {
@@ -737,7 +738,7 @@ void AFPSCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int Invent
             const FVector TraceEnd = TraceStart + (TraceDirection * WeaponSpawnDistance);
 
             // Spawning the new pickup
-            ASWeaponPickup* NewPickup = GetWorld()->SpawnActor<ASWeaponPickup>(CurrentWeapon->WeaponData->PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
+            ASWeaponPickup* NewPickup = GetWorld()->SpawnActor<ASWeaponPickup>(CurrentWeapon->WeaponData.PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
             if (bStatic)
             {
                 NewPickup->MainMesh->SetSimulatePhysics(false);
@@ -746,23 +747,40 @@ void AFPSCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int Invent
             // Applying the current weapon data to the pickup
             NewPickup->bStatic = bStatic;
             NewPickup->bRuntimeSpawned = true;
-            NewPickup->WeaponReference = CurrentWeapon->GetClass();
-            NewPickup->DataStruct = CurrentWeapon->GeneralWeaponData;
+            NewPickup->WeaponReference = EquippedWeapons[InventoryPosition]->GetClass();
+            NewPickup->DataStruct = EquippedWeapons[InventoryPosition]->GeneralWeaponData;
             NewPickup->SpawnAttachmentMesh();
+            EquippedWeapons[InventoryPosition]->Destroy();
         }
-        
-        // Destroys the current weapon, if it exists
-        CurrentWeapon->Destroy();
     }
     // Spawns the new weapon and sets the player as it's owner
-    CurrentWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
-    if (CurrentWeapon)
+    ASWeaponBase* SpawnedWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
+    if (SpawnedWeapon)
     {
-        CurrentWeapon->SetOwner(this);
-        CurrentWeapon->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->WeaponData->WeaponAttachmentSocketName);
-        CurrentWeapon->GeneralWeaponData = DataStruct;
-        CurrentWeapon->SpawnAttachments();
-        EquippedWeapons.Add(InventoryPosition, CurrentWeapon);
+        SpawnedWeapon->SetOwner(this);
+        SpawnedWeapon->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SpawnedWeapon->WeaponData.WeaponAttachmentSocketName);
+        SpawnedWeapon->GeneralWeaponData = DataStruct;
+        SpawnedWeapon->SpawnAttachments();
+        EquippedWeapons.Add(InventoryPosition, SpawnedWeapon);
+
+        if (CurrentWeapon)
+        {
+            CurrentWeapon->PrimaryActorTick.bCanEverTick = false;
+            CurrentWeapon->SetActorHiddenInGame(true);
+        }
+    
+        CurrentWeapon = EquippedWeapons[InventoryPosition];
+        CurrentWeaponSlot = InventoryPosition; 
+        
+        if (CurrentWeapon)
+        {
+            CurrentWeapon->PrimaryActorTick.bCanEverTick = true;
+            CurrentWeapon->SetActorHiddenInGame(false);
+            if (CurrentWeapon->WeaponData.WeaponEquip)
+            {
+                HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
+            }
+        }
     }
 }
 
@@ -829,9 +847,9 @@ void AFPSCharacter::Tick(const float DeltaTime)
     float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? (BaseFOV + SpeedFOVChange) : BaseFOV;
     if (CurrentWeapon)
     {
-        if (bIsAiming && CurrentWeapon->WeaponData->bAimingFOV && !CurrentWeapon->bIsReloading)
+        if (bIsAiming && CurrentWeapon->WeaponData.bAimingFOV && !CurrentWeapon->bIsReloading)
         {
-            TargetFOV = BaseFOV - CurrentWeapon->WeaponData->AimingFOVChange;
+            TargetFOV = BaseFOV - CurrentWeapon->WeaponData.AimingFOVChange;
             FOVChangeSpeed = 6;
         }
     }
@@ -868,11 +886,25 @@ void AFPSCharacter::Tick(const float DeltaTime)
     {
         for ( int Index = 0; Index < NumberOfWeaponSlots; Index++ )
         {
-            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.ClipSize));
-            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.ClipCapacity));
-            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.WeaponHealth));
+            if (EquippedWeapons.Contains(Index))
+            {
+                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.ClipSize));
+                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.ClipCapacity));
+                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.WeaponHealth));
+            }
+            else
+            {
+                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
+                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
+                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
+            }
             GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::FromInt(Index));
         }
+    }
+
+    if (CurrentWeapon != nullptr)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::SanitizeFloat(CurrentWeapon->WeaponData.RateOfFire));
     }
 
     // Checks to see if we are facing something to interact with, and updates the interaction indicator accordingly
@@ -882,20 +914,17 @@ void AFPSCharacter::Tick(const float DeltaTime)
     //Updating the scope's material parameter collection
     if (CurrentWeapon)
     {
-        if (CurrentWeapon->WeaponData)
+        if (bIsAiming)
         {
-            if (bIsAiming)
-            {
-                ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 1, DeltaTime, 8.0f);
-                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
-                                                                OpacityParameterName, ScopeBlend);
-            }
-            else
-            {
-                ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 0, DeltaTime, 8.0f);
-                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
-                                                                OpacityParameterName, ScopeBlend);
-            }
+            ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 1, DeltaTime, 8.0f);
+            UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
+                                                            OpacityParameterName, ScopeBlend);
+        }
+        else
+        {
+            ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 0, DeltaTime, 8.0f);
+            UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
+                                                            OpacityParameterName, ScopeBlend);
         }
     }
 }

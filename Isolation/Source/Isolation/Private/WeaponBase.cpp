@@ -86,12 +86,12 @@ void ASWeaponBase::BeginPlay()
 	QueryParams.bReturnPhysicalMaterial = true;
 
     // Getting a reference to the relevant row in the WeaponData DataTable
-    WeaponData = WeaponDataTable->FindRow<FWeaponData>(FName(DataTableNameRef), FString(DataTableNameRef), true);
+    WeaponData = *WeaponDataTable->FindRow<FWeaponData>(FName(DataTableNameRef), FString(DataTableNameRef), true);
 
     // if we don't have attachments then we can check to render the scope here
-    if (!WeaponData->bHasAttachments)
+    if (!WeaponData.bHasAttachments)
     {
-        if (WeaponData->bIsScope)
+        if (WeaponData.bIsScope)
         {
             if (bShowDebug)
             {
@@ -99,7 +99,7 @@ void ASWeaponBase::BeginPlay()
             }
             ScopeCaptureComponent->FOVAngle = FOVFromMagnification();
         }
-        if (WeaponData->bIsScope)
+        if (WeaponData.bIsScope)
         {
             GetWorldTimerManager().SetTimer(ScopeRenderTimer, this, &ASWeaponBase::RenderScope, 1.0f/ScopeFrameRate, true, 0.0f);
         }
@@ -109,36 +109,29 @@ void ASWeaponBase::BeginPlay()
      *Setting our default animation values
      *We set these here, but they can be overriden later by variables from applied attachments.
      */
-    if (WeaponData)
+    if (WeaponData.WeaponEquip)
     {
-        if (WeaponData->WeaponEquip)
-        {
-            WeaponEquip = WeaponData->WeaponEquip;
-        }
-        if (WeaponData->BS_Walk)
-        {
-            WalkBlendSpace = WeaponData->BS_Walk;
-        }
-        if (WeaponData->BS_Ads_Walk)
-        {
-            ADSWalkBlendSpace = WeaponData->BS_Ads_Walk;
-        }
-        if (WeaponData->Anim_Idle)
-        {
-            Anim_Idle = WeaponData->Anim_Idle;
-        }
-        if (WeaponData->Anim_Sprint)
-        {
-            Anim_Sprint = WeaponData->Anim_Sprint;
-        }
-        if (WeaponData->Anim_Ads_Idle)
-        {
-            Anim_ADS_Idle = WeaponData->Anim_Ads_Idle;
-        }
+        WeaponEquip = WeaponData.WeaponEquip;
     }
-    else
+    if (WeaponData.BS_Walk)
     {
-        UE_LOG(LogTemp, Error, TEXT("Could not find the weapon's Weapon Data in the DataTable, check to make sure you've set a DataTableNameRef value in your Weapon Blueprint"));
+        WalkBlendSpace = WeaponData.BS_Walk;
+    }
+    if (WeaponData.BS_Ads_Walk)
+    {
+        ADSWalkBlendSpace = WeaponData.BS_Ads_Walk;
+    }
+    if (WeaponData.Anim_Idle)
+    {
+        Anim_Idle = WeaponData.Anim_Idle;
+    }
+    if (WeaponData.Anim_Sprint)
+    {
+        Anim_Sprint = WeaponData.Anim_Sprint;
+    }
+    if (WeaponData.Anim_Ads_Idle)
+    {
+        Anim_ADS_Idle = WeaponData.Anim_Ads_Idle;
     }
 
 
@@ -172,7 +165,7 @@ void ASWeaponBase::SpawnAttachments()
 
     GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("1"));
     
-    if (WeaponData->bHasAttachments)
+    if (WeaponData.bHasAttachments)
     {
 
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("2"));
@@ -182,7 +175,7 @@ void ASWeaponBase::SpawnAttachments()
 
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("3"));
             
-            AttachmentData = WeaponData->AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
+            AttachmentData = WeaponData.AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
 
             if (AttachmentData)
             {
@@ -195,40 +188,40 @@ void ASWeaponBase::SpawnAttachments()
                 if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
                 {
                     BarrelAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-                    WeaponData->MuzzleLocation = AttachmentData->MuzzleLocationOverride;
-                    WeaponData->ParticleSpawnLocation = AttachmentData->ParticleSpawnLocationOverride;
-                    WeaponData->bSilenced = AttachmentData->bSilenced;
+                    WeaponData.MuzzleLocation = AttachmentData->MuzzleLocationOverride;
+                    WeaponData.ParticleSpawnLocation = AttachmentData->ParticleSpawnLocationOverride;
+                    WeaponData.bSilenced = AttachmentData->bSilenced;
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
                 {
                     MagazineAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
-                    WeaponData->FireSound = AttachmentData->FiringSoundOverride;
-                    WeaponData->SilencedSound = AttachmentData->SilencedFiringSoundOverride;
-                    WeaponData->RateOfFire = AttachmentData->FireRate;
-                    WeaponData->bAutomaticFire = AttachmentData->AutomaticFire;
-                    WeaponData->VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
-                    WeaponData->HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
-                    WeaponData->RecoilCameraShake = AttachmentData->RecoilCameraShake;
-                    WeaponData->bIsShotgun = AttachmentData->bIsShotgun;
-                    WeaponData->ShotgunRange = AttachmentData->ShotgunRange;
-                    WeaponData->ShotgunPellets = AttachmentData->ShotgunPellets;
-                    WeaponData->EmptyWeaponReload = AttachmentData->EmptyWeaponReload;
-                    WeaponData->WeaponReload = AttachmentData->WeaponReload;
-                    WeaponData->EmptyPlayerReload = AttachmentData->EmptyPlayerReload;
-                    WeaponData->PlayerReload = AttachmentData->PlayerReload;
-                    WeaponData->Gun_Shot = AttachmentData->Gun_Shot;
-                    WeaponData->AccuracyDebuff = AttachmentData->AccuracyDebuff;
+                    WeaponData.FireSound = AttachmentData->FiringSoundOverride;
+                    WeaponData.SilencedSound = AttachmentData->SilencedFiringSoundOverride;
+                    WeaponData.RateOfFire = AttachmentData->FireRate;
+                    WeaponData.bAutomaticFire = AttachmentData->AutomaticFire;
+                    WeaponData.VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
+                    WeaponData.HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
+                    WeaponData.RecoilCameraShake = AttachmentData->RecoilCameraShake;
+                    WeaponData.bIsShotgun = AttachmentData->bIsShotgun;
+                    WeaponData.ShotgunRange = AttachmentData->ShotgunRange;
+                    WeaponData.ShotgunPellets = AttachmentData->ShotgunPellets;
+                    WeaponData.EmptyWeaponReload = AttachmentData->EmptyWeaponReload;
+                    WeaponData.WeaponReload = AttachmentData->WeaponReload;
+                    WeaponData.EmptyPlayerReload = AttachmentData->EmptyPlayerReload;
+                    WeaponData.PlayerReload = AttachmentData->PlayerReload;
+                    WeaponData.Gun_Shot = AttachmentData->Gun_Shot;
+                    WeaponData.AccuracyDebuff = AttachmentData->AccuracyDebuff;
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
                 {
                     SightsAttachment->SetSkeletalMesh(AttachmentData->AttachmentMesh);
                     VerticalCameraOffset = AttachmentData->VerticalCameraOffset;
-                    WeaponData->bAimingFOV = AttachmentData->bAimingFOV;
-                    WeaponData->AimingFOVChange = AttachmentData->AimingFOVChange;
-                    WeaponData->bIsScope = AttachmentData->bIsScope;
-                    WeaponData->ScopeMagnification = AttachmentData->ScopeMagnification;
-                    WeaponData->UnmagnifiedLFoV = AttachmentData->UnmagnifiedLFoV;
-                    if (WeaponData->bIsScope)
+                    WeaponData.bAimingFOV = AttachmentData->bAimingFOV;
+                    WeaponData.AimingFOVChange = AttachmentData->AimingFOVChange;
+                    WeaponData.bIsScope = AttachmentData->bIsScope;
+                    WeaponData.ScopeMagnification = AttachmentData->ScopeMagnification;
+                    WeaponData.UnmagnifiedLFoV = AttachmentData->UnmagnifiedLFoV;
+                    if (WeaponData.bIsScope)
                     {
                         if (bShowDebug)
                         {
@@ -236,7 +229,7 @@ void ASWeaponBase::SpawnAttachments()
                         }
                         ScopeCaptureComponent->FOVAngle = FOVFromMagnification();
                     }
-                    if (WeaponData->bIsScope)
+                    if (WeaponData.bIsScope)
                     {
                         GetWorldTimerManager().SetTimer(ScopeRenderTimer, this, &ASWeaponBase::RenderScope, 1.0f/ScopeFrameRate, true, 0.0f);
                     }
@@ -281,10 +274,10 @@ void ASWeaponBase::SpawnAttachments()
 void ASWeaponBase::StartFire()
 { 
     // If the weapon can be fired (i.e. not reloading, for example)
-    if (bCanFire && WeaponData)
+    if (bCanFire)
     {
         // sets a timer for firing the weapon - if bAutomaticFire is true then this timer will repeat until cleared by StopFire(), leading to fully automatic fire
-        GetWorldTimerManager().SetTimer(ShotDelay, this, &ASWeaponBase::Fire, WeaponData->RateOfFire, WeaponData->bAutomaticFire, 0.0f);
+        GetWorldTimerManager().SetTimer(ShotDelay, this, &ASWeaponBase::Fire, WeaponData.RateOfFire, WeaponData.bAutomaticFire, 0.0f);
 
         if (bShowDebug)
         {
@@ -348,7 +341,7 @@ void ASWeaponBase::Fire()
         // Subtracting from the ammunition count of the weapon
        GeneralWeaponData.ClipSize -= 1;
 
-        const int NumberOfShots = WeaponData->bIsShotgun? WeaponData->ShotgunPellets : 1;
+        const int NumberOfShots = WeaponData.bIsShotgun? WeaponData.ShotgunPellets : 1;
         for (int i = 0; i < NumberOfShots; i++)
         {
 
@@ -358,22 +351,22 @@ void ASWeaponBase::Fire()
             float AccuracyMultiplier = 1.0f;
             if (!PlayerCharacter->IsPlayerAiming())
             {
-                AccuracyMultiplier = WeaponData->AccuracyDebuff;
+                AccuracyMultiplier = WeaponData.AccuracyDebuff;
             }
             
-            TraceStartRotation.Pitch += FMath::FRandRange(-((WeaponData->WeaponPitchVariation + WeaponPitchModifier) * AccuracyMultiplier), (WeaponData->WeaponPitchVariation + WeaponPitchModifier) * AccuracyMultiplier);
-            TraceStartRotation.Yaw += FMath::FRandRange(-((WeaponData->WeaponYawVariation + WeaponYawModifier) * AccuracyMultiplier), (WeaponData->WeaponYawVariation + WeaponYawModifier) * AccuracyMultiplier);
+            TraceStartRotation.Pitch += FMath::FRandRange(-((WeaponData.WeaponPitchVariation + WeaponPitchModifier) * AccuracyMultiplier), (WeaponData.WeaponPitchVariation + WeaponPitchModifier) * AccuracyMultiplier);
+            TraceStartRotation.Yaw += FMath::FRandRange(-((WeaponData.WeaponYawVariation + WeaponYawModifier) * AccuracyMultiplier), (WeaponData.WeaponYawVariation + WeaponYawModifier) * AccuracyMultiplier);
             TraceDirection = TraceStartRotation.Vector();
-            TraceEnd = TraceStart + (TraceDirection * (WeaponData->bIsShotgun? WeaponData->ShotgunRange : WeaponData->LengthMultiplier));
+            TraceEnd = TraceStart + (TraceDirection * (WeaponData.bIsShotgun? WeaponData.ShotgunRange : WeaponData.LengthMultiplier));
             
 
             // Applying Recoil to the weapon
             Recoil();
 
             // Playing an animation on the weapon mesh
-            if (WeaponData->Gun_Shot)
+            if (WeaponData.Gun_Shot)
             {
-                MeshComp->PlayAnimation(WeaponData->Gun_Shot, false);
+                MeshComp->PlayAnimation(WeaponData.Gun_Shot, false);
             }
 
             FVector EndPoint = TraceEnd;
@@ -384,18 +377,18 @@ void ASWeaponBase::Fire()
                 // Drawing debug line trace
                 if (bShowDebug)
                 {
-                    DrawDebugLine(GetWorld(), (WeaponData->bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData->MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData->MuzzleLocation)), Hit.Location, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                    DrawDebugLine(GetWorld(), (WeaponData.bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation)), Hit.Location, FColor::Red, false, 10.0f, 0.0f, 2.0f);
                 }
                 
                 // Resetting finalDamage
                 FinalDamage = 0.0f;
 
                 // Setting finalDamage based on the type of surface hit
-                FinalDamage = (WeaponData->BaseDamage + DamageModifier);
+                FinalDamage = (WeaponData.BaseDamage + DamageModifier);
                 
-                if (Hit.PhysMaterial.Get() == WeaponData->HeadshotDamageSurface)
+                if (Hit.PhysMaterial.Get() == WeaponData.HeadshotDamageSurface)
                 {
-                    FinalDamage = (WeaponData->BaseDamage + DamageModifier) * WeaponData->HeadshotMultiplier;
+                    FinalDamage = (WeaponData.BaseDamage + DamageModifier) * WeaponData.HeadshotMultiplier;
                 }
 
                 AActor* HitActor = Hit.GetActor();
@@ -410,60 +403,60 @@ void ASWeaponBase::Fire()
                 // Drawing debug line trace
                 if (bShowDebug)
                 {
-                    DrawDebugLine(GetWorld(), (WeaponData->bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData->MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData->MuzzleLocation)), TraceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                    DrawDebugLine(GetWorld(), (WeaponData.bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation)), TraceEnd, FColor::Red, false, 10.0f, 0.0f, 2.0f);
                 }
             }
 
-            const FRotator ParticleRotation = (EndPoint - (WeaponData->bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData->MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData->MuzzleLocation))).Rotation();
+            const FRotator ParticleRotation = (EndPoint - (WeaponData.bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation))).Rotation();
             
             // Spawning the bullet trace particle effect
-            if (WeaponData->bHasAttachments)
+            if (WeaponData.bHasAttachments)
             {
-                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrace, BarrelAttachment->GetSocketLocation(WeaponData->ParticleSpawnLocation), ParticleRotation);
+                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData.BulletTrace, BarrelAttachment->GetSocketLocation(WeaponData.ParticleSpawnLocation), ParticleRotation);
             }
             else
             {
-                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData->BulletTrace, MeshComp->GetSocketLocation(WeaponData->ParticleSpawnLocation), ParticleRotation);
+                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData.BulletTrace, MeshComp->GetSocketLocation(WeaponData.ParticleSpawnLocation), ParticleRotation);
             }
 
             // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
 
-            if (Hit.PhysMaterial.Get() == WeaponData->NormalDamageSurface || Hit.PhysMaterial.Get() == WeaponData->HeadshotDamageSurface)
+            if (Hit.PhysMaterial.Get() == WeaponData.NormalDamageSurface || Hit.PhysMaterial.Get() == WeaponData.HeadshotDamageSurface)
             {
-                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData->EnemyHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData.EnemyHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
             }
-            else if (Hit.PhysMaterial.Get() == WeaponData->GroundSurface)
+            else if (Hit.PhysMaterial.Get() == WeaponData.GroundSurface)
             {
-                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData->GroundHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData.GroundHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
             }
-            else if (Hit.PhysMaterial.Get() == WeaponData->RockSurface)
+            else if (Hit.PhysMaterial.Get() == WeaponData.RockSurface)
             {
-                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData->RockHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData.RockHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
             }
             else
             {
-                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData->DefaultHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData.DefaultHitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
             }
         }
 
         // Spawning the muzzle flash particle
-        if (WeaponData->bHasAttachments)
+        if (WeaponData.bHasAttachments)
         {
-            UGameplayStatics::SpawnEmitterAttached(WeaponData->MuzzleFlash, BarrelAttachment, WeaponData->ParticleSpawnLocation, FVector::ZeroVector, BarrelAttachment->GetSocketRotation(WeaponData->ParticleSpawnLocation), FVector::OneVector);
+            UGameplayStatics::SpawnEmitterAttached(WeaponData.MuzzleFlash, BarrelAttachment, WeaponData.ParticleSpawnLocation, FVector::ZeroVector, BarrelAttachment->GetSocketRotation(WeaponData.ParticleSpawnLocation), FVector::OneVector);
         }
         else
         {
-            UGameplayStatics::SpawnEmitterAttached(WeaponData->MuzzleFlash, MeshComp, WeaponData->ParticleSpawnLocation, FVector::ZeroVector, MeshComp->GetSocketRotation(WeaponData->ParticleSpawnLocation), FVector::OneVector);
+            UGameplayStatics::SpawnEmitterAttached(WeaponData.MuzzleFlash, MeshComp, WeaponData.ParticleSpawnLocation, FVector::ZeroVector, MeshComp->GetSocketRotation(WeaponData.ParticleSpawnLocation), FVector::OneVector);
         }
 
         // Spawning the firing sound
-        if(WeaponData->bSilenced)
+        if(WeaponData.bSilenced)
         {
-            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->SilencedSound, TraceStart);
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData.SilencedSound, TraceStart);
         }
         else
         {
-            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->FireSound, TraceStart);
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData.FireSound, TraceStart);
         }
 
 
@@ -471,7 +464,7 @@ void ASWeaponBase::Fire()
         EjectionSpawnVector.Yaw = 270.0f;
         UNiagaraFunctionLibrary::SpawnSystemAttached(EjectedCasing, MagazineAttachment, FName("ejection_port"), FVector::ZeroVector, EjectionSpawnVector, EAttachLocation::SnapToTarget, true, true);
 
-        if (!WeaponData->bAutomaticFire)
+        if (!WeaponData.bAutomaticFire)
         {
             VerticalRecoilTimeline.Stop();
             HorizontalRecoilTimeline.Stop();
@@ -480,7 +473,7 @@ void ASWeaponBase::Fire()
     }
     else if (bCanFire && !bIsReloading)
     {
-        UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData->EmptyFireSound, MeshComp->GetSocketLocation(WeaponData->MuzzleLocation));
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData.EmptyFireSound, MeshComp->GetSocketLocation(WeaponData.MuzzleLocation));
         // Clearing the ShotDelay timer so that we don't have a constant ticking when the player has no ammo, just a single click
         GetWorldTimerManager().ClearTimer(ShotDelay);
 
@@ -495,19 +488,19 @@ void ASWeaponBase::Recoil()
     ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
 
     // Apply recoil
-    if (WeaponData->bAutomaticFire && CharacterController && ShotsFired > 0 && IsValid(VerticalRecoilCurve) && IsValid(HorizontalRecoilCurve))
+    if (WeaponData.bAutomaticFire && CharacterController && ShotsFired > 0 && IsValid(VerticalRecoilCurve) && IsValid(HorizontalRecoilCurve))
     {
-        CharacterController->AddPitchInput(WeaponData->VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()) * VerticalRecoilModifier);
-        CharacterController->AddYawInput(WeaponData->HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()) * HorizontalRecoilModifier);
+        CharacterController->AddPitchInput(WeaponData.VerticalRecoilCurve->GetFloatValue(VerticalRecoilTimeline.GetPlaybackPosition()) * VerticalRecoilModifier);
+        CharacterController->AddYawInput(WeaponData.HorizontalRecoilCurve->GetFloatValue(HorizontalRecoilTimeline.GetPlaybackPosition()) * HorizontalRecoilModifier);
     }
     else
     {
-        CharacterController->AddPitchInput(WeaponData->VerticalRecoilCurve->GetFloatValue(0) * VerticalRecoilModifier);
-        CharacterController->AddYawInput(WeaponData->HorizontalRecoilCurve->GetFloatValue(0) * HorizontalRecoilModifier);
+        CharacterController->AddPitchInput(WeaponData.VerticalRecoilCurve->GetFloatValue(0) * VerticalRecoilModifier);
+        CharacterController->AddYawInput(WeaponData.HorizontalRecoilCurve->GetFloatValue(0) * HorizontalRecoilModifier);
     }
 
     ShotsFired += 1;
-    GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(WeaponData->RecoilCameraShake);  
+    GetWorld()->GetFirstPlayerController()->ClientStartCameraShake(WeaponData.RecoilCameraShake);  
 }
 
 void ASWeaponBase::RecoilRecovery()
@@ -529,7 +522,7 @@ void ASWeaponBase::Reload()
 
     // Changing the maximum ammunition based on if the weapon can hold a bullet in the chamber
     int Value = 0;
-    if(WeaponData->bCanBeChambered)
+    if(WeaponData.bCanBeChambered)
     {
         Value = 1;
     }
@@ -538,30 +531,30 @@ void ASWeaponBase::Reload()
     if(!bIsReloading && CharacterController->AmmoMap[GeneralWeaponData.AmmoType] > 0 && (GeneralWeaponData.ClipSize != (GeneralWeaponData.ClipCapacity + Value)))
     {
          // Differentiating between having no ammunition in the magazine (having to chamber a round after reloading) or not, and playing an animation relevant to that
-        if (GeneralWeaponData.ClipSize <= 0 && WeaponData->EmptyPlayerReload)
+        if (GeneralWeaponData.ClipSize <= 0 && WeaponData.EmptyPlayerReload)
         {
-            if (WeaponData->bHasAttachments)
+            if (WeaponData.bHasAttachments)
             {
-                MagazineAttachment->PlayAnimation(WeaponData->EmptyWeaponReload, false);
+                MagazineAttachment->PlayAnimation(WeaponData.EmptyWeaponReload, false);
             }
             else
             {
-                MeshComp->PlayAnimation(WeaponData->EmptyWeaponReload, false);
+                MeshComp->PlayAnimation(WeaponData.EmptyWeaponReload, false);
             }
             
-            AnimTime = PlayerCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(WeaponData->EmptyPlayerReload, 1.0f);
+            AnimTime = PlayerCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(WeaponData.EmptyPlayerReload, 1.0f);
         }
-        else if (WeaponData->PlayerReload)
+        else if (WeaponData.PlayerReload)
         {
-            if (WeaponData->bHasAttachments)
+            if (WeaponData.bHasAttachments)
             {
-                MagazineAttachment->PlayAnimation(WeaponData->WeaponReload, false);
+                MagazineAttachment->PlayAnimation(WeaponData.WeaponReload, false);
             }
             else
             {
-                MeshComp->PlayAnimation(WeaponData->WeaponReload, false);
+                MeshComp->PlayAnimation(WeaponData.WeaponReload, false);
             }
-            AnimTime = PlayerCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(WeaponData->PlayerReload, 1.0f);
+            AnimTime = PlayerCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(WeaponData.PlayerReload, 1.0f);
         }
         else
         {
@@ -600,7 +593,7 @@ void ASWeaponBase::UpdateAmmo()
     int value = 0;
 
     // Checking to see if there is already ammunition within the gun and that this particular gun supports chambered rounds
-    if (GeneralWeaponData.ClipSize > 0 && WeaponData->bCanBeChambered)
+    if (GeneralWeaponData.ClipSize > 0 && WeaponData.bCanBeChambered)
     {
         value = 1;
 
@@ -672,7 +665,7 @@ void ASWeaponBase::HandleRecoveryProgress(float value) const
 // Converts an unmagnified linear FoV and magnification value into a magnified FoV
 float ASWeaponBase::FOVFromMagnification() const
 {
-    return (FMath::RadiansToDegrees(2*(FMath::Atan(((WeaponData->UnmagnifiedLFoV/WeaponData->ScopeMagnification)/2)/100.0f))));
+    return (FMath::RadiansToDegrees(2*(FMath::Atan(((WeaponData.UnmagnifiedLFoV/WeaponData.ScopeMagnification)/2)/100.0f))));
 }
 
 void ASWeaponBase::RenderScope() const

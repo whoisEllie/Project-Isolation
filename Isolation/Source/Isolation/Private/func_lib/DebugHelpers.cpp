@@ -38,10 +38,10 @@ void FDebugHelpers::PrintFloatArray(TArray<float> Arr, FColor Color, float Displ
 
 void FDebugHelpers::PrintTMap(TMap<int, ASWeaponBase*> Map, FColor Color, float DisplayTime)
 {
-	for (ASWeaponBase* WeaponBase : Map.)
-	{
-		
-	}
+	// for (ASWeaponBase* WeaponBase : Map.)
+	// {
+	// 	
+	// }
 }
 
 

@@ -45,3 +45,5 @@ public:
 	static void PrintFloatArray(TArray<float> Arr, FColor Color, float DisplayTime);
 
 	static void PrintTMap(TMap<int, ASWeaponBase*> Map, FColor Color, float DisplayTime);
+	
+};

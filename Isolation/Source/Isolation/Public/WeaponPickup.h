@@ -69,24 +69,24 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Mesh")
 	UStaticMeshComponent* MainMesh;
 
-protected:
+private:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	// Meshes for Attachments
 
-	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UPROPERTY()
 	UStaticMeshComponent* BarrelAttachment;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UPROPERTY()
 	UStaticMeshComponent* MagazineAttachment;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UPROPERTY()
 	UStaticMeshComponent* SightsAttachment;
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UPROPERTY()
 	UStaticMeshComponent* StockAttachment;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Mesh")
+	UPROPERTY()
 	UStaticMeshComponent* GripAttachment;
 };

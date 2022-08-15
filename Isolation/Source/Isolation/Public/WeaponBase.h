@@ -570,7 +570,7 @@ public:
 	FString DataTableNameRef;
 
 	// Reference to the data stored in the weapon DataTable
-	FWeaponData* WeaponData;
+	FWeaponData WeaponData;
 
 	// Reference to the data stored in the attachment DataTable
 	FAttachmentData* AttachmentData;

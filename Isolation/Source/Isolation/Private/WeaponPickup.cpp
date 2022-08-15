@@ -156,7 +156,7 @@ void ASWeaponPickup::Interact()
 			InventoryPosition = Index;
 			SpawnPickup = false;
 			break;
-		}	
+		}
 	}
 		
 	PlayerCharacter->UpdateWeapon(WeaponReference, InventoryPosition, SpawnPickup, bStatic, GetActorTransform(),  DataStruct);
