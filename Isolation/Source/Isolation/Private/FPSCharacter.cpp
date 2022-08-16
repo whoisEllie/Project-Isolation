@@ -66,9 +66,6 @@ AFPSCharacter::AFPSCharacter()
     FootstepAudioComp->bAutoActivate = false;
     
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
-    bIsPrimary = true;
-
-    QueryParams.bReturnPhysicalMaterial = true;
 }
 
 // Called when the game starts or when spawned
@@ -94,7 +91,7 @@ void AFPSCharacter::BeginPlay()
         PlayerSettingsWidget = Cast<USettingsWidget>(CreateWidget(GetWorld(), SettingsWidget));
     }
     
-    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[EMovementState::State_Walk].MaxWalkSpeed;
     DefaultSpringArmOffset = SpringArmComp->GetRelativeLocation().Z; // Setting the default location of the spring arm
 
     // Binding a timeline to our vaulting curve
@@ -150,7 +147,7 @@ void AFPSCharacter::WorldInteract()
     const FVector CameraLocation = CameraComp->GetComponentLocation();
     const FRotator CameraRotation = CameraComp->GetComponentRotation();
     const FVector TraceDirection = CameraRotation.Vector();
-    const FVector TraceEndLocation = CameraLocation + (TraceDirection * InteractDistance);
+    const FVector TraceEndLocation = CameraLocation + TraceDirection * InteractDistance;
 
     if (GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
     {
@@ -173,7 +170,7 @@ void AFPSCharacter::InteractionIndicator()
     const FVector CameraLocation = CameraComp->GetComponentLocation();
     const FRotator CameraRotation = CameraComp->GetComponentRotation();
     const FVector TraceDirection = CameraRotation.Vector();
-    const FVector TraceEndLocation = CameraLocation + (TraceDirection * InteractDistance);
+    const FVector TraceEndLocation = CameraLocation + TraceDirection * InteractDistance;
 
     if (GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
     {        
@@ -248,14 +245,18 @@ void AFPSCharacter::FootstepSounds()
     const FVector TraceStart = GetActorLocation();
     FVector TraceEnd = TraceStart;
     TraceEnd.Z -= 100.0f;
+
+    // Query parameters for the interaction line trace
+    FCollisionQueryParams QueryParams;
+    QueryParams.bReturnPhysicalMaterial = true;
     
     FootstepAudioComp->SetIntParameter(FName("floor"), 0);
-    if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, FOOTSTEP_TRACE, QueryParams))
+    if(GetWorld()->LineTraceSingleByChannel(FootstepHit, TraceStart, TraceEnd, FOOTSTEP_TRACE, QueryParams))
     {
-        FootstepAudioComp->SetIntParameter(FName("floor"), SurfaceMaterialArray.Find(Hit.PhysMaterial.Get()));
+        FootstepAudioComp->SetIntParameter(FName("floor"), SurfaceMaterialArray.Find(FootstepHit.PhysMaterial.Get()));
         if (bDrawDebug)
         {
-            DrawDebugLine(GetWorld(), TraceStart, Hit.Location, FColor::Red, false, 10.0f, 0.0f, 2.0f);
+            DrawDebugLine(GetWorld(), TraceStart, FootstepHit.Location, FColor::Red, false, 10.0f, 0.0f, 2.0f);
         }
     }
     else if (bDrawDebug)
@@ -272,18 +273,29 @@ void AFPSCharacter::ScrollWeapon(const FInputActionValue& Value)
     int NewID;
     
     if (Value[0] < 0)
-    {
+    {        
         NewID = FMath::Clamp(CurrentWeaponSlot + 1, 0, NumberOfWeaponSlots - 1);
+
+        if (CurrentWeaponSlot == NumberOfWeaponSlots - 1)
+        {
+            NewID = 0;
+        }
     }
     else
-    {
+    {        
         NewID = FMath::Clamp(CurrentWeaponSlot - 1, 0, NumberOfWeaponSlots - 1);
+
+        if (CurrentWeaponSlot == 0)
+        {
+            NewID = NumberOfWeaponSlots - 1;
+        }
     }
 
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Wheee"));
     SwapWeapon(NewID);
 }
 
-void AFPSCharacter::EnhancedMove(const FInputActionValue& Value)
+void AFPSCharacter::Move(const FInputActionValue& Value)
 {
     ForwardMovement = Value[1];
     RightMovement = Value[0];
@@ -295,7 +307,7 @@ void AFPSCharacter::EnhancedMove(const FInputActionValue& Value)
     }
 }
 
-void AFPSCharacter::EnhancedLook(const FInputActionValue& Value)
+void AFPSCharacter::Look(const FInputActionValue& Value)
 {
     MouseX = Value[1];
     MouseY = Value[0];
@@ -437,7 +449,7 @@ void AFPSCharacter::CheckVault()
 
 
     FVector StartLocation = ColliderLocation;
-    FVector EndLocation = ColliderLocation + (UKismetMathLibrary::GetForwardVector(ColliderRotation) * 75);
+    FVector EndLocation = ColliderLocation + UKismetMathLibrary::GetForwardVector(ColliderRotation) * 75;
     if (bDrawDebug)
     {
         DrawDebugCapsule(GetWorld(), StartLocation, 50, 30, FQuat::Identity, FColor::Red);
@@ -447,23 +459,23 @@ void AFPSCharacter::CheckVault()
     TraceParams.bTraceComplex = true;
     TraceParams.AddIgnoredActor(this);
 
-    if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50), TraceParams)) return;
-    if (!Hit.bBlockingHit) return;
+    if (!GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50), TraceParams)) return;
+    if (!VaultHit.bBlockingHit) return;
     
-    FVector ForwardImpactPoint = Hit.ImpactPoint;
-    FVector ForwardImpactNormal = Hit.ImpactNormal;
+    FVector ForwardImpactPoint = VaultHit.ImpactPoint;
+    FVector ForwardImpactNormal = VaultHit.ImpactNormal;
     FVector CapsuleLocation = ForwardImpactPoint;
     CapsuleLocation.Z = ColliderLocation.Z;
-    CapsuleLocation += (ForwardImpactNormal * -15);
+    CapsuleLocation += ForwardImpactNormal * -15;
 
     StartLocation = CapsuleLocation;
     StartLocation.Z += 100;
     EndLocation = CapsuleLocation;
 
-    if (!GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams)) return;
-    if (!GetCharacterMovement()->IsWalkable(Hit)) return;
+    if (!GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams)) return;
+    if (!GetCharacterMovement()->IsWalkable(VaultHit)) return;
     
-    FVector SecondaryVaultStartLocation = Hit.ImpactPoint;
+    FVector SecondaryVaultStartLocation = VaultHit.ImpactPoint;
     SecondaryVaultStartLocation.Z += 5;
     FVector SecondaryVaultEndLocation = SecondaryVaultStartLocation;
     SecondaryVaultEndLocation.Z = 0;
@@ -496,7 +508,7 @@ void AFPSCharacter::CheckVault()
             DrawDebugLine(GetWorld(), SecondaryVaultStartLocation, VaultHit.ImpactPoint, FColor::Red, false, 10.0f, 0.0f, 2.0f);
         }
 
-        float TraceLength = (SecondaryVaultStartLocation.Z - VaultHit.ImpactPoint.Z);
+        float TraceLength = SecondaryVaultStartLocation.Z - VaultHit.ImpactPoint.Z;
         if (!bInitialSwitch)
         {
             InitialTraceHeight = TraceLength;
@@ -538,20 +550,20 @@ void AFPSCharacter::CheckVault()
 
     if (!bVaultFailed) return;
     
-    FVector DownTracePoint = Hit.Location;
-    DownTracePoint.Z = Hit.ImpactPoint.Z;
+    FVector DownTracePoint = VaultHit.Location;
+    DownTracePoint.Z = VaultHit.ImpactPoint.Z;
     //UPrimitiveComponent* hitComponent = hit.Component;
 
     FVector CalculationVector = FVector::ZeroVector;
-    CalculationVector.Z = (GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2);
+    CalculationVector.Z = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2;
     DownTracePoint += CalculationVector;
     StartLocation = DownTracePoint;
-    StartLocation.Z += (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
+    StartLocation.Z += GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
     EndLocation = DownTracePoint;
-    EndLocation.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere());
+    EndLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
 
     //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
-    if (GetWorld()->SweepSingleByChannel(Hit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic,
+    if (GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic,
                                          FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()),
                                          TraceParams)) return;
 
@@ -570,7 +582,7 @@ void AFPSCharacter::CheckAngle(float DeltaTime)
     TraceParams.AddIgnoredActor(this);
 
     FVector CapsuleHeight = GetCapsuleComponent()->GetComponentLocation();
-    CapsuleHeight.Z -= (GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+    CapsuleHeight.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
     const FVector AngleStartTrace = CapsuleHeight;
     FVector AngleEndTrace = AngleStartTrace;
     AngleEndTrace.Z -= 50;
@@ -601,13 +613,13 @@ bool AFPSCharacter::HasSpaceToStandUp()
         DrawDebugCapsule(GetWorld(), CenterVector, CollisionCapsuleHeight, 30.0f, FQuat::Identity, FColor::Red, false, 5.0f, 0, 3);
     }
             
-    if (GetWorld()->SweepSingleByChannel(Hit, CenterVector, CenterVector, FQuat::Identity, STAND_UP_CHECK_COLLISION, CollisionCapsule))
+    if (GetWorld()->SweepSingleByChannel(StandUpHit, CenterVector, CenterVector, FQuat::Identity, STAND_UP_CHECK_COLLISION, CollisionCapsule))
     {
         /* confetti or smth idk */
         if (bDrawDebug)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, Hit.Actor->GetName());
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, StandUpHit.Actor->GetName());
         }
         return false;
     }
@@ -627,69 +639,34 @@ void AFPSCharacter::Vault(const FTransform TargetTransform)
 // Function that determines the player's maximum speed and other related variables based on movement state
 void AFPSCharacter::UpdateMovementValues(const EMovementState NewMovementState)
 {
+    // Clearing sprinting and crouching flags
     bIsSprinting = false;
     bIsCrouching = false;
 
+    // Updating the movement state
     MovementState = NewMovementState;
 
-    switch (MovementState)
+    // Updating CharacterMovementComponent variables based on movement state
+    if (CurrentWeapon)
     {
-        case EMovementState::State_Crouch:
-            bIsCrouching = true;
-            GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
-            if (CurrentWeapon)
-            {
-                CurrentWeapon->bCanFire = true;
-            }
-            GetCharacterMovement()->MaxAcceleration = 2048.0f;
-            GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
-            GetCharacterMovement()->GroundFriction = 8.0f;
-            break;
-
-        case EMovementState::State_Sprint:
-            bIsSprinting = true;
-            GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
-            if (CurrentWeapon)
-            {
-                CurrentWeapon->bCanFire = false;
-            }
-            GetCharacterMovement()->MaxAcceleration = 2048.0f;
-            GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
-            GetCharacterMovement()->GroundFriction = 8.0f;
-            break;
-
-        case EMovementState::State_Walk:
-            GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-            if (CurrentWeapon)
-            {
-                CurrentWeapon->bCanFire = true;
-            }
-            GetCharacterMovement()->MaxAcceleration = 2048.0f;
-            GetCharacterMovement()->BrakingDecelerationWalking = 2048.0f;
-            GetCharacterMovement()->GroundFriction = 8.0f;
-            break;
-
-        case EMovementState::State_Slide:
-            GetCharacterMovement()->MaxWalkSpeed = SlideSpeed;
-            if (CurrentWeapon)
-            {
-                CurrentWeapon->bCanFire = false;
-            }
-            GetCharacterMovement()->MaxAcceleration = 200.0f;
-            GetCharacterMovement()->BrakingDecelerationWalking = 200.0f;
-            GetCharacterMovement()->GroundFriction = 1.0f;
-            break;
-
-        case EMovementState::State_Vault:
-            if (CurrentWeapon)
-            {
-                CurrentWeapon->bCanFire = true;
-            }
-            break;
-
-        default:
-            break;
+        CurrentWeapon->bCanFire = MovementDataMap[MovementState].bCanFire;
     }
+    GetCharacterMovement()->MaxAcceleration = MovementDataMap[MovementState].MaxAcceleration;
+    GetCharacterMovement()->BrakingDecelerationWalking = MovementDataMap[MovementState].BreakingDecelerationWalking;
+    GetCharacterMovement()->GroundFriction = MovementDataMap[MovementState].GroundFriction;
+    GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[MovementState].MaxWalkSpeed;
+
+    // Updating sprinting and crouching flags
+    if (MovementState == EMovementState::State_Crouch)
+    {
+        bIsCrouching = true;
+    }
+    if (MovementState == EMovementState::State_Sprint)
+    {
+        bIsSprinting = true;
+    }
+
+    
 }
 
 void AFPSCharacter::SwapWeapon(int SlotId)
@@ -705,6 +682,7 @@ void AFPSCharacter::SwapWeapon(int SlotId)
     {
         CurrentWeapon->PrimaryActorTick.bCanEverTick = false;
         CurrentWeapon->SetActorHiddenInGame(true);
+        CurrentWeapon->StopFire();
     }
     
     CurrentWeapon = EquippedWeapons[SlotId];
@@ -712,7 +690,6 @@ void AFPSCharacter::SwapWeapon(int SlotId)
     {
         CurrentWeapon->PrimaryActorTick.bCanEverTick = true;
         CurrentWeapon->SetActorHiddenInGame(false);
-        // CurrentWeapon->SpawnAttachments();
         if (CurrentWeapon->WeaponData.WeaponEquip)
         {
             HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
@@ -735,7 +712,7 @@ void AFPSCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int Invent
             const FVector TraceStart = CameraComp->GetComponentLocation();
             const FRotator TraceStartRotation = CameraComp->GetComponentRotation();
             const FVector TraceDirection = TraceStartRotation.Vector();
-            const FVector TraceEnd = TraceStart + (TraceDirection * WeaponSpawnDistance);
+            const FVector TraceEnd = TraceStart + TraceDirection * WeaponSpawnDistance;
 
             // Spawning the new pickup
             ASWeaponPickup* NewPickup = GetWorld()->SpawnActor<ASWeaponPickup>(CurrentWeapon->WeaponData.PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
@@ -832,7 +809,7 @@ void AFPSCharacter::Tick(const float DeltaTime)
 	// Crouching
 	// Sets the new Target Half Height based on whether the player is crouching or standing
 	const float TargetHalfHeight = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? CrouchedCapsuleHalfHeight : DefaultCapsuleHalfHeight;
-    const float SpringArmTargetOffset = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? (DefaultSpringArmOffset + CrouchedSpringArmHeightDelta) : DefaultSpringArmOffset;
+    const float SpringArmTargetOffset = (MovementState == EMovementState::State_Crouch || MovementState == EMovementState::State_Slide)? DefaultSpringArmOffset + CrouchedSpringArmHeightDelta : DefaultSpringArmOffset;
     // Interpolates between the current height and the target height
 	const float NewHalfHeight = FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(), TargetHalfHeight, DeltaTime, CrouchSpeed);
     const float NewLocation = FMath::FInterpTo(CurrentSpringArmOffset, SpringArmTargetOffset, DeltaTime, CrouchSpeed);
@@ -844,7 +821,7 @@ void AFPSCharacter::Tick(const float DeltaTime)
     SpringArmComp->SetRelativeLocation(NewSpringArmLocation);
     
     // FOV adjustments
-    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > WalkSpeed)? (BaseFOV + SpeedFOVChange) : BaseFOV;
+    float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > MovementDataMap[EMovementState::State_Walk].MaxWalkSpeed)? BaseFOV + SpeedFOVChange : BaseFOV;
     if (CurrentWeapon)
     {
         if (bIsAiming && CurrentWeapon->WeaponData.bAimingFOV && !CurrentWeapon->bIsReloading)
@@ -902,14 +879,8 @@ void AFPSCharacter::Tick(const float DeltaTime)
         }
     }
 
-    if (CurrentWeapon != nullptr)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::SanitizeFloat(CurrentWeapon->WeaponData.RateOfFire));
-    }
-
     // Checks to see if we are facing something to interact with, and updates the interaction indicator accordingly
     InteractionIndicator();
-
 
     //Updating the scope's material parameter collection
     if (CurrentWeapon)
@@ -953,13 +924,13 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         if (MovementAction)
         {
             // Move forward/back + left/right inputs
-            PlayerEnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AFPSCharacter::EnhancedMove);
+            PlayerEnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AFPSCharacter::Move);
         }
 
         if (LookAction)
         {
             // Look up/down + left/right
-            PlayerEnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFPSCharacter::EnhancedLook);
+            PlayerEnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFPSCharacter::Look);
         }
 
         if (CrouchAction)

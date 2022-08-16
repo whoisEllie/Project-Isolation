@@ -3,8 +3,8 @@
 
 #include "Widgets/InputRemapper.h"
 #include "FPSCharacter.h"
-#include "func_lib/InputHelper.h"
-#include "func_lib/WidgetHelpers.h"
+#include "func_lib/FInputHelper.h"
+#include "func_lib/FWidgetHelpers.h"
 #include "Kismet/GameplayStatics.h"
 
 void UInputRemapper::NativePreConstruct()
@@ -39,7 +39,7 @@ void UInputRemapper::RemapKey(const FInputChord InSelectedKey)
 
 void UInputRemapper::SelectedKeyChanged()
 {
-	UUserWidget* ParentCanvas = WidgetHelpers::GetParentCanvas(Cast<UWidget>(this));
+	UUserWidget* ParentCanvas = FWidgetHelpers::GetParentCanvas(Cast<UWidget>(this));
 	USettingsWidget* SettingsWidget = Cast<USettingsWidget>(ParentCanvas);
 	SettingsWidget->SwitchKeySelectPopupVisibility();
 }
@@ -54,7 +54,7 @@ void UInputRemapper::UpdateMappings() const
 	{
 		if (Mapping.Action == InputAction)
 		{
-			InputDisplayText.Append("<img id=\"" + InputHelper::KeyConversionMap[Mapping.Key.GetDisplayName().ToString()] + "\"/> ");
+			InputDisplayText.Append("<img id=\"" + FInputHelper::KeyConversionMap[Mapping.Key.GetDisplayName().ToString()] + "\"/> ");
 		}
 	}
 

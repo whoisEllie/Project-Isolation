@@ -35,13 +35,3 @@ void FDebugHelpers::PrintFloatArray(TArray<float> Arr, FColor Color, float Displ
 		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, Color, FString::SanitizeFloat(Element));
 	}
 }
-
-void FDebugHelpers::PrintTMap(TMap<int, ASWeaponBase*> Map, FColor Color, float DisplayTime)
-{
-	// for (ASWeaponBase* WeaponBase : Map.)
-	// {
-	// 	
-	// }
-}
-
-

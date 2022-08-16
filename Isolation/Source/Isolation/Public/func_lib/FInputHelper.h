@@ -7,11 +7,11 @@
 /**
  * 
  */
-class ISOLATION_API InputHelper
+class ISOLATION_API FInputHelper
 {
 public:
-	InputHelper();
-	~InputHelper();
+	FInputHelper();
+	~FInputHelper();
 
 	static const TMap<FString, FString> KeyConversionMap;
 };

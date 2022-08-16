@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "InputAction.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/MultiLineEditableTextBox.h"
 #include "Components/RichTextBlock.h"
 #include "Components/TextBlock.h"
 #include "HUDWidget.generated.h"
@@ -69,7 +68,7 @@ private:
 	
 	void HideTooltip();
 
-	void HideRapirKitCount();
+	void HideRepairKitCount();
 
 	float ReadTime(FString Text);
 };

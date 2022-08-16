@@ -1,17 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "func_lib/WidgetHelpers.h"
+#include "func_lib/FWidgetHelpers.h"
 
-WidgetHelpers::WidgetHelpers()
+FWidgetHelpers::FWidgetHelpers()
 {
 }
 
-WidgetHelpers::~WidgetHelpers()
+FWidgetHelpers::~FWidgetHelpers()
 {
 }
 
-UUserWidget* WidgetHelpers::GetParentCanvas(const UWidget* Widget)
+UUserWidget* FWidgetHelpers::GetParentCanvas(const UWidget* Widget)
 {
 	UObject* Outer = Widget->GetOuter();
 	

@@ -6,7 +6,7 @@
 #include "FPSCharacter.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
-#include "func_lib/InputHelper.h"
+#include "func_lib/FInputHelper.h"
 #include "Kismet/GameplayStatics.h"
 
 void USHUDWidget::ReceiveTooltipInput(FText MainText, FText DescriptionText)
@@ -29,7 +29,7 @@ void USHUDWidget::ReceiveTooltipInput(FText MainText, FText DescriptionText)
 void USHUDWidget::ShowRepairKitCount()
 {
 	PlayAnimation(RepairKitSlideIn);
-	GetWorld()->GetTimerManager().SetTimer(RepairKitTimerHandle, this, &USHUDWidget::HideRapirKitCount, 5.0f, false, 5.0f);
+	GetWorld()->GetTimerManager().SetTimer(RepairKitTimerHandle, this, &USHUDWidget::HideRepairKitCount, 5.0f, false, 5.0f);
 
 }
 
@@ -44,7 +44,7 @@ void USHUDWidget::UpdateInteractKeyIndicator()
 	{
 		if (Mapping.Action == InteractAction)
 		{
-			InputDisplayText.Append("<img id=\"" + InputHelper::KeyConversionMap[Mapping.Key.GetDisplayName().ToString()] + "\"/> ");
+			InputDisplayText.Append("<img id=\"" + FInputHelper::KeyConversionMap[Mapping.Key.GetDisplayName().ToString()] + "\"/> ");
 		}
 	}
 
@@ -69,12 +69,12 @@ void USHUDWidget::HideTooltip()
 	TooltipVisible = false;
 }
 
-void USHUDWidget::HideRapirKitCount()
+void USHUDWidget::HideRepairKitCount()
 {
 	PlayAnimation(RepairKitSlideOut);
 }
 
 float USHUDWidget::ReadTime(FString Text)
 {
-	return ((Text.Len()/4.7f)*60.0f)/250.0f;
+	return Text.Len()/4.7f*60.0f/250.0f;
 }

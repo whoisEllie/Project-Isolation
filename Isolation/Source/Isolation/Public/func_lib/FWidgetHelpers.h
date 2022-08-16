@@ -8,11 +8,11 @@
 /**
  * 
  */
-class ISOLATION_API WidgetHelpers
+class ISOLATION_API FWidgetHelpers
 {
 public:
-	WidgetHelpers();
-	~WidgetHelpers();
+	FWidgetHelpers();
+	~FWidgetHelpers();
 	
 	static UUserWidget* GetParentCanvas(const UWidget* Widget);
 };

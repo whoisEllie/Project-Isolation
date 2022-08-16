@@ -1,18 +1,18 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "func_lib/InputHelper.h"
+#include "func_lib/FInputHelper.h"
 
 
-InputHelper::InputHelper()
+FInputHelper::FInputHelper()
 {
 }
 
-InputHelper::~InputHelper()
+FInputHelper::~FInputHelper()
 {
 }
 
-const TMap<FString, FString> InputHelper::KeyConversionMap = {
+const TMap<FString, FString> FInputHelper::KeyConversionMap = {
 	{"A", "A_Key"},
 	{"B", "B_Key"},
 	{"C", "C_Key"},

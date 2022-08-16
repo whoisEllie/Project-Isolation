@@ -4,7 +4,7 @@
 #include "TooltipPopup.h"
 #include "FPSCharacter.h"
 #include "Components/BoxComponent.h"
-#include "func_lib/InputHelper.h"
+#include "func_lib/FInputHelper.h"
 #include "GameFramework/InputSettings.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -53,7 +53,7 @@ void ASTooltipPopup::GenerateText()
 				{
 					if (Mapping.Action == TextStruct.InputAction)
 					{
-						InputDisplayText.Append("<img id=\"" + InputHelper::KeyConversionMap[Mapping.Key.GetDisplayName().ToString()] + "\"/> ");
+						InputDisplayText.Append("<img id=\"" + FInputHelper::KeyConversionMap[Mapping.Key.GetDisplayName().ToString()] + "\"/> ");
 					}
 				}
 

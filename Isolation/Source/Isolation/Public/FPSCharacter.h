@@ -34,6 +34,28 @@ enum class EMovementState : uint8
 	State_Vault	    UMETA(DisplayName = "Vaulting")
 };
 
+/** Variables associated with each movement state */
+USTRUCT()
+struct FMovementVariables
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly)
+	bool bCanFire;
+
+	UPROPERTY(EditDefaultsOnly)
+	float MaxAcceleration;
+
+	UPROPERTY(EditDefaultsOnly)
+	float BreakingDecelerationWalking;
+
+	UPROPERTY(EditDefaultsOnly)
+	float GroundFriction;
+
+	UPROPERTY(EditDefaultsOnly)
+	float MaxWalkSpeed;
+};
+
 UCLASS()
 class ISOLATION_API AFPSCharacter : public ACharacter
 {
@@ -79,7 +101,7 @@ public:
 	 * @param bSpawnPickup Whether to spawn a pickup of CurrentWeapon (can be false if player has an empty weapon slot)
 	 * @param bStatic Whether the spawned pickup should implement a physics simulation or not
 	 * @param PickupTransform The position at which to spawn the new pickup, in the case that it is static (bStatic)
-	 * @param DataStruct The FRuntimeWeaponData struct for this newly equipped weapon
+	 * @param DataStruct The FRuntimeWeaponData struct for the newly equipped weapon
 	 * 
 	 */
 	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int InventoryPosition, bool bSpawnPickup,
@@ -139,15 +161,7 @@ public:
 
 	/** Returns true if the interaction trace is hitting a weapon pickup */
 	bool InteractionIsWeapon() const { return bInteractionIsWeapon; }
-
-	/** Returns true if the current weapon is the primary weapon */
-	bool IsPrimaryWeaponEquipped() const { return bIsPrimary; }
-
-	/** Updates the weapon the player is holding, where true = primary weapon and false = secondary weapon
-	 *  @param bIsPrimaryWeaponEquipped Whether the equipped weapon should be the primary weapon
-	 */
-	void SetPrimaryWeaponEquipped(bool const bIsPrimaryWeaponEquipped) { bIsPrimary = bIsPrimaryWeaponEquipped; } 
-
+	
 	/** Returns the character's current movement state */
 	EMovementState GetMovementState() const { return MovementState; }
 
@@ -155,25 +169,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FText& GetInteractText() { return InteractText; }
 
-	/** Returns the current primary weapon
+	/** Returns an equipped weapon
 	 *	@param WeaponID The ID of the weapon to get
+	 *	@return The weapon with the given ID
 	 */
 	ASWeaponBase* GetWeaponByID(const int WeaponID) const { return EquippedWeapons[WeaponID]; }
 
 	/** Returns the character's hands mesh */
 	USkeletalMeshComponent* GetHandsMesh() const { return HandsMeshComp; }
-
-	/** Returns a reference to the primary weapon's cached data map */
-	FRuntimeWeaponData* GetCurrentWeaponData() const { return &CurrentWeapon->GeneralWeaponData; }
-
-	/** Updates the primary weapon's cached data map
-	 *	@param NewWeaponDataStruct The new FWeaponDataStruct
-	 *	@param WeaponSlot The slot which to update
-	 */
-	void SetCurrentWeaponData(const FRuntimeWeaponData* NewWeaponDataStruct, const int WeaponSlot)
-	{
-		EquippedWeapons[WeaponSlot]->GeneralWeaponData = *NewWeaponDataStruct;
-	}
 
 	/** Returns a reference to the player's heads up display */
 	USHUDWidget* GetPlayerHud() const { return PlayerHudWidget; }
@@ -201,6 +204,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UAnimSequence* GetSprintAnim() const { return Anim_Sprint; }
 
+	/** Draws the settings menu to the screen */
 	UFUNCTION(BlueprintCallable)
 	void CreateSettingsMenu();
 
@@ -211,8 +215,10 @@ public:
 	/** Returns the number of weapon slots */
 	int GetNumberOfWeaponSlots() const { return NumberOfWeaponSlots; }
 
+	/** Returns the currently equipped weapon slot */
 	int GetCurrentWeaponSlot() const { return CurrentWeaponSlot; }
-	
+
+	/** Returns the map of currently equipped weapons */
 	TMap<int, ASWeaponBase*> GetEquippedWeapons() const { return EquippedWeapons; }
 	
 protected:
@@ -260,6 +266,8 @@ protected:
 
 private:
 
+#pragma region FUNCTIONS
+
 	/** Sets default values for this character's properties */
 	AFPSCharacter();
 
@@ -296,7 +304,9 @@ private:
 	/** Function that runs on tick and checks if we should execute the Vault() functions */
 	void CheckVault();
 	
-	/** Function that actually executes the Vault */
+	/** Function that actually executes the Vault
+	 * @param TargetTransform The location to which to interpolate the player
+	 */
 	void Vault(FTransform TargetTransform);
 	
 	/** A global system that handles updates to the movement state and changes relevant values accordingly
@@ -304,13 +314,16 @@ private:
 	 */
 	void UpdateMovementValues(EMovementState NewMovementState);
 
-		
+	/** Swap to a new weapon
+	 *	@param SlotId The ID of the slot which to swap to
+	 */
 	void SwapWeapon(int SlotId);
 
+	/**	Template function for SwapWeapon (used with the enhanced input component) */
 	template <int SlotID>
 	void SwapWeapon() { SwapWeapon(SlotID); }
 	
-	/** Swaps between the primary and secondary weapon using the scroll wheel */
+	/** Swaps between weapons using the scroll wheel */
 	void ScrollWeapon(const FInputActionValue& Value);
 
 	/** Fires the weapon */
@@ -344,37 +357,32 @@ private:
 	/** Displaying the indicator for interaction */
 	void InteractionIndicator();
 
-	//void RemapInput(FKey key);
-
 	/** Updates widgets */
 	void ManageOnScreenWidgets();
 
-	/** Debug */
-	
+	/** Move the character left/right and forward/back
+	 *	@param Value The value passed in by the Input Component
+	 */
+	void Move(const FInputActionValue& Value);
+
+	/** Look left/right and up/down
+	 *	@param Value The value passed in by the Input Component
+	 */
+	void Look(const FInputActionValue& Value);
+		
+	/** Called every frame */
+	virtual void Tick(float DeltaTime) override;
+
+#pragma endregion 
+
+#pragma region USER_VARIABLES
+		
 	/** Prints debug variables if true */
 	UPROPERTY(EditDefaultsOnly, Category = "Debug")
 	bool bDrawDebug;
-
-	/** Variables for movement */
 	
-	/** The maximum speed of the character when in the sprint state */
-	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float SprintSpeed = 700.0f;
-	
-	/** The maximum speed of the character when in the walk state */
-	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float WalkSpeed = 400.0f;
-	
-	/** Determines the speed of the character when crouched */
-	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float CrouchMovementSpeed = 250.0f;
-		
-	/** Determines the speed of the character when sliding */
-	UPROPERTY(EditDefaultsOnly, Category = "Movement")
-	float SlideSpeed = 1000.0f;
-
 	/** Sets the height of the player's capsule component when crouched */	
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement | Crouch")
 	float CrouchedCapsuleHalfHeight = 58.0f;
 	
 	/** The change in height of the spring arm that the camera + hands rest on when the player is crouched
@@ -383,7 +391,7 @@ private:
 	 *	CrouchedCapsuleHalfHeight minus the capsule's default height. For example, if the default capsule half height
 	 *	is 88.0f, and the crouched half height is 58.0f, then the crouched spring arm height delta should be -30
 	 */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement | Crouch")
 	float CrouchedSpringArmHeightDelta = -30.0f;
 
 	/** The default offset of the spring arm from a Z position of 0, set automatically on BeginPlay */
@@ -393,39 +401,82 @@ private:
 	float CurrentSpringArmOffset = 0.0f;
 	
 	/** The rate at which the character crouches */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables") 
+	UPROPERTY(EditDefaultsOnly, Category = "Movement | Crouch") 
 	float CrouchSpeed = 10.0f;
 	
-	/** The time between the beginning of a slide and when it is ended */;
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	/** The time in seconds between the beginning of a slide and when it is ended */
+	UPROPERTY(EditDefaultsOnly, Category = "Movement | Slide")
 	float SlideTime = 1.0f;
 
+	/** The height of the highest surface that the player can mantle up onto */
+	UPROPERTY(EditDefaultsOnly, Category = "Movement | Vault")
+	float MaxMantleHeight = 200.0f;
+	
+	/** The amount of traces to draw for vault collision checks, to get distance in unreal units, multiply by 5 */
+	UPROPERTY(EditDefaultsOnly, Category = "Movement | Vault")
+	int VaultTraceAmount = 25.0f;
+
+	/** Curve that controls motion during vault */
+	UPROPERTY(EditAnywhere, Category = "Movement | Vault")
+	UCurveFloat* VaultTimelineCurve;
+	
+	/** A map holding data for each movement state */
+	UPROPERTY(EditDefaultsOnly, Category = "Movement | Data")
+	TMap<EMovementState, FMovementVariables> MovementDataMap;
+	
+	/** The game's default FOV */
+	UPROPERTY(EditDefaultsOnly, Category = "Camera | FOV")
+	float BaseFOV = 77.0f;
+	
 	/** The speed at which FOV changes occur */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Camera | FOV")
 	float FOVChangeSpeed = 2.0f;
 	
 	/** The increase in FOV during fast actions, such as sprinting and sliding */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Camera | FOV")
 	float SpeedFOVChange = 5.0f;
 
-	/** The height of the highest surface that the player can mantle up onto */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float MaxMantleHeight = 200.0f;
-	
 	/** The distance at which pickups for old weapons spawn during a weapon swap */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Camera | Interaction")
 	float WeaponSpawnDistance = 100.0f;
 	
 	/** The maximum distance in unreal units at which the player can interact with an object */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
+	UPROPERTY(EditDefaultsOnly, Category = "Camera | Interaction")
 	float InteractDistance = 400.0f;
-
-	/** The amount of traces to draw for vault collision checks, to get distance in unreal units, multiply by 5 */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	int VaultTraceAmount = 25.0f;
 	
-	/** Weapon classes */
+	/** Name of the socket we attach our camera to */
+	UPROPERTY(EditDefaultsOnly, Category = "Camera | Socket")
+	FName CameraSocketName;
+	
+	/** THe Number of slots for Weapons that this player has */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapons | Inventory")
+	int NumberOfWeaponSlots;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
+	TSubclassOf<USHUDWidget> HUDWidget;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
+	TSubclassOf<UPauseWidget> PauseWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
+	TSubclassOf<USettingsWidget> SettingsWidget;
+
+	/** The material parameter collection that stores the scope opacity parameter to be changed */
+	UPROPERTY(EditDefaultsOnly, Category = "Materials")
+	UMaterialParameterCollection* ScopeOpacityParameterCollection;
+
+	/** The name of the parameter to modify in the material parameter collection */
+	UPROPERTY(EditDefaultsOnly, Category = "Materials")
+	FName OpacityParameterName;
+
+	/** Array of physical materials for footsteps */
+	UPROPERTY(EditDefaultsOnly, Category = "Footsteps")
+	TArray<UPhysicalMaterial*> SurfaceMaterialArray;
+
+#pragma endregion 
+
+#pragma region INTERNAL_VARIABLES
+	
 	/** A Map storing the player's current weapons and the slot that they correspond to */
 	UPROPERTY()
 	TMap<int, ASWeaponBase*> EquippedWeapons;
@@ -433,8 +484,45 @@ private:
 	/** The player's currently equipped weapon */
 	UPROPERTY()
 	ASWeaponBase* CurrentWeapon;
+	
+	/** Enumerator holding the 5 possible movement states defined by EMovementState */
+	UPROPERTY()
+    EMovementState MovementState;
+	
+	/** The current message to be displayed above the screen (if any) */
+	UPROPERTY()
+	FText InteractText;
+	
+	/** A reference to the player's main HUD widget */
+	UPROPERTY()
+	USHUDWidget* PlayerHudWidget;
 
-	/** Booleans */
+	/** A reference to the player's pause widget */
+	UPROPERTY()
+	UPauseWidget* PlayerPauseWidget;
+
+	/** A reference to the player's settings widget */
+	UPROPERTY()
+	USettingsWidget* PlayerSettingsWidget;
+
+	/** The current widget visible on screen */
+	UPROPERTY()
+	UUserWidget* CurrentWidget;
+	
+	/** The timeline for vaulting (generated from the curve) */
+	UPROPERTY()
+	FTimeline VaultTimeline;
+	
+	/** Hit results for various line traces */
+	FHitResult FootstepHit;
+
+	FHitResult StandUpHit;
+	
+	FHitResult VaultHit;
+
+	FHitResult AngleHit;
+
+	FHitResult InteractionHit;
 	
 	/** Whether the player is holding down the aim down sights button */
 	bool bWantsToAim;
@@ -472,90 +560,12 @@ private:
 	/** Whether the interaction object the character is looking at is a weapon pickup (used for UI) */
 	bool bInteractionIsWeapon;
 	
-	/** Whether the player is holding the primary weapon (or not, and are thus holding the secondary weapon) */
-	bool bIsPrimary;
-
-	/** Whether the player is waiting for an input update */
-	bool bWaitingForInput;
-
-	bool bPauseWidgetActive;
-	
-	/** Enumerator holding the 5 possible movement states defined above in EMovementState */
-	UPROPERTY()
-    EMovementState MovementState;
-	
-	/** The current message to be displayed above the screen (if any) */
-	UPROPERTY()
-	FText InteractText;
-	
-	/** Name of the socket we attach our camera to */
-	UPROPERTY(EditDefaultsOnly, Category = "Other")
-	FName CameraSocketName;
-
 	/** The integer that keeps track of which weapon slot ID is currently active */
 	int CurrentWeaponSlot;
 
-	/** THe Number of slots for Weapons that this player has */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapons | Inventory")
-	int NumberOfWeaponSlots;
-	
-	/** A reference to the player's main HUD widget */
-	UPROPERTY()
-	USHUDWidget* PlayerHudWidget;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI | Widgets")
-	UPauseWidget* PlayerPauseWidget;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI | Widgets")
-	USettingsWidget* PlayerSettingsWidget;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI | Widgets")
-	UUserWidget* CurrentWidget;
-	
 	/** Keeps track of the opacity of scopes */
 	float ScopeBlend;
-
-	/** The material parameter collection that stores the scope opacity parameter to be changed */
-	UPROPERTY(EditDefaultsOnly, Category = "Materials")
-	UMaterialParameterCollection* ScopeOpacityParameterCollection;
-
-	/** The name of the parameter to modify in the material parameter collection */
-	UPROPERTY(EditDefaultsOnly, Category = "Materials")
-	FName OpacityParameterName;
-
-	/** Query parameters for the interaction line trace */
-	FCollisionQueryParams QueryParams;
-
-	/** Array of physical materials for footsteps */
-	UPROPERTY(EditDefaultsOnly, Category = "Footsteps")
-	TArray<UPhysicalMaterial*> SurfaceMaterialArray;
-
-	/** Curve that controls motion during vault */
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-	UCurveFloat* VaultTimelineCurve;
 	
-	/** The timeline for vaulting (generated from the curve) */
-	UPROPERTY()
-	FTimeline VaultTimeline;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<USHUDWidget> HUDWidget;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UPauseWidget> PauseWidget;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<USettingsWidget> SettingsWidget;
-	
-	/** Hit results for various line traces */
-	FHitResult Hit;
-
-	FHitResult VaultHit;
-
-	FHitResult AngleHit;
-
-	FHitResult InteractionHit;
-
 	/** The start location of a vaulting or mantle */
 	FTransform VaultStartLocation;
 
@@ -565,10 +575,6 @@ private:
 	/** Set automatically, the base height of the capsule */
 	float DefaultCapsuleHalfHeight;
 
-	/** The game's default FOV */
-	UPROPERTY(EditDefaultsOnly, Category = "Variables")
-	float BaseFOV = 77.0f;
-	
 	/** The current angle of the floor beneath the player */
 	float FloorAngle;
 	
@@ -589,9 +595,8 @@ private:
 
 	/** Timer manager for sliding */
 	FTimerHandle SlideStop;
-		
-	/** Called every frame */
-	virtual void Tick(float DeltaTime) override;
+
+#pragma endregion 
 
 #pragma region INPUT
 
@@ -647,21 +652,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Input | Mappings")
 	int32 BaseMappingPriority = 0;
 
-	void EnhancedMove(const FInputActionValue& Value);
-	
-	void EnhancedLook(const FInputActionValue& Value);
-	
-	//TODO: Research saving/loading mapping contexts
-
-#pragma endregion
-	
-	DECLARE_DELEGATE_OneParam(MyAwesomeDelegate, FVector)
- 
-	/** The actual delegate declaration */
-	MyAwesomeDelegate MyAwesomeDelegateExecFunc;
-
-private:
-
 	/** Called to bind functionality to input */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+#pragma endregion
 };
