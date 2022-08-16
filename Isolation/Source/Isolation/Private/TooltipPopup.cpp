@@ -4,6 +4,7 @@
 #include "TooltipPopup.h"
 #include "FPSCharacter.h"
 #include "Components/BoxComponent.h"
+#include "Components/WidgetManagmentComponent.h"
 #include "func_lib/FInputHelper.h"
 #include "GameFramework/InputSettings.h"
 #include "Kismet/GameplayStatics.h"
@@ -86,7 +87,11 @@ void ASTooltipPopup::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Confirmed Playercharacter overlap"));
 			}
 
-			PlayerCharacter->GetPlayerHud()->ReceiveTooltipInput(TooltipTitle, TooltipDescription);
+			if (UWidgetManagmentComponent* WidgetManagmentComponent = PlayerCharacter->FindComponentByClass<UWidgetManagmentComponent>())
+			{
+				WidgetManagmentComponent->GetPlayerHud()->ReceiveTooltipInput(TooltipTitle, TooltipDescription);
+			}
+			
 			ShouldDisplay = false;
 			GetWorldTimerManager().SetTimer(DisplayDelayHandle, this, &ASTooltipPopup::ResetDisplay, 300.0f, false, 300.0f);
 		}

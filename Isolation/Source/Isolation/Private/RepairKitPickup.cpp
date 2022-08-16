@@ -5,6 +5,7 @@
 
 #include "FPSCharacter.h"
 #include "FPSCharacterController.h"
+#include "Components/WidgetManagmentComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 
@@ -20,7 +21,10 @@ void ASRepairKitPickup::Interact()
 	// Spawning our pickup sound effect
 	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSFX, GetActorLocation());
 
-	PlayerCharacter->GetPlayerHud()->ShowRepairKitCount();
+	if (UWidgetManagmentComponent* WidgetManagmentComponent = PlayerCharacter->FindComponentByClass<UWidgetManagmentComponent>())
+	{
+		WidgetManagmentComponent->GetPlayerHud()->ShowRepairKitCount();
+	}
 	
 	Destroy();
 }

@@ -11,13 +11,10 @@
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
 #include "FPSCharacterController.h"
-#include "InteractInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "WeaponBase.h"
-#include "WeaponPickup.h"
-#include "BehaviorTree/BehaviorTreeTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Components/AudioComponent.h"
@@ -25,20 +22,9 @@
 #include "Isolation/Isolation.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Widgets/HUDWidget.h"
-
-void AFPSCharacter::CreateSettingsMenu()
-{
-    if (PlayerPauseWidget)
-    {
-        PlayerPauseWidget->RemoveFromParent();
-        if (PlayerSettingsWidget)
-        {
-            PlayerSettingsWidget->AddToViewport();
-            CurrentWidget = PlayerSettingsWidget;
-        }
-    }
-}
+#include "Components/InteractionComponent.h"
+#include "Components/InventoryComponent.h"
+#include "Components/WidgetManagmentComponent.h"
 
 // Sets default values
 AFPSCharacter::AFPSCharacter()
@@ -72,25 +58,7 @@ AFPSCharacter::AFPSCharacter()
 void AFPSCharacter::BeginPlay()
 {
     Super::BeginPlay();
-
-    // Initialising our widgets, and adding the HUD widget to the screen
-    if (IsValid(HUDWidget))
-    {
-        PlayerHudWidget = Cast<USHUDWidget>(CreateWidget(GetWorld(), HUDWidget));
-        if (PlayerHudWidget != nullptr)
-        {
-            PlayerHudWidget->AddToViewport();
-        }
-    }
-    if (IsValid(PauseWidget))
-    {
-        PlayerPauseWidget = Cast<UPauseWidget>(CreateWidget(GetWorld(), PauseWidget));
-    }
-    if (IsValid(SettingsWidget))
-    {
-        PlayerSettingsWidget = Cast<USettingsWidget>(CreateWidget(GetWorld(), SettingsWidget));
-    }
-    
+        
     GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[EMovementState::State_Walk].MaxWalkSpeed;
     DefaultSpringArmOffset = SpringArmComp->GetRelativeLocation().Z; // Setting the default location of the spring arm
 
@@ -102,7 +70,11 @@ void AFPSCharacter::BeginPlay()
         VaultTimeline.AddInterpFloat(VaultTimelineCurve, TimelineProgress);
     }
 
-    EquippedWeapons.Reserve(NumberOfWeaponSlots);
+    if (UInventoryComponent* InventoryComp = FindComponentByClass<UInventoryComponent>())
+    {
+        InventoryComponent = InventoryComp;
+        InventoryComponent->GetEquippedWeapons().Reserve(InventoryComponent->GetNumberOfWeaponSlots());
+    }
 }
 
 void AFPSCharacter::PawnClientRestart()
@@ -139,106 +111,6 @@ void AFPSCharacter::TimelineProgress(const float Value)
     }
 }
 
-void AFPSCharacter::WorldInteract()
-{
-    FCollisionQueryParams TraceParams;
-    TraceParams.bTraceComplex = true;
-    TraceParams.AddIgnoredActor(this);
-    const FVector CameraLocation = CameraComp->GetComponentLocation();
-    const FRotator CameraRotation = CameraComp->GetComponentRotation();
-    const FVector TraceDirection = CameraRotation.Vector();
-    const FVector TraceEndLocation = CameraLocation + TraceDirection * InteractDistance;
-
-    if (GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
-    {
-        if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
-        {
-            Cast<ISInteractInterface>(InteractionHit.GetActor())->Interact();
-        }
-    }
-}
-
-// Performing logic for the interaction indicator at the center of the screen
-void AFPSCharacter::InteractionIndicator()
-{
-    bCanInteract = false;
-    
-    FCollisionQueryParams TraceParams;
-    TraceParams.bTraceComplex = true;
-    TraceParams.AddIgnoredActor(this);
-    
-    const FVector CameraLocation = CameraComp->GetComponentLocation();
-    const FRotator CameraRotation = CameraComp->GetComponentRotation();
-    const FVector TraceDirection = CameraRotation.Vector();
-    const FVector TraceEndLocation = CameraLocation + TraceDirection * InteractDistance;
-
-    if (GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
-    {        
-        if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
-        {
-            bCanInteract = true;
-            const ASInteractionActor* InteractionActor = Cast<ASInteractionActor>(InteractionHit.GetActor());
-            AAmmoPickup* AmmoPickup = Cast<AAmmoPickup>(InteractionHit.GetActor());
-            if (InteractionActor)
-            {
-                InteractText = InteractionActor->PopupDescription;
-            }
-            else if (AmmoPickup)
-            {
-                InteractText = AmmoPickup->GetPickupName();
-            }
-            else
-            {
-                InteractText = FText::GetEmpty();
-            }
-            
-            const ASWeaponPickup* InteractedPickup = Cast<ASWeaponPickup>(InteractionHit.GetActor());
-            if (InteractedPickup)
-            {
-                bInteractionIsWeapon = true;
-                InteractText = InteractedPickup->WeaponName;
-            }
-            else
-            {
-                bInteractionIsWeapon = false;
-            }
-        }
-    }
-}
-
-void AFPSCharacter::ManageOnScreenWidgets()
-{
-    ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
-    
-    if (CurrentWidget != nullptr)
-    {
-        if (CurrentWidget == PlayerPauseWidget)
-        {
-            PlayerPauseWidget->RemoveFromParent();
-            PlayerHudWidget->AddToViewport();
-            CharacterController->SetInputMode(FInputModeGameOnly());
-            CharacterController->SetShowMouseCursor(false);
-            UGameplayStatics::SetGamePaused(GetWorld(), false);
-            CurrentWidget = nullptr;
-        }
-        else
-        {
-            PlayerSettingsWidget->RemoveFromParent();
-            PlayerPauseWidget->AddToViewport();
-            CurrentWidget = PlayerPauseWidget;
-        }
-    }
-    else
-    {
-        PlayerHudWidget->RemoveFromParent();
-        PlayerPauseWidget->AddToViewport();
-        CurrentWidget = PlayerPauseWidget;
-        CharacterController->SetInputMode(FInputModeGameAndUI());
-        CharacterController->SetShowMouseCursor(true);
-        UGameplayStatics::SetGamePaused(GetWorld(), true);
-    }
-}
-
 // Playing footstep sounds on FootstepAudioComp, called from animnotifies
 void AFPSCharacter::FootstepSounds()
 {
@@ -267,34 +139,6 @@ void AFPSCharacter::FootstepSounds()
     FootstepAudioComp->Play();
 }
 
-// Swapping weapons with the scroll wheel
-void AFPSCharacter::ScrollWeapon(const FInputActionValue& Value)
-{
-    int NewID;
-    
-    if (Value[0] < 0)
-    {        
-        NewID = FMath::Clamp(CurrentWeaponSlot + 1, 0, NumberOfWeaponSlots - 1);
-
-        if (CurrentWeaponSlot == NumberOfWeaponSlots - 1)
-        {
-            NewID = 0;
-        }
-    }
-    else
-    {        
-        NewID = FMath::Clamp(CurrentWeaponSlot - 1, 0, NumberOfWeaponSlots - 1);
-
-        if (CurrentWeaponSlot == 0)
-        {
-            NewID = NumberOfWeaponSlots - 1;
-        }
-    }
-
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Wheee"));
-    SwapWeapon(NewID);
-}
-
 void AFPSCharacter::Move(const FInputActionValue& Value)
 {
     ForwardMovement = Value[1];
@@ -315,10 +159,13 @@ void AFPSCharacter::Look(const FInputActionValue& Value)
     AddControllerPitchInput(Value[1] * -1);
     AddControllerYawInput(Value[0]);
 
-    if (Value.GetMagnitude() != 0.0f && CurrentWeapon)
+    if (InventoryComponent)
     {
-        CurrentWeapon->bShouldRecover = false;
-        CurrentWeapon->RecoilRecoveryTimeline.Stop();
+        if (Value.GetMagnitude() != 0.0f && InventoryComponent->GetCurrentWeapon())
+        {
+            InventoryComponent->GetCurrentWeapon()->bShouldRecover = false;
+            InventoryComponent->GetCurrentWeapon()->RecoilRecoveryTimeline.Stop();
+        }
     }
 }
 
@@ -437,6 +284,17 @@ void AFPSCharacter::StopSlide()
         GetWorldTimerManager().SetTimer(SlideStop, this, &AFPSCharacter::ReleaseCrouch, 0.1f, false, 0.1f);
     }
 }
+
+void AFPSCharacter::StartAds()
+{
+    bWantsToAim = true;
+}
+
+void AFPSCharacter::StopAds()
+{
+    bWantsToAim = false;
+}
+
 
 void AFPSCharacter::CheckVault()
 {    
@@ -647,9 +505,12 @@ void AFPSCharacter::UpdateMovementValues(const EMovementState NewMovementState)
     MovementState = NewMovementState;
 
     // Updating CharacterMovementComponent variables based on movement state
-    if (CurrentWeapon)
+    if (InventoryComponent)
     {
-        CurrentWeapon->bCanFire = MovementDataMap[MovementState].bCanFire;
+        if (InventoryComponent->GetCurrentWeapon())
+        {
+            InventoryComponent->GetCurrentWeapon()->bCanFire = MovementDataMap[MovementState].bCanFire;
+        }
     }
     GetCharacterMovement()->MaxAcceleration = MovementDataMap[MovementState].MaxAcceleration;
     GetCharacterMovement()->BrakingDecelerationWalking = MovementDataMap[MovementState].BreakingDecelerationWalking;
@@ -667,135 +528,6 @@ void AFPSCharacter::UpdateMovementValues(const EMovementState NewMovementState)
     }
 
     
-}
-
-void AFPSCharacter::SwapWeapon(int SlotId)
-{
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, FString::FromInt(SlotId));
-
-    if (CurrentWeaponSlot == SlotId) { return; }
-    if (!EquippedWeapons.Contains(SlotId)) { return; }
-    
-    CurrentWeaponSlot = SlotId;
-    
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->PrimaryActorTick.bCanEverTick = false;
-        CurrentWeapon->SetActorHiddenInGame(true);
-        CurrentWeapon->StopFire();
-    }
-    
-    CurrentWeapon = EquippedWeapons[SlotId];
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->PrimaryActorTick.bCanEverTick = true;
-        CurrentWeapon->SetActorHiddenInGame(false);
-        if (CurrentWeapon->WeaponData.WeaponEquip)
-        {
-            HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
-        }
-    }
-}
-
-// Spawns a new weapon (either from weapon swap or picking up a new weapon)
-void AFPSCharacter::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int InventoryPosition, bool bSpawnPickup,
-                      bool bStatic, FTransform PickupTransform, FRuntimeWeaponData DataStruct)
-{
-    // Determining spawn parameters (forcing the weapon to spawn at all times)
-    FActorSpawnParameters SpawnParameters;
-    SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    if (InventoryPosition == CurrentWeaponSlot && EquippedWeapons.Contains(InventoryPosition))
-    {
-        if (bSpawnPickup)
-        {
-            // Calculating the location where to spawn the new weapon in front of the player
-            const FVector TraceStart = CameraComp->GetComponentLocation();
-            const FRotator TraceStartRotation = CameraComp->GetComponentRotation();
-            const FVector TraceDirection = TraceStartRotation.Vector();
-            const FVector TraceEnd = TraceStart + TraceDirection * WeaponSpawnDistance;
-
-            // Spawning the new pickup
-            ASWeaponPickup* NewPickup = GetWorld()->SpawnActor<ASWeaponPickup>(CurrentWeapon->WeaponData.PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
-            if (bStatic)
-            {
-                NewPickup->MainMesh->SetSimulatePhysics(false);
-                NewPickup->SetActorTransform(PickupTransform);
-            }
-            // Applying the current weapon data to the pickup
-            NewPickup->bStatic = bStatic;
-            NewPickup->bRuntimeSpawned = true;
-            NewPickup->WeaponReference = EquippedWeapons[InventoryPosition]->GetClass();
-            NewPickup->DataStruct = EquippedWeapons[InventoryPosition]->GeneralWeaponData;
-            NewPickup->SpawnAttachmentMesh();
-            EquippedWeapons[InventoryPosition]->Destroy();
-        }
-    }
-    // Spawns the new weapon and sets the player as it's owner
-    ASWeaponBase* SpawnedWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
-    if (SpawnedWeapon)
-    {
-        SpawnedWeapon->SetOwner(this);
-        SpawnedWeapon->AttachToComponent(HandsMeshComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale, SpawnedWeapon->WeaponData.WeaponAttachmentSocketName);
-        SpawnedWeapon->GeneralWeaponData = DataStruct;
-        SpawnedWeapon->SpawnAttachments();
-        EquippedWeapons.Add(InventoryPosition, SpawnedWeapon);
-
-        if (CurrentWeapon)
-        {
-            CurrentWeapon->PrimaryActorTick.bCanEverTick = false;
-            CurrentWeapon->SetActorHiddenInGame(true);
-        }
-    
-        CurrentWeapon = EquippedWeapons[InventoryPosition];
-        CurrentWeaponSlot = InventoryPosition; 
-        
-        if (CurrentWeapon)
-        {
-            CurrentWeapon->PrimaryActorTick.bCanEverTick = true;
-            CurrentWeapon->SetActorHiddenInGame(false);
-            if (CurrentWeapon->WeaponData.WeaponEquip)
-            {
-                HandsMeshComp->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
-            }
-        }
-    }
-}
-
-// Passing player inputs to WeaponBase
-void AFPSCharacter::StartFire()
-{
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->StartFire();
-    }
-}
-
-// Passing player inputs to WeaponBase
-void AFPSCharacter::StopFire()
-{
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->StopFire();
-    }
-}
-
-// Passing player inputs to WeaponBase
-void AFPSCharacter::Reload()
-{
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->Reload();
-    }
-}
-
-void AFPSCharacter::StartAds()
-{
-    bWantsToAim = true;
-}
-
-void AFPSCharacter::StopAds()
-{
-    bWantsToAim = false;
 }
 
 // Called every frame
@@ -822,12 +554,15 @@ void AFPSCharacter::Tick(const float DeltaTime)
     
     // FOV adjustments
     float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > MovementDataMap[EMovementState::State_Walk].MaxWalkSpeed)? BaseFOV + SpeedFOVChange : BaseFOV;
-    if (CurrentWeapon)
+    if (InventoryComponent)
     {
-        if (bIsAiming && CurrentWeapon->WeaponData.bAimingFOV && !CurrentWeapon->bIsReloading)
+        if (InventoryComponent->GetCurrentWeapon())
         {
-            TargetFOV = BaseFOV - CurrentWeapon->WeaponData.AimingFOVChange;
-            FOVChangeSpeed = 6;
+            if (bIsAiming && InventoryComponent->GetCurrentWeapon()->WeaponData.bAimingFOV && !InventoryComponent->GetCurrentWeapon()->bIsReloading)
+            {
+                TargetFOV = BaseFOV - InventoryComponent->GetCurrentWeapon()->WeaponData.AimingFOVChange;
+                FOVChangeSpeed = 6;
+            }
         }
     }
     //Interpolates between current fov and target fov
@@ -861,41 +596,44 @@ void AFPSCharacter::Tick(const float DeltaTime)
 
     if (bDrawDebug)
     {
-        for ( int Index = 0; Index < NumberOfWeaponSlots; Index++ )
+        if (InventoryComponent)
         {
-            if (EquippedWeapons.Contains(Index))
+            for ( int Index = 0; Index < InventoryComponent->GetNumberOfWeaponSlots(); Index++ )
             {
-                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.ClipSize));
-                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.ClipCapacity));
-                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(EquippedWeapons[Index]->GeneralWeaponData.WeaponHealth));
+                if (InventoryComponent->GetEquippedWeapons().Contains(Index))
+                {
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GeneralWeaponData.ClipSize));
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GeneralWeaponData.ClipCapacity));
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GeneralWeaponData.WeaponHealth));
+                }
+                else
+                {
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
+                }
+                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::FromInt(Index));
             }
-            else
-            {
-                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
-                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
-                GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, TEXT("No Weapon Found"));
-            }
-            GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::FromInt(Index));
         }
     }
 
-    // Checks to see if we are facing something to interact with, and updates the interaction indicator accordingly
-    InteractionIndicator();
-
     //Updating the scope's material parameter collection
-    if (CurrentWeapon)
+    if (InventoryComponent)
     {
-        if (bIsAiming)
+        if (InventoryComponent->GetCurrentWeapon())
         {
-            ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 1, DeltaTime, 8.0f);
-            UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
-                                                            OpacityParameterName, ScopeBlend);
-        }
-        else
-        {
-            ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 0, DeltaTime, 8.0f);
-            UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
-                                                            OpacityParameterName, ScopeBlend);
+            if (bIsAiming)
+            {
+                ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 1, DeltaTime, 8.0f);
+                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
+                                                                OpacityParameterName, ScopeBlend);
+            }
+            else
+            {
+                ScopeBlend = FMath::FInterpConstantTo(ScopeBlend, 0, DeltaTime, 8.0f);
+                UKismetMaterialLibrary::SetScalarParameterValue(GetWorld(), ScopeOpacityParameterCollection,
+                                                                OpacityParameterName, ScopeBlend);
+            }
         }
     }
 }
@@ -905,9 +643,35 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+        
     // Make sure that we are using a UEnhancedInputComponent; if not, the project is not configured correctly.
     if (UEnhancedInputComponent* PlayerEnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
     {        
+        if (UInteractionComponent* InteractionComponent = FindComponentByClass<UInteractionComponent>())
+        {
+            InteractionComponent->WorldInteractAction = InteractAction;
+            InteractionComponent->SetupInputComponent(PlayerEnhancedInputComponent);
+        }
+
+        if (UWidgetManagmentComponent* WidgetManagmentComponent = FindComponentByClass<UWidgetManagmentComponent>())
+        {
+            WidgetManagmentComponent->PauseAction = PauseAction;
+            WidgetManagmentComponent->SetupInputComponent(PlayerEnhancedInputComponent);
+        }
+
+        if (UInventoryComponent* InventoryComp = FindComponentByClass<UInventoryComponent>())
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("WHOOP"));
+            
+            InventoryComp->FiringAction = FiringAction;
+            InventoryComp->PrimaryWeaponAction = PrimaryWeaponAction;
+            InventoryComp->SecondaryWeaponAction = SecondaryWeaponAction;
+            InventoryComp->ReloadAction = ReloadAction;
+            InventoryComp->ScrollAction = ScrollAction;
+            
+            InventoryComp->SetupInputComponent(PlayerEnhancedInputComponent);
+        }
+        
         if (JumpAction)
         {
             // Jumping
@@ -933,38 +697,6 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
             PlayerEnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFPSCharacter::Look);
         }
 
-        if (CrouchAction)
-        {
-            // Crouching
-            PlayerEnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &AFPSCharacter::StartCrouch);
-            PlayerEnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &AFPSCharacter::ReleaseCrouch);
-        }
-
-        if (FiringAction)
-        {
-            // Firing
-            PlayerEnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Started, this, &AFPSCharacter::StartFire);
-            PlayerEnhancedInputComponent->BindAction(FiringAction, ETriggerEvent::Completed, this, &AFPSCharacter::StopFire);
-        }
-        
-        if (PrimaryWeaponAction)
-        {
-            // Switching to the primary weapon
-            PlayerEnhancedInputComponent->BindAction(PrimaryWeaponAction, ETriggerEvent::Started, this, &AFPSCharacter::SwapWeapon<0>);
-        }
-
-        if (SecondaryWeaponAction)
-        {            
-            // Switching to the secondary weapon
-            PlayerEnhancedInputComponent->BindAction(SecondaryWeaponAction, ETriggerEvent::Started, this, &AFPSCharacter::SwapWeapon<1>);
-        }
-
-        if (ReloadAction)
-        {
-            // Reloading
-            PlayerEnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AFPSCharacter::Reload);
-        }
-
         if (AimAction)
         {
             // Aiming
@@ -972,22 +704,11 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
             PlayerEnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AFPSCharacter::StopAds);
         }
 
-        if (InteractAction)
+        if (CrouchAction)
         {
-            // Interacting with the world
-            PlayerEnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AFPSCharacter::WorldInteract);
-        }
-
-        if (ScrollAction)
-        {
-            // Scrolling through weapons
-            PlayerEnhancedInputComponent->BindAction(ScrollAction, ETriggerEvent::Started, this, &AFPSCharacter::ScrollWeapon);
-        }
-
-        if (PauseAction)
-        {
-            // Pausing the game
-            PlayerEnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &AFPSCharacter::ManageOnScreenWidgets);
+            // Crouching
+            PlayerEnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &AFPSCharacter::StartCrouch);
+            PlayerEnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &AFPSCharacter::ReleaseCrouch);
         }
     }
 }

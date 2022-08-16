@@ -146,12 +146,12 @@ void ASWeaponPickup::Interact()
 	// Getting a reference to the Character Controller
 	AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
-	int InventoryPosition = PlayerCharacter->GetCurrentWeaponSlot();
+	int InventoryPosition = PlayerCharacter->GetInventoryComponent()->GetCurrentWeaponSlot();
 	bool SpawnPickup = true;
 
-	for (int Index = 0; Index < PlayerCharacter->GetNumberOfWeaponSlots(); Index++)
+	for (int Index = 0; Index < PlayerCharacter->GetInventoryComponent()->GetNumberOfWeaponSlots(); Index++)
 	{
-		if (PlayerCharacter->GetEquippedWeapons().Find(Index) == nullptr)
+		if (PlayerCharacter->GetInventoryComponent()->GetEquippedWeapons().Find(Index) == nullptr)
 		{
 			InventoryPosition = Index;
 			SpawnPickup = false;
@@ -159,7 +159,7 @@ void ASWeaponPickup::Interact()
 		}
 	}
 		
-	PlayerCharacter->UpdateWeapon(WeaponReference, InventoryPosition, SpawnPickup, bStatic, GetActorTransform(),  DataStruct);
+	PlayerCharacter->GetInventoryComponent()->UpdateWeapon(WeaponReference, InventoryPosition, SpawnPickup, bStatic, GetActorTransform(),  DataStruct);
 	
 	// Destroying the pickup
 	Destroy();

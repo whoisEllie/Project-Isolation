@@ -3,9 +3,12 @@
 
 #include "Widgets/InputRemapper.h"
 #include "FPSCharacter.h"
+#include "Components/RichTextBlock.h"
+#include "Components/TextBlock.h"
 #include "func_lib/FInputHelper.h"
 #include "func_lib/FWidgetHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "Widgets/SettingsWidget.h"
 
 void UInputRemapper::NativePreConstruct()
 {

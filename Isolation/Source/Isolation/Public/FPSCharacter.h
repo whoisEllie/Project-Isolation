@@ -3,16 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "FPSCharacterController.h"
-#include "Widgets/HUDWidget.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
 #include "Widgets/PauseWidget.h"
-#include "Widgets/SettingsWidget.h"
 #include "InputActionValue.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include "WeaponBase.h"
+#include "Components/InventoryComponent.h"
 #include "FPSCharacter.generated.h"
 
 class UCameraComponent;
@@ -67,46 +65,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FootstepSounds();
 
-	/**  Returns the amount of ammunition currently loaded into the weapon  */
-	UFUNCTION(BlueprintCallable)
-	FText GetCurrentWeaponLoadedAmmo() const
-	{
-		if (CurrentWeapon != nullptr)
-		{
-			return FText::AsNumber(CurrentWeapon->GeneralWeaponData.ClipSize);
-		}
-		return FText::AsNumber(0);
-	} 
-
-	/** Returns the amount of ammunition remaining for the current weapon */
-	UFUNCTION(BlueprintCallable)
-	FText GetCurrentWeaponRemainingAmmo() const
-	{
-		ASCharacterController* CharacterController = Cast<ASCharacterController>(GetController());
-
-		if (CharacterController)
-		{
-			if (CurrentWeapon != nullptr)
-			{
-				return FText::AsNumber(CharacterController->AmmoMap[CurrentWeapon->GeneralWeaponData.AmmoType]);
-			}
-			return FText::AsNumber(0);
-		}
-		return FText::FromString("No Character Controller found");
-	}
-
-	/** Switching to a new weapon
-	 * @param NewWeapon The new weapon which to spawn
-	 * @param InventoryPosition The position in the player's inventory in which to place the weapon
-	 * @param bSpawnPickup Whether to spawn a pickup of CurrentWeapon (can be false if player has an empty weapon slot)
-	 * @param bStatic Whether the spawned pickup should implement a physics simulation or not
-	 * @param PickupTransform The position at which to spawn the new pickup, in the case that it is static (bStatic)
-	 * @param DataStruct The FRuntimeWeaponData struct for the newly equipped weapon
-	 * 
-	 */
-	void UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int InventoryPosition, bool bSpawnPickup,
-	                  bool bStatic, FTransform PickupTransform, FRuntimeWeaponData DataStruct);
-
 	/** Returns the character's forward movement (from 0 to 1) */
 	UFUNCTION(BlueprintCallable)
 	float GetForwardMovement() const { return ForwardMovement; }
@@ -129,10 +87,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetBaseFOV(const float NewFOV) { BaseFOV = NewFOV; }
 
-	/** Returns the current weapon equipped by the player */
-	UFUNCTION(BlueprintCallable)
-	ASWeaponBase* GetCurrentWeapon() const {return CurrentWeapon; }
-
 	/** Returns the current visibility of the crosshair */
 	UFUNCTION(BlueprintCallable)
 	bool IsCrosshairVisible() const { return bShowCrosshair; }
@@ -153,33 +107,12 @@ public:
 
 	/** Returns whether the player is crouching or not */
 	bool IsPlayerCrouching() const { return bIsCrouching; }
-
-	/** Returns the result of the interaction trace, which is true if the object that we are looking at is able to be
-	 *  interacted with */
-	UFUNCTION(BlueprintCallable)
-	bool CanInteract() const { return bCanInteract; }
-
-	/** Returns true if the interaction trace is hitting a weapon pickup */
-	bool InteractionIsWeapon() const { return bInteractionIsWeapon; }
 	
 	/** Returns the character's current movement state */
 	EMovementState GetMovementState() const { return MovementState; }
 
-	/** Returns the display text of the current interactable object that the player is looking at */
-	UFUNCTION(BlueprintCallable)
-	FText& GetInteractText() { return InteractText; }
-
-	/** Returns an equipped weapon
-	 *	@param WeaponID The ID of the weapon to get
-	 *	@return The weapon with the given ID
-	 */
-	ASWeaponBase* GetWeaponByID(const int WeaponID) const { return EquippedWeapons[WeaponID]; }
-
 	/** Returns the character's hands mesh */
 	USkeletalMeshComponent* GetHandsMesh() const { return HandsMeshComp; }
-
-	/** Returns a reference to the player's heads up display */
-	USHUDWidget* GetPlayerHud() const { return PlayerHudWidget; }
 
 	/** Returns a reference to the player's camera component */
 	UCameraComponent* GetCameraComponent() const { return CameraComp; }
@@ -204,22 +137,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UAnimSequence* GetSprintAnim() const { return Anim_Sprint; }
 
-	/** Draws the settings menu to the screen */
-	UFUNCTION(BlueprintCallable)
-	void CreateSettingsMenu();
-
 	/** Returns the character's current input mapping context */
 	UFUNCTION(BlueprintCallable)
 	UInputMappingContext* GetBaseMappingContext() const { return BaseMappingContext; }
 
-	/** Returns the number of weapon slots */
-	int GetNumberOfWeaponSlots() const { return NumberOfWeaponSlots; }
+	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
-	/** Returns the currently equipped weapon slot */
-	int GetCurrentWeaponSlot() const { return CurrentWeaponSlot; }
-
-	/** Returns the map of currently equipped weapons */
-	TMap<int, ASWeaponBase*> GetEquippedWeapons() const { return EquippedWeapons; }
 	
 protected:
 
@@ -314,33 +237,6 @@ private:
 	 */
 	void UpdateMovementValues(EMovementState NewMovementState);
 
-	/** Swap to a new weapon
-	 *	@param SlotId The ID of the slot which to swap to
-	 */
-	void SwapWeapon(int SlotId);
-
-	/**	Template function for SwapWeapon (used with the enhanced input component) */
-	template <int SlotID>
-	void SwapWeapon() { SwapWeapon(SlotID); }
-	
-	/** Swaps between weapons using the scroll wheel */
-	void ScrollWeapon(const FInputActionValue& Value);
-
-	/** Fires the weapon */
-	void StartFire();
-
-	/** Stops firing the weapon */
-	void StopFire();
-
-	/** Reloads the weapon */
-	void Reload();
-
-	/** Starts ADS */
-	void StartAds();
-
-	/** Ends ADS */
-	void StopAds();
-
 	/** Checks the angle of the floor to determine slide behaviour */
 	void CheckAngle(float DeltaTime);
 
@@ -351,15 +247,6 @@ private:
 	UFUNCTION()
 	void TimelineProgress(float Value);
 
-	/** Interaction with the world using SInteractInterface */
-	void WorldInteract();
-
-	/** Displaying the indicator for interaction */
-	void InteractionIndicator();
-
-	/** Updates widgets */
-	void ManageOnScreenWidgets();
-
 	/** Move the character left/right and forward/back
 	 *	@param Value The value passed in by the Input Component
 	 */
@@ -369,6 +256,12 @@ private:
 	 *	@param Value The value passed in by the Input Component
 	 */
 	void Look(const FInputActionValue& Value);
+
+	/** Starts ADS */
+	void StartAds();
+
+	/** Ends ADS */
+	void StopAds();
 		
 	/** Called every frame */
 	virtual void Tick(float DeltaTime) override;
@@ -435,32 +328,11 @@ private:
 	/** The increase in FOV during fast actions, such as sprinting and sliding */
 	UPROPERTY(EditDefaultsOnly, Category = "Camera | FOV")
 	float SpeedFOVChange = 5.0f;
-
-	/** The distance at which pickups for old weapons spawn during a weapon swap */
-	UPROPERTY(EditDefaultsOnly, Category = "Camera | Interaction")
-	float WeaponSpawnDistance = 100.0f;
-	
-	/** The maximum distance in unreal units at which the player can interact with an object */
-	UPROPERTY(EditDefaultsOnly, Category = "Camera | Interaction")
-	float InteractDistance = 400.0f;
 	
 	/** Name of the socket we attach our camera to */
 	UPROPERTY(EditDefaultsOnly, Category = "Camera | Socket")
 	FName CameraSocketName;
 	
-	/** THe Number of slots for Weapons that this player has */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapons | Inventory")
-	int NumberOfWeaponSlots;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
-	TSubclassOf<USHUDWidget> HUDWidget;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
-	TSubclassOf<UPauseWidget> PauseWidget;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
-	TSubclassOf<USettingsWidget> SettingsWidget;
-
 	/** The material parameter collection that stores the scope opacity parameter to be changed */
 	UPROPERTY(EditDefaultsOnly, Category = "Materials")
 	UMaterialParameterCollection* ScopeOpacityParameterCollection;
@@ -477,37 +349,9 @@ private:
 
 #pragma region INTERNAL_VARIABLES
 	
-	/** A Map storing the player's current weapons and the slot that they correspond to */
-	UPROPERTY()
-	TMap<int, ASWeaponBase*> EquippedWeapons;
-
-	/** The player's currently equipped weapon */
-	UPROPERTY()
-	ASWeaponBase* CurrentWeapon;
-	
 	/** Enumerator holding the 5 possible movement states defined by EMovementState */
 	UPROPERTY()
     EMovementState MovementState;
-	
-	/** The current message to be displayed above the screen (if any) */
-	UPROPERTY()
-	FText InteractText;
-	
-	/** A reference to the player's main HUD widget */
-	UPROPERTY()
-	USHUDWidget* PlayerHudWidget;
-
-	/** A reference to the player's pause widget */
-	UPROPERTY()
-	UPauseWidget* PlayerPauseWidget;
-
-	/** A reference to the player's settings widget */
-	UPROPERTY()
-	USettingsWidget* PlayerSettingsWidget;
-
-	/** The current widget visible on screen */
-	UPROPERTY()
-	UUserWidget* CurrentWidget;
 	
 	/** The timeline for vaulting (generated from the curve) */
 	UPROPERTY()
@@ -521,8 +365,6 @@ private:
 	FHitResult VaultHit;
 
 	FHitResult AngleHit;
-
-	FHitResult InteractionHit;
 	
 	/** Whether the player is holding down the aim down sights button */
 	bool bWantsToAim;
@@ -554,15 +396,6 @@ private:
 	/** Whether the character is crouching */
 	bool bIsCrouching;
 	
-	/** Whether the object we are looking at is one we are able to interact with (used for UI) */
-	bool bCanInteract;
-	
-	/** Whether the interaction object the character is looking at is a weapon pickup (used for UI) */
-	bool bInteractionIsWeapon;
-	
-	/** The integer that keeps track of which weapon slot ID is currently active */
-	int CurrentWeaponSlot;
-
 	/** Keeps track of the opacity of scopes */
 	float ScopeBlend;
 	
@@ -595,6 +428,10 @@ private:
 
 	/** Timer manager for sliding */
 	FTimerHandle SlideStop;
+
+	/** A reference to the player's Inventory Component */ 
+	UPROPERTY()
+	UInventoryComponent* InventoryComponent;
 
 #pragma endregion 
 
@@ -640,9 +477,6 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
 	UInputAction* PauseAction;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input | Actions")
-	UInputAction* RemapAction;
 
 	/** Input Mappings */
 
