@@ -4,7 +4,7 @@
 #include "func_lib/DebugHelpers.h"
 
 
-void FDebugHelpers::PrintStrArray(TArray<FString> Arr, FColor Color, float DisplayTime)
+void FDebugHelpers::PrintStrArray(TArray<FString> Arr, const FColor Color, const float DisplayTime)
 {
 	for (FString Element: Arr)
 	{
@@ -12,7 +12,7 @@ void FDebugHelpers::PrintStrArray(TArray<FString> Arr, FColor Color, float Displ
 	}
 }
 
-void FDebugHelpers::PrintNameArray(TArray<FName> Arr, FColor Color, float DisplayTime)
+void FDebugHelpers::PrintNameArray(TArray<FName> Arr, const FColor Color, const float DisplayTime)
 {
 	for (FName Element: Arr)
 	{
@@ -20,7 +20,7 @@ void FDebugHelpers::PrintNameArray(TArray<FName> Arr, FColor Color, float Displa
 	}
 }
 
-void FDebugHelpers::PrintIntArray(TArray<int> Arr, FColor Color, float DisplayTime)
+void FDebugHelpers::PrintIntArray(TArray<int> Arr, const FColor Color, const float DisplayTime)
 {
 	for (const int Element: Arr)
 	{
@@ -28,7 +28,7 @@ void FDebugHelpers::PrintIntArray(TArray<int> Arr, FColor Color, float DisplayTi
 	}
 }
 
-void FDebugHelpers::PrintFloatArray(TArray<float> Arr, FColor Color, float DisplayTime)
+void FDebugHelpers::PrintFloatArray(TArray<float> Arr, const FColor Color, const float DisplayTime)
 {
 	for (const float Element: Arr)
 	{

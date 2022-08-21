@@ -4,18 +4,18 @@
 #include "InteractedActor.h"
 
 // Sets default values
-ASInteractedActor::ASInteractedActor()
+AInteractedActor::AInteractedActor()
 {
 }
 
-void ASInteractedActor::Interacted()
+void AInteractedActor::Interacted()
 {
 	// Calls function to be implemented in blueprints
 	OnInteracted();
 }
 
 // Called when the game starts or when spawned
-void ASInteractedActor::BeginPlay()
+void AInteractedActor::BeginPlay()
 {
 	Super::BeginPlay();
 	

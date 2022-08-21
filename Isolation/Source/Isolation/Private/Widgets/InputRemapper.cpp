@@ -26,14 +26,14 @@ void UInputRemapper::NativeConstruct()
 	UpdateMappings();
 }
 
-void UInputRemapper::ClearActionMappings()
+void UInputRemapper::ClearActionMappings() const
 {
 	PlayerCharacter->GetBaseMappingContext()->UnmapAction(InputAction);
 
 	UpdateMappings();
 }
 
-void UInputRemapper::RemapKey(const FInputChord InSelectedKey)
+void UInputRemapper::RemapKey(const FInputChord InSelectedKey) const
 {
 	PlayerCharacter->GetBaseMappingContext()->MapKey(InputAction, InSelectedKey.Key);
 
@@ -52,7 +52,8 @@ void UInputRemapper::UpdateMappings() const
 	TArray<FEnhancedActionKeyMapping> Mappings = PlayerCharacter->GetBaseMappingContext()->GetMappings();
 
 	FString InputDisplayText = "";
-	
+
+	// Iterating through all the action mappings and adding the rich text images for the selected input to the screen 
 	for (FEnhancedActionKeyMapping Mapping : Mappings)
 	{
 		if (Mapping.Action == InputAction)

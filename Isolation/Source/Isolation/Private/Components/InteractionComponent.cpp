@@ -7,6 +7,7 @@
 #include "FPSCharacter.h"
 #include "InteractionActor.h"
 #include "WeaponPickup.h"
+#include "Camera/CameraComponent.h"
 
 // Sets default values for this component's properties
 UInteractionComponent::UInteractionComponent()
@@ -16,19 +17,9 @@ UInteractionComponent::UInteractionComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-
-// Called when the game starts
-void UInteractionComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-    CameraComponent = GetOwner()->FindComponentByClass<UCameraComponent>();
-}
-
+// Interact with a hit actor through an interact interface
 void UInteractionComponent::WorldInteract()
-{
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("LineTrace"));
-    
+{    
     FCollisionQueryParams TraceParams;
     TraceParams.bTraceComplex = true;
 
@@ -42,28 +33,32 @@ void UInteractionComponent::WorldInteract()
     FVector CameraLocation = FVector::ZeroVector;
     FRotator CameraRotation = FRotator::ZeroRotator;
     
-    if (CameraComponent)
+    if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
     {
-        CameraLocation = CameraComponent->GetComponentLocation();
-        CameraRotation = CameraComponent->GetComponentRotation(); 
+        CameraLocation = FPSCharacter->GetCameraComponent()->GetComponentLocation();
+        CameraRotation = FPSCharacter->GetCameraComponent()->GetComponentRotation();
     }
     
     const FVector TraceDirection = CameraRotation.Vector();
     const FVector TraceEndLocation = CameraLocation + TraceDirection * InteractDistance;
 
+    // Checking if we hit something with our line trace
     if (GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
     {
-        if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
+        // Checking if the actor we hit implements the interaction interface
+        if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
         {
-            Cast<ISInteractInterface>(InteractionHit.GetActor())->Interact();
+            // Calling the Interact function within our hit actor via the interface
+            Cast<IInteractInterface>(InteractionHit.GetActor())->Interact();
         }
     }
 }
 
-// Performing logic for the interaction indicator at the center of the screen
+// Performing logic around the visibility of the interaction indicator - called every frame
 void UInteractionComponent::InteractionIndicator()
 {
     bCanInteract = false;
+    bInteractionIsWeapon = false;
     
     FCollisionQueryParams TraceParams;
     TraceParams.bTraceComplex = true;
@@ -72,27 +67,33 @@ void UInteractionComponent::InteractionIndicator()
     
     if (Owner)
     {
+        // Making sure we do not collide with our own line trace
         TraceParams.AddIgnoredActor(Owner);
     }
     
     FVector CameraLocation = FVector::ZeroVector;
     FRotator CameraRotation = FRotator::ZeroRotator;
     
-    if (CameraComponent)
+    if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
     {
-        CameraLocation = CameraComponent->GetComponentLocation();
-        CameraRotation = CameraComponent->GetComponentRotation(); 
+        CameraLocation = FPSCharacter->GetCameraComponent()->GetComponentLocation();
+        CameraRotation = FPSCharacter->GetCameraComponent()->GetComponentRotation();
     }
     
     const FVector TraceDirection = CameraRotation.Vector();
     const FVector TraceEndLocation = CameraLocation + TraceDirection * InteractDistance;
 
+    // Checking if we hit something with our line trace
     if (GetWorld()->LineTraceSingleByChannel(InteractionHit, CameraLocation, TraceEndLocation, ECC_WorldStatic, TraceParams))
-    {        
-        if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(USInteractInterface::StaticClass()))
+    {
+        // Checking if the actor we hit implements the interaction interface
+        if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
         {
             bCanInteract = true;
-            const ASInteractionActor* InteractionActor = Cast<ASInteractionActor>(InteractionHit.GetActor());
+
+            // Checking between classes that derive from ASInteract and updating variables accordingly
+            const AInteractionActor* InteractionActor = Cast<AInteractionActor>(InteractionHit.GetActor());
+            const AWeaponPickup* InteractedPickup = Cast<AWeaponPickup>(InteractionHit.GetActor());
             AAmmoPickup* AmmoPickup = Cast<AAmmoPickup>(InteractionHit.GetActor());
             if (InteractionActor)
             {
@@ -102,20 +103,14 @@ void UInteractionComponent::InteractionIndicator()
             {
                 InteractText = AmmoPickup->GetPickupName();
             }
+            else if (InteractedPickup)
+            {
+                bInteractionIsWeapon = true;
+                InteractText = InteractedPickup->GetWeaponName();
+            }
             else
             {
                 InteractText = FText::GetEmpty();
-            }
-            
-            const ASWeaponPickup* InteractedPickup = Cast<ASWeaponPickup>(InteractionHit.GetActor());
-            if (InteractedPickup)
-            {
-                bInteractionIsWeapon = true;
-                InteractText = InteractedPickup->WeaponName;
-            }
-            else
-            {
-                bInteractionIsWeapon = false;
             }
         }
     }
@@ -130,12 +125,13 @@ void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
     InteractionIndicator();
 }
 
+// Binds functionality to the owner's Input Component
 void UInteractionComponent::SetupInputComponent(UEnhancedInputComponent* PlayerInputComponent)
 {
-    if (WorldInteractAction)
+    if (InteractAction)
     {            
         // Interacting with the world
-        PlayerInputComponent->BindAction(WorldInteractAction, ETriggerEvent::Started, this, &UInteractionComponent::WorldInteract);
+        PlayerInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &UInteractionComponent::WorldInteract);
     }
 }
 

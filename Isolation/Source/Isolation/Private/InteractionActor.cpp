@@ -7,17 +7,17 @@
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
-ASInteractionActor::ASInteractionActor()
+AInteractionActor::AInteractionActor()
 {
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
 	RootComponent = MeshComp;
 }
 
 // Implementing the function from our interface
-void ASInteractionActor::Interact()
+void AInteractionActor::Interact()
 {
 	// Calling Interacted() on all of the interacted actors
-	for (ASInteractedActor* InteractedActor : InteractedActors)
+	for (AInteractedActor* InteractedActor : InteractedActors)
 	{
 		InteractedActor->Interacted();
 		OnInteraction(InteractedActor);

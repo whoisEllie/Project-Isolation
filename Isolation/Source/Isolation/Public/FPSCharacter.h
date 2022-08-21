@@ -3,20 +3,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-#include "Components/TimelineComponent.h"
-#include "Widgets/PauseWidget.h"
-#include "InputActionValue.h"
 #include "InputAction.h"
-#include "InputMappingContext.h"
+#include "InputActionValue.h"
+// ReSharper disable once CppUnusedIncludeDirective
+#include "InputMappingContext.h" // Rider may mark this as unused, but this is incorrect and removal will cause issues
 #include "WeaponBase.h"
 #include "Components/InventoryComponent.h"
+#include "Components/TimelineComponent.h"
+#include "GameFramework/Character.h"
+#include "Widgets/PauseWidget.h"
 #include "FPSCharacter.generated.h"
 
 class UCameraComponent;
 class USpringArmComponent;
 class USkeletalMeshComponent;
-class ASWeaponBase;
+class AWeaponBase;
 class UAnimMontage;
 class UCurveFloat;
 class UBlendSpace;
@@ -141,6 +142,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UInputMappingContext* GetBaseMappingContext() const { return BaseMappingContext; }
 
+	/** Returns the Inventory Component */
 	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 	
@@ -163,27 +165,27 @@ protected:
 	UAudioComponent* FootstepAudioComp;
 	
 	/** Hand animation blend space for when the player has no weapon  */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations | Blend Spaces")
 	UBlendSpace* BS_Walk;
 
 	/** Hand animation blend space for then the player has no weapon and is aiming down sights */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations | Blend Spaces")
 	UBlendSpace* BS_Ads_Walk;
 
 	/** Hand animation for when the player has no weapon and is idle */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations | Sequences")
 	UAnimSequence* Anim_Idle;
 
 	/** Hand animation for when the player has no weapon, is idle, and is aiming down sights */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations | Sequences")
 	UAnimSequence* Anim_Ads_Idle;
 
 	/** Hand animation for when the player has no weapon and is sprinting */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations | Sequences")
 	UAnimSequence* Anim_Sprint;
 
 	/** Hand montage, played during vault */
-	UPROPERTY(EditDefaultsOnly, Category = "Animation Montages")
+	UPROPERTY(EditDefaultsOnly, Category = "Animations | Montages")
 	UAnimMontage* VaultMontage;
 
 
@@ -290,7 +292,7 @@ private:
 	/** The default offset of the spring arm from a Z position of 0, set automatically on BeginPlay */
 	float DefaultSpringArmOffset;
 	
-	//* The current offset of the spring arm */
+	/** The current offset of the spring arm */
 	float CurrentSpringArmOffset = 0.0f;
 	
 	/** The rate at which the character crouches */
@@ -363,6 +365,8 @@ private:
 	FHitResult StandUpHit;
 	
 	FHitResult VaultHit;
+
+	FHitResult MantleHit;
 
 	FHitResult AngleHit;
 	

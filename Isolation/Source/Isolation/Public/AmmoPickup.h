@@ -39,14 +39,20 @@ struct FAmmoTypeData
 };
 
 UCLASS()
-class ISOLATION_API AAmmoPickup : public AActor, public ISInteractInterface
+class ISOLATION_API AAmmoPickup : public AActor, public IInteractInterface
 {
 	GENERATED_BODY()
 
 public:
-	
+
+	/** Return the name of the current pickup based on the ammo type
+	 *	@return The pickup name to display on the HUD
+	 */
 	FText GetPickupName() { return PickupName[AmmoType]; }
 
+	/** Return the selected ammo type
+	 *	@return Selected ammo type
+	 */
 	EAmmoType GetAmmoType() const { return AmmoType; }
 
 protected:

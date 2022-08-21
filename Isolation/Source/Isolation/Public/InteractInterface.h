@@ -8,7 +8,7 @@
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
-class USInteractInterface : public UInterface
+class UInteractInterface : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -16,13 +16,13 @@ class USInteractInterface : public UInterface
 /**
  * 
  */
-class ISOLATION_API ISInteractInterface
+class ISOLATION_API IInteractInterface
 {
 	GENERATED_BODY()
 
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
+	/** Called by the interact interface */
 	UFUNCTION()
 	virtual void Interact();
 };

@@ -30,7 +30,7 @@ void AAmmoPickup::BeginPlay()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Mesh to spawn not found in SAmmoPickup, make sure all meshes are set."));
+		UE_LOG(LogProfilingDebugging, Error, TEXT("Mesh to spawn not found in SAmmoPickup, make sure all meshes are set."));
 	}
 }
 
@@ -39,7 +39,7 @@ void AAmmoPickup::Interact()
 	if (!bIsEmpty)
 	{
 		const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-		ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+		AFPSCharacterController* CharacterController = Cast<AFPSCharacterController>(PlayerCharacter->GetController());
 
 
 		// Debug print of the ammo before pickup

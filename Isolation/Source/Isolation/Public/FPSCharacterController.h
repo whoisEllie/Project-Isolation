@@ -7,20 +7,20 @@
 #include "GameFramework/PlayerController.h"
 #include "FPSCharacterController.generated.h"
 
-class ASWeaponBase; 
-
-
+class AWeaponBase; 
 
 UCLASS()
-class ISOLATION_API ASCharacterController : public APlayerController
+class ISOLATION_API AFPSCharacterController : public APlayerController
 {
 	GENERATED_BODY()
-
+	
 	public:
-
+	
+	/** Stored ammo data for the player character */
     UPROPERTY(EditDefaultsOnly, Category = "Inventory")
     TMap<EAmmoType, int32> AmmoMap;
 
+	/** The amount of ammunition boxes that the player has */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory")
 	int AmmoBoxCount;
 };

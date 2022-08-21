@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class ISOLATION_API USIsolationSave : public USaveGame
+class ISOLATION_API UIsolationSave : public USaveGame
 {
 	GENERATED_BODY()
 

@@ -2,29 +2,29 @@
 
 #include "FPSCharacter.h"
 #include "AmmoPickup.h"
-#include "GameFramework/Character.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Components/TimelineComponent.h"
-#include "Camera/CameraComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
-#include "FPSCharacterController.h"
-#include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "WeaponBase.h"
-#include "Blueprint/UserWidget.h"
-#include "Kismet/KismetMaterialLibrary.h"
-#include "Components/AudioComponent.h"
-#include "GameFramework/InputSettings.h"
-#include "Isolation/Isolation.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "FPSCharacterController.h"
+#include "WeaponBase.h"
+#include "Blueprint/UserWidget.h"
+#include "Camera/CameraComponent.h"
+#include "Components/AudioComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/InteractionComponent.h"
 #include "Components/InventoryComponent.h"
-#include "Components/WidgetManagmentComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/TimelineComponent.h"
+#include "Components/WidgetManagementComponent.h"
+#include "Engine/Engine.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/InputSettings.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Isolation/Isolation.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMaterialLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AFPSCharacter::AFPSCharacter()
@@ -70,6 +70,7 @@ void AFPSCharacter::BeginPlay()
         VaultTimeline.AddInterpFloat(VaultTimelineCurve, TimelineProgress);
     }
 
+    // Obtaining our inventory component and reserving space in memory for our set of weapons
     if (UInventoryComponent* InventoryComp = FindComponentByClass<UInventoryComponent>())
     {
         InventoryComponent = InventoryComp;
@@ -82,7 +83,7 @@ void AFPSCharacter::PawnClientRestart()
     Super::PawnClientRestart();
 
     // Make sure that we have a valid PlayerController.
-    if (const ASCharacterController* PlayerController = Cast<ASCharacterController>(GetController()))
+    if (const AFPSCharacterController* PlayerController = Cast<AFPSCharacterController>(GetController()))
     {
         // Get the Enhanced Input Local Player Subsystem from the Local Player related to our Player Controller.
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -96,24 +97,10 @@ void AFPSCharacter::PawnClientRestart()
     }
 }
 
-/** Progresses the timeline that is used to vault the character */
-void AFPSCharacter::TimelineProgress(const float Value)
-{    
-    const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), Value);
-    SetActorLocation(NewLocation);
-    if (Value == 1)
-    {
-        bIsVaulting = false;
-        if (bHoldingSprint)
-        {
-            UpdateMovementValues(EMovementState::State_Sprint);
-        }
-    }
-}
-
 // Playing footstep sounds on FootstepAudioComp, called from animnotifies
 void AFPSCharacter::FootstepSounds()
 {
+    // Calculating the line trace start and end locations
     const FVector TraceStart = GetActorLocation();
     FVector TraceEnd = TraceStart;
     TraceEnd.Z -= 100.0f;
@@ -121,10 +108,11 @@ void AFPSCharacter::FootstepSounds()
     // Query parameters for the interaction line trace
     FCollisionQueryParams QueryParams;
     QueryParams.bReturnPhysicalMaterial = true;
-    
+
     FootstepAudioComp->SetIntParameter(FName("floor"), 0);
     if(GetWorld()->LineTraceSingleByChannel(FootstepHit, TraceStart, TraceEnd, FOOTSTEP_TRACE, QueryParams))
     {
+        // Updating the relevant parameter in the footstep audio component if we hit something with our line trace
         FootstepAudioComp->SetIntParameter(FName("floor"), SurfaceMaterialArray.Find(FootstepHit.PhysMaterial.Get()));
         if (bDrawDebug)
         {
@@ -141,9 +129,11 @@ void AFPSCharacter::FootstepSounds()
 
 void AFPSCharacter::Move(const FInputActionValue& Value)
 {
+    // Storing movement vectors for animation manipulation
     ForwardMovement = Value[1];
     RightMovement = Value[0];
-    
+
+    // Moving the player
     if (Value.GetMagnitude() != 0.0f)
     {
         AddMovementInput(GetActorForwardVector(), Value[1]);
@@ -153,23 +143,25 @@ void AFPSCharacter::Move(const FInputActionValue& Value)
 
 void AFPSCharacter::Look(const FInputActionValue& Value)
 {
+    // Storing look vectors for animation manipulation
     MouseX = Value[1];
     MouseY = Value[0];
-    
+
+    // Looking around
     AddControllerPitchInput(Value[1] * -1);
     AddControllerYawInput(Value[0]);
-
+    
     if (InventoryComponent)
     {
         if (Value.GetMagnitude() != 0.0f && InventoryComponent->GetCurrentWeapon())
         {
-            InventoryComponent->GetCurrentWeapon()->bShouldRecover = false;
-            InventoryComponent->GetCurrentWeapon()->RecoilRecoveryTimeline.Stop();
+            // If movement is detected and we have a current weapon, make sure we don't recover the recoil
+            InventoryComponent->GetCurrentWeapon()->SetShouldRecover(false);
+            InventoryComponent->GetCurrentWeapon()->GetRecoilRecoveryTimeline()->Stop();
         }
     }
 }
 
-// Custom crouch function
 void AFPSCharacter::StartCrouch()
 {
     bHoldingCrouch = true;
@@ -178,7 +170,6 @@ void AFPSCharacter::StartCrouch()
         if (MovementState == EMovementState::State_Crouch)
         {
             StopCrouch(false);
-            //GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ending Crouch", true);
         }
         else if (MovementState == EMovementState::State_Sprint && !bPerformedSlide)
         {
@@ -191,6 +182,7 @@ void AFPSCharacter::StartCrouch()
     }
     else if (!bPerformedSlide)
     {
+        // If we are in the air and have not performed a slide yet
         bWantsToSlide = true;
     }
 }
@@ -220,7 +212,6 @@ void AFPSCharacter::StopCrouch(const bool bToSprint)
     }
 }
 
-// Starting to sprint (IE_Pressed)
 void AFPSCharacter::StartSprint()
 {
     if (!HasSpaceToStandUp() && (MovementState == EMovementState::State_Crouch || MovementState ==
@@ -230,11 +221,9 @@ void AFPSCharacter::StartSprint()
     }
     bHoldingSprint = true;
     bPerformedSlide = false;
-    // Updates the sprint speed
     UpdateMovementValues(EMovementState::State_Sprint);
 }
 
-// Stopping to sprint (IE_Released)
 void AFPSCharacter::StopSprint()
 {
     if (MovementState == EMovementState::State_Slide && bHoldingCrouch)
@@ -295,17 +284,14 @@ void AFPSCharacter::StopAds()
     bWantsToAim = false;
 }
 
-
 void AFPSCharacter::CheckVault()
 {    
     float ForwardVelocity = FVector::DotProduct(GetVelocity(), GetActorForwardVector());
     if (!(ForwardVelocity > 0 && !bIsVaulting && GetCharacterMovement()->IsFalling())) return;
 
-    // store these for future use.
+    // Store these for future use.
     FVector ColliderLocation = GetCapsuleComponent()->GetComponentLocation();
     FRotator ColliderRotation = GetCapsuleComponent()->GetComponentRotation();
-
-
     FVector StartLocation = ColliderLocation;
     FVector EndLocation = ColliderLocation + UKismetMathLibrary::GetForwardVector(ColliderRotation) * 75;
     if (bDrawDebug)
@@ -317,23 +303,25 @@ void AFPSCharacter::CheckVault()
     TraceParams.bTraceComplex = true;
     TraceParams.AddIgnoredActor(this);
 
-    if (!GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeCapsule(30, 50), TraceParams)) return;
-    if (!VaultHit.bBlockingHit) return;
+    // Checking if we are near a wall
+    if (!GetWorld()->SweepSingleByChannel(MantleHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic,
+                                          FCollisionShape::MakeCapsule(30, 50), TraceParams)) return;
+    if (!MantleHit.bBlockingHit) return;
     
-    FVector ForwardImpactPoint = VaultHit.ImpactPoint;
-    FVector ForwardImpactNormal = VaultHit.ImpactNormal;
+    FVector ForwardImpactPoint = MantleHit.ImpactPoint;
+    FVector ForwardImpactNormal = MantleHit.ImpactNormal;
     FVector CapsuleLocation = ForwardImpactPoint;
     CapsuleLocation.Z = ColliderLocation.Z;
     CapsuleLocation += ForwardImpactNormal * -15;
-
     StartLocation = CapsuleLocation;
     StartLocation.Z += 100;
     EndLocation = CapsuleLocation;
 
-    if (!GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams)) return;
-    if (!GetCharacterMovement()->IsWalkable(VaultHit)) return;
+    // Checking if we can stand up on the wall that we've hit
+    if (!GetWorld()->SweepSingleByChannel(MantleHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(1), TraceParams)) return;
+    if (!GetCharacterMovement()->IsWalkable(MantleHit)) return;
     
-    FVector SecondaryVaultStartLocation = VaultHit.ImpactPoint;
+    FVector SecondaryVaultStartLocation = MantleHit.ImpactPoint;
     SecondaryVaultStartLocation.Z += 5;
     FVector SecondaryVaultEndLocation = SecondaryVaultStartLocation;
     SecondaryVaultEndLocation.Z = 0;
@@ -354,7 +342,8 @@ void AFPSCharacter::CheckVault()
     FVector ForwardAddition = UKismetMathLibrary::GetForwardVector(ColliderRotation) * 5;
     float CalculationHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2;
     float ScaledCapsuleWithoutHemisphere = GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
-    
+
+    // Tracing downwards VaultTraceAmount times and looking for a significant change in height followed by a space large enough to stand
     for (i = 0; i <= VaultTraceAmount; i++)
     {
         SecondaryVaultStartLocation += ForwardAddition;
@@ -381,8 +370,7 @@ void AFPSCharacter::CheckVault()
 
         FVector DownTracePoint = VaultHit.Location;
         DownTracePoint.Z = VaultHit.ImpactPoint.Z;
-        //UPrimitiveComponent* hitComponent = hit.Component;
-
+ 
         FVector CalculationVector = FVector::ZeroVector;
         CalculationVector.Z = CalculationHeight;
         DownTracePoint += CalculationVector;
@@ -397,6 +385,7 @@ void AFPSCharacter::CheckVault()
         }
         if (GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic, FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()), TraceParams)) continue;
 
+        // If we find such a location, break the loop and vault
         ForwardImpactNormal.X -= 1;
         ForwardImpactNormal.Y -= 1;
         VaultTargetLocation = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
@@ -407,11 +396,12 @@ void AFPSCharacter::CheckVault()
     }
 
     if (!bVaultFailed) return;
-    
-    FVector DownTracePoint = VaultHit.Location;
-    DownTracePoint.Z = VaultHit.ImpactPoint.Z;
-    //UPrimitiveComponent* hitComponent = hit.Component;
 
+    // If the vault has failed (there is no space or the surface is too high), we proceed to perform the mantle logic
+    
+    FVector DownTracePoint = MantleHit.Location;
+    DownTracePoint.Z = MantleHit.ImpactPoint.Z;
+ 
     FVector CalculationVector = FVector::ZeroVector;
     CalculationVector.Z = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 2;
     DownTracePoint += CalculationVector;
@@ -420,8 +410,8 @@ void AFPSCharacter::CheckVault()
     EndLocation = DownTracePoint;
     EndLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight_WithoutHemisphere();
 
-    //DrawDebugSphere(GetWorld(), startLocation, GetCapsuleComponent()->GetUnscaledCapsuleRadius(), 32, FColor::Green);
-    if (GetWorld()->SweepSingleByChannel(VaultHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic,
+    // Looking for a safe place to mantle to
+     if (GetWorld()->SweepSingleByChannel(MantleHit, StartLocation, EndLocation, FQuat::Identity, ECC_WorldStatic,
                                          FCollisionShape::MakeSphere(GetCapsuleComponent()->GetUnscaledCapsuleRadius()),
                                          TraceParams)) return;
 
@@ -429,8 +419,24 @@ void AFPSCharacter::CheckVault()
     ForwardImpactNormal.Y -= 1;
     VaultTargetLocation = FTransform(UKismetMathLibrary::MakeRotFromX(ForwardImpactNormal), DownTracePoint);
     bIsVaulting = true;
-    
+
+    // Calling vault with our mantle target point
     Vault(VaultTargetLocation);
+}
+
+// Progresses the timeline that is used to vault the character
+void AFPSCharacter::TimelineProgress(const float Value)
+{
+    const FVector NewLocation = FMath::Lerp(VaultStartLocation.GetLocation(), VaultEndLocation.GetLocation(), Value);
+    SetActorLocation(NewLocation);
+    if (Value == 1)
+    {
+        bIsVaulting = false;
+        if (bHoldingSprint)
+        {
+            UpdateMovementValues(EMovementState::State_Sprint);
+        }
+    }
 }
 
 void AFPSCharacter::CheckAngle(float DeltaTime)
@@ -439,6 +445,7 @@ void AFPSCharacter::CheckAngle(float DeltaTime)
     TraceParams.bTraceComplex = true;
     TraceParams.AddIgnoredActor(this);
 
+    // Determines the angle of the floor from the vector of a hit line trace
     FVector CapsuleHeight = GetCapsuleComponent()->GetComponentLocation();
     CapsuleHeight.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
     const FVector AngleStartTrace = CapsuleHeight;
@@ -463,7 +470,8 @@ bool AFPSCharacter::HasSpaceToStandUp()
     CenterVector.Z += 44;
 
     const float CollisionCapsuleHeight = DefaultCapsuleHalfHeight - 17.0f;
-        
+
+    // Check to see if a capsule collision collides with the environment, if yes, we don't have space to stand up
     const FCollisionShape CollisionCapsule = FCollisionShape::MakeCapsule(30.0f, CollisionCapsuleHeight);
 
     if (bDrawDebug)
@@ -476,8 +484,8 @@ bool AFPSCharacter::HasSpaceToStandUp()
         /* confetti or smth idk */
         if (bDrawDebug)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "SweepSingleByChannel returned true", true);
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, StandUpHit.Actor->GetName());
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Stand up trace returned hit", true);
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, StandUpHit.Actor->GetName());
         }
         return false;
     }
@@ -487,6 +495,7 @@ bool AFPSCharacter::HasSpaceToStandUp()
 
 void AFPSCharacter::Vault(const FTransform TargetTransform)
 {
+    // Updating our target location and playing the vault timeline from start
     VaultStartLocation = GetActorTransform();
     VaultEndLocation = TargetTransform;
     UpdateMovementValues(EMovementState::State_Vault);
@@ -509,7 +518,7 @@ void AFPSCharacter::UpdateMovementValues(const EMovementState NewMovementState)
     {
         if (InventoryComponent->GetCurrentWeapon())
         {
-            InventoryComponent->GetCurrentWeapon()->bCanFire = MovementDataMap[MovementState].bCanFire;
+            InventoryComponent->GetCurrentWeapon()->SetCanFire(MovementDataMap[MovementState].bCanFire);
         }
     }
     GetCharacterMovement()->MaxAcceleration = MovementDataMap[MovementState].MaxAcceleration;
@@ -526,8 +535,6 @@ void AFPSCharacter::UpdateMovementValues(const EMovementState NewMovementState)
     {
         bIsSprinting = true;
     }
-
-    
 }
 
 // Called every frame
@@ -558,9 +565,9 @@ void AFPSCharacter::Tick(const float DeltaTime)
     {
         if (InventoryComponent->GetCurrentWeapon())
         {
-            if (bIsAiming && InventoryComponent->GetCurrentWeapon()->WeaponData.bAimingFOV && !InventoryComponent->GetCurrentWeapon()->bIsReloading)
+            if (bIsAiming && InventoryComponent->GetCurrentWeapon()->GetStaticWeaponData()->bAimingFOV && !InventoryComponent->GetCurrentWeapon()->IsReloading())
             {
-                TargetFOV = BaseFOV - InventoryComponent->GetCurrentWeapon()->WeaponData.AimingFOVChange;
+                TargetFOV = BaseFOV - InventoryComponent->GetCurrentWeapon()->GetStaticWeaponData()->AimingFOVChange;
                 FOVChangeSpeed = 6;
             }
         }
@@ -602,9 +609,9 @@ void AFPSCharacter::Tick(const float DeltaTime)
             {
                 if (InventoryComponent->GetEquippedWeapons().Contains(Index))
                 {
-                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GeneralWeaponData.ClipSize));
-                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GeneralWeaponData.ClipCapacity));
-                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GeneralWeaponData.WeaponHealth));
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GetRuntimeWeaponData()->ClipSize));
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GetRuntimeWeaponData()->ClipCapacity));
+                    GEngine->AddOnScreenDebugMessage(-1, DeltaTime, FColor::Red, FString::SanitizeFloat(InventoryComponent->GetEquippedWeapons()[Index]->GetRuntimeWeaponData()->WeaponHealth));
                 }
                 else
                 {
@@ -649,14 +656,14 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
     {        
         if (UInteractionComponent* InteractionComponent = FindComponentByClass<UInteractionComponent>())
         {
-            InteractionComponent->WorldInteractAction = InteractAction;
+            InteractionComponent->InteractAction = InteractAction;
             InteractionComponent->SetupInputComponent(PlayerEnhancedInputComponent);
         }
 
-        if (UWidgetManagmentComponent* WidgetManagmentComponent = FindComponentByClass<UWidgetManagmentComponent>())
+        if (UWidgetManagementComponent* WidgetManagementComponent = FindComponentByClass<UWidgetManagementComponent>())
         {
-            WidgetManagmentComponent->PauseAction = PauseAction;
-            WidgetManagmentComponent->SetupInputComponent(PlayerEnhancedInputComponent);
+            WidgetManagementComponent->PauseAction = PauseAction;
+            WidgetManagementComponent->SetupInputComponent(PlayerEnhancedInputComponent);
         }
 
         if (UInventoryComponent* InventoryComp = FindComponentByClass<UInventoryComponent>())

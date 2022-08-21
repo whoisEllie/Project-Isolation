@@ -2,7 +2,6 @@
 
 
 #include "Components/InventoryComponent.h"
-
 #include "EnhancedInputComponent.h"
 #include "FPSCharacter.h"
 #include "FPSCharacterController.h"
@@ -13,27 +12,22 @@
 // Sets default values for this component's properties
 UInventoryComponent::UInventoryComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-}
-
-// Called when the game starts
-void UInventoryComponent::BeginPlay()
-{
-	Super::BeginPlay();
-		
 }
 
 // Swapping weapons with the scroll wheel
 void UInventoryComponent::ScrollWeapon(const FInputActionValue& Value)
 {
 	int NewID;
-    
+
+	// Value[0] determines the axis of input for our scroll wheel
+	// a positive value indicates scrolling towards you, while a negative one
+	// represents scrolling away from you
+	
 	if (Value[0] < 0)
-	{        
+	{
 		NewID = FMath::Clamp(CurrentWeaponSlot + 1, 0, NumberOfWeaponSlots - 1);
 
+		// If we've reached the end of the weapons array, loop back around to index 0
 		if (CurrentWeaponSlot == NumberOfWeaponSlots - 1)
 		{
 			NewID = 0;
@@ -43,50 +37,51 @@ void UInventoryComponent::ScrollWeapon(const FInputActionValue& Value)
 	{        
 		NewID = FMath::Clamp(CurrentWeaponSlot - 1, 0, NumberOfWeaponSlots - 1);
 
+		// If we've reached index 0, loop back around to the max index
 		if (CurrentWeaponSlot == 0)
 		{
 			NewID = NumberOfWeaponSlots - 1;
 		}
 	}
-
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Wheee"));
+	
 	SwapWeapon(NewID);
 }
 
-void UInventoryComponent::SwapWeapon(int SlotId)
+void UInventoryComponent::SwapWeapon(const int SlotId)
 {
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, FString::FromInt(SlotId));
-
+	// Returning if the target weapon is already equipped or it does not exist
     if (CurrentWeaponSlot == SlotId) { return; }
     if (!EquippedWeapons.Contains(SlotId)) { return; }
-    
+	
     CurrentWeaponSlot = SlotId;
-    
+
+	// Disabling the currently equipped weapon, if it exists
     if (CurrentWeapon)
     {
         CurrentWeapon->PrimaryActorTick.bCanEverTick = false;
         CurrentWeapon->SetActorHiddenInGame(true);
         CurrentWeapon->StopFire();
     }
-    
+
+	// Swapping to the new weapon, enabling it and playing it's equip animation
     CurrentWeapon = EquippedWeapons[SlotId];
     if (CurrentWeapon)
     {
         CurrentWeapon->PrimaryActorTick.bCanEverTick = true;
         CurrentWeapon->SetActorHiddenInGame(false);
-        if (CurrentWeapon->WeaponData.WeaponEquip)
+        if (CurrentWeapon->GetStaticWeaponData()->WeaponEquip)
         {
         	if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
         	{
-        		FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
+        		FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->GetStaticWeaponData()->WeaponEquip, 1.0f);
         	}
         }
     }
 }
 
 // Spawns a new weapon (either from weapon swap or picking up a new weapon)
-void UInventoryComponent::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int InventoryPosition, bool bSpawnPickup,
-                      bool bStatic, FTransform PickupTransform, FRuntimeWeaponData DataStruct)
+void UInventoryComponent::UpdateWeapon(const TSubclassOf<AWeaponBase> NewWeapon, const int InventoryPosition, const bool bSpawnPickup,
+                                       const bool bStatic, const FTransform PickupTransform, const FRuntimeWeaponData DataStruct)
 {
     // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
@@ -96,7 +91,6 @@ void UInventoryComponent::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int 
         if (bSpawnPickup)
         {
             // Calculating the location where to spawn the new weapon in front of the player
-
         	FVector TraceStart = FVector::ZeroVector;
         	FRotator TraceStartRotation = FRotator::ZeroRotator;
         	
@@ -109,40 +103,45 @@ void UInventoryComponent::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int 
             const FVector TraceEnd = TraceStart + TraceDirection * WeaponSpawnDistance;
 
             // Spawning the new pickup
-            ASWeaponPickup* NewPickup = GetWorld()->SpawnActor<ASWeaponPickup>(CurrentWeapon->WeaponData.PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
+            AWeaponPickup* NewPickup = GetWorld()->SpawnActor<AWeaponPickup>(CurrentWeapon->GetStaticWeaponData()->PickupReference, TraceEnd, FRotator::ZeroRotator, SpawnParameters);
             if (bStatic)
             {
-                NewPickup->MainMesh->SetSimulatePhysics(false);
+                NewPickup->GetMainMesh()->SetSimulatePhysics(false);
                 NewPickup->SetActorTransform(PickupTransform);
             }
             // Applying the current weapon data to the pickup
-            NewPickup->bStatic = bStatic;
-            NewPickup->bRuntimeSpawned = true;
-            NewPickup->WeaponReference = EquippedWeapons[InventoryPosition]->GetClass();
-            NewPickup->DataStruct = EquippedWeapons[InventoryPosition]->GeneralWeaponData;
+            NewPickup->SetStatic(bStatic);
+            NewPickup->SetRuntimeSpawned(true);
+            NewPickup->SetWeaponReference(EquippedWeapons[InventoryPosition]->GetClass());
+            NewPickup->SetCacheDataStruct(EquippedWeapons[InventoryPosition]->GetRuntimeWeaponData());
             NewPickup->SpawnAttachmentMesh();
             EquippedWeapons[InventoryPosition]->Destroy();
         }
     }
     // Spawns the new weapon and sets the player as it's owner
-    ASWeaponBase* SpawnedWeapon = GetWorld()->SpawnActor<ASWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
+    AWeaponBase* SpawnedWeapon = GetWorld()->SpawnActor<AWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
     if (SpawnedWeapon)
     {
+    	// Placing the new weapon at the correct location and finishing up it's initialisation
         SpawnedWeapon->SetOwner(GetOwner());
     	if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
     	{
-    		SpawnedWeapon->AttachToComponent(FPSCharacter->GetHandsMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SpawnedWeapon->WeaponData.WeaponAttachmentSocketName);
+    		SpawnedWeapon->AttachToComponent(FPSCharacter->GetHandsMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SpawnedWeapon->GetStaticWeaponData()->WeaponAttachmentSocketName);
     	}
-        SpawnedWeapon->GeneralWeaponData = DataStruct;
+        SpawnedWeapon->SetRuntimeWeaponData(DataStruct);
         SpawnedWeapon->SpawnAttachments();
         EquippedWeapons.Add(InventoryPosition, SpawnedWeapon);
 
+		// Disabling the currently equipped weapon, if it exists
         if (CurrentWeapon)
         {
             CurrentWeapon->PrimaryActorTick.bCanEverTick = false;
             CurrentWeapon->SetActorHiddenInGame(true);
+        	CurrentWeapon->StopFire();
         }
-    
+
+    	
+    	// Swapping to the new weapon, enabling it and playing it's equip animation
         CurrentWeapon = EquippedWeapons[InventoryPosition];
         CurrentWeaponSlot = InventoryPosition; 
         
@@ -150,37 +149,37 @@ void UInventoryComponent::UpdateWeapon(TSubclassOf<ASWeaponBase> NewWeapon, int 
         {
             CurrentWeapon->PrimaryActorTick.bCanEverTick = true;
             CurrentWeapon->SetActorHiddenInGame(false);
-            if (CurrentWeapon->WeaponData.WeaponEquip)
+            if (CurrentWeapon->GetStaticWeaponData()->WeaponEquip)
             {
             	if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
 	            {
-		            FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->WeaponEquip, 1.0f);
+		            FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->GetStaticWeaponData()->WeaponEquip, 1.0f);
 	            }
             }
         }
     }
 }
 
-FText UInventoryComponent::GetCurrentWeaponRemainingAmmo()
+FText UInventoryComponent::GetCurrentWeaponRemainingAmmo() const
 {
+	if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
 	{
-		if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
+		AFPSCharacterController* CharacterController = Cast<AFPSCharacterController>(FPSCharacter->GetController());
+
+		if (CharacterController)	
 		{
-			ASCharacterController* CharacterController = Cast<ASCharacterController>(FPSCharacter->GetController());
-
-			if (CharacterController)
+			if (CurrentWeapon != nullptr)
 			{
-				if (CurrentWeapon != nullptr)
-				{
-					return FText::AsNumber(CharacterController->AmmoMap[CurrentWeapon->GeneralWeaponData.AmmoType]);
-				}
-				return FText::AsNumber(0);
+				return FText::AsNumber(CharacterController->AmmoMap[CurrentWeapon->GetRuntimeWeaponData()->AmmoType]);
 			}
-			return FText::FromString("No Character Controller found");
+			UE_LOG(LogProfilingDebugging, Log, TEXT("Cannot find Current Weapon"));
+			return FText::AsNumber(0);
 		}
-
-		return FText::FromString("No Character Controller found");
+		UE_LOG(LogProfilingDebugging, Error, TEXT("No character controller found in UInventoryComponent"))
+		return FText::FromString("Err");
 	}
+	UE_LOG(LogProfilingDebugging, Error, TEXT("No player character found in UInventoryComponent"))
+	return FText::FromString("Err");
 }
 
 // Passing player inputs to WeaponBase
@@ -208,13 +207,6 @@ void UInventoryComponent::Reload()
     {
         CurrentWeapon->Reload();
     }
-}
-
-// Called every frame
-void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
 }
 
 void UInventoryComponent::SetupInputComponent(UEnhancedInputComponent* PlayerInputComponent)

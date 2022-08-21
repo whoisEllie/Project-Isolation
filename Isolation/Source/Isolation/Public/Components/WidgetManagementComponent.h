@@ -8,23 +8,17 @@
 #include "Widgets/HUDWidget.h"
 #include "Widgets/PauseWidget.h"
 #include "Widgets/SettingsWidget.h"
-#include "WidgetManagmentComponent.generated.h"
+#include "WidgetManagementComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ISOLATION_API UWidgetManagmentComponent : public UActorComponent
+class ISOLATION_API UWidgetManagementComponent final : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
-	UWidgetManagmentComponent();
-	
 	/** Called to bind functionality to input */
 	void SetupInputComponent(class UEnhancedInputComponent* PlayerInputComponent);
-
-	UPROPERTY()
-	UInputAction* PauseAction;
 
 	/** Returns a reference to the player's heads up display */
 	USHUDWidget* GetPlayerHud() const { return PlayerHudWidget; }
@@ -32,6 +26,10 @@ public:
 	/** Draws the settings menu to the screen */
 	UFUNCTION(BlueprintCallable)
 	void CreateSettingsMenu();
+
+	/** The input action for pausing the game */
+	UPROPERTY()
+	UInputAction* PauseAction;
 	
 protected:
 	// Called when the game starts
@@ -41,29 +39,32 @@ private:
 	
 	/** Updates widgets */
 	void ManageOnScreenWidgets();
-	
+
+	/** The HUD widget blueprint to spawn */
 	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
 	TSubclassOf<USHUDWidget> HUDWidget;
 
+	/** The pause widget blueprint to spawn */
 	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
 	TSubclassOf<UPauseWidget> PauseWidget;
 
+	/** The settings widget blueprint to spawn */
 	UPROPERTY(EditDefaultsOnly, Category = "UI | Widget Defaults")
 	TSubclassOf<USettingsWidget> SettingsWidget;
 
-	/** A reference to the player's main HUD widget */
+	/** A reference to the instance of the player's main HUD widget */
 	UPROPERTY()
 	USHUDWidget* PlayerHudWidget;
 
-	/** A reference to the player's pause widget */
+	/** A reference to the instance of the player's pause widget */
 	UPROPERTY()
 	UPauseWidget* PlayerPauseWidget;
 
-	/** A reference to the player's settings widget */
+	/** A reference to the instance of the player's settings widget */
 	UPROPERTY()
 	USettingsWidget* PlayerSettingsWidget;
 
-	/** The current widget visible on screen */
+	/** The current insanced widget visible on screen */
 	UPROPERTY()
 	UUserWidget* CurrentWidget;
 };

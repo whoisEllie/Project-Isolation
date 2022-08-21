@@ -3,22 +3,21 @@
 
 #include "Widgets/SettingsWidget.h"
 
-void USettingsWidget::SwitchKeySelectPopupVisibility()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Swapping visibility"));
-	
+void USettingsWidget::SwitchKeySelectPopupVisibility() const
+{	
 	switch (PressAnyKeyBlur->GetVisibility())
 	{
-	case ESlateVisibility::Hidden:
-		PressAnyKeyBlur->SetVisibility(ESlateVisibility::HitTestInvisible);
-		PressAnyKeyBlur->SetIsEnabled(true);
-		return;
+		case ESlateVisibility::Hidden:
+			// We make sure that ESlateVisibility is set to HitTestInvisible, so that the UInputKeySelector can be
+			// interacted with
+			PressAnyKeyBlur->SetVisibility(ESlateVisibility::HitTestInvisible);
+			PressAnyKeyBlur->SetIsEnabled(true);
+			return;
 
-	case ESlateVisibility::HitTestInvisible:
-		PressAnyKeyBlur->SetVisibility(ESlateVisibility::Hidden);
-		PressAnyKeyBlur->SetIsEnabled(false);
-		return;
-		
-	default: return;
+		case ESlateVisibility::HitTestInvisible:
+			PressAnyKeyBlur->SetVisibility(ESlateVisibility::Hidden);
+			PressAnyKeyBlur->SetIsEnabled(false);
+			
+		default: ;
 	}
 }

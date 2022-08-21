@@ -5,31 +5,31 @@
 
 #include "FPSCharacter.h"
 #include "FPSCharacterController.h"
-#include "Components/WidgetManagmentComponent.h"
+#include "Components/WidgetManagementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 
-void ASRepairKitPickup::Interact()
+void ARepairKitPickup::Interact()
 {
 	Super::Interact();
 
 	const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	ASCharacterController* CharacterController = Cast<ASCharacterController>(PlayerCharacter->GetController());
+	AFPSCharacterController* CharacterController = Cast<AFPSCharacterController>(PlayerCharacter->GetController());
 
 	CharacterController->AmmoBoxCount += 1;
 	
 	// Spawning our pickup sound effect
 	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSFX, GetActorLocation());
 
-	if (UWidgetManagmentComponent* WidgetManagmentComponent = PlayerCharacter->FindComponentByClass<UWidgetManagmentComponent>())
+	if (const UWidgetManagementComponent* WidgetManagementComponent = PlayerCharacter->FindComponentByClass<UWidgetManagementComponent>())
 	{
-		WidgetManagmentComponent->GetPlayerHud()->ShowRepairKitCount();
+		WidgetManagementComponent->GetPlayerHud()->ShowRepairKitCount();
 	}
 	
 	Destroy();
 }
 
-void ASRepairKitPickup::BeginPlay()
+void ARepairKitPickup::BeginPlay()
 {
 	Super::BeginPlay();
 

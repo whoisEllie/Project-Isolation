@@ -7,13 +7,13 @@
 #include "InteractedActor.generated.h"
 
 UCLASS()
-class ISOLATION_API ASInteractedActor : public AActor
+class ISOLATION_API AInteractedActor : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASInteractedActor();
+	AInteractedActor();
 
 	// The function called from the delegating SInteractionActor
 	void Interacted();

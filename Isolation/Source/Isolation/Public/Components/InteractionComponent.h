@@ -4,13 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "InputAction.h"
-#include "Camera/CameraComponent.h"
 #include "Components/ActorComponent.h"
 #include "InteractionComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ISOLATION_API UInteractionComponent : public UActorComponent
+class ISOLATION_API UInteractionComponent final : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -23,7 +22,7 @@ public:
 	FText& GetInteractText() { return InteractText; }
 
 	/** Returns the result of the interaction trace, which is true if the object that we are looking at is able to be
- *  interacted with */
+		interacted with */
 	UFUNCTION(BlueprintCallable)
 	bool CanInteract() const { return bCanInteract; }
 
@@ -33,15 +32,12 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-
 	/** Called to bind functionality to input */
 	void SetupInputComponent(class UEnhancedInputComponent* PlayerInputComponent);
 
+	/** The input action for interacting with the world */
 	UPROPERTY()
-	UInputAction* WorldInteractAction;
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	UInputAction* InteractAction;
 
 private:	
 	/** Interaction with the world using SInteractInterface */
@@ -60,9 +56,6 @@ private:
 	/** The maximum distance in unreal units at which the player can interact with an object */
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
 	float InteractDistance = 400.0f;
-	
-	UPROPERTY()
-	UCameraComponent* CameraComponent;
 
 	/** Whether the object we are looking at is one we are able to interact with (used for UI) */
 	bool bCanInteract;

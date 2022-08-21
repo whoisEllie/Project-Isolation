@@ -1,8 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "func_lib/AttachmentHelpers.h"
-#include "Math/UnrealMathUtility.h"
+#include "Math/UnrealMathUtility.h"	
 
 TArray<FName> FAttachmentHelpers::RandomiseAllAttachments(UDataTable* AttachmentDataTable) const
 {
@@ -41,11 +40,11 @@ TArray<FName> FAttachmentHelpers::RandomiseAllAttachments(UDataTable* Attachment
 	TArray<FName> TempArray;
 
 	// Randomly adding one of each type of attachment to the array
-	TempArray.Add(FName(*BarrelAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
-	TempArray.Add(FName(*MagazineAttachments[FMath::RandRange(0, (MagazineAttachments.Num() - 1))]));
-	TempArray.Add(FName(*SightsAttachments[FMath::RandRange(0, (SightsAttachments.Num() - 1))]));
-	TempArray.Add(FName(*StockAttachments[FMath::RandRange(0, (StockAttachments.Num() - 1))]));
-	TempArray.Add(FName(*GripAttachments[FMath::RandRange(0, (GripAttachments.Num() - 1))]));
+	TempArray.Add(FName(*BarrelAttachments[FMath::RandRange(0, BarrelAttachments.Num() - 1)]));
+	TempArray.Add(FName(*MagazineAttachments[FMath::RandRange(0, MagazineAttachments.Num() - 1)]));
+	TempArray.Add(FName(*SightsAttachments[FMath::RandRange(0, SightsAttachments.Num() - 1)]));
+	TempArray.Add(FName(*StockAttachments[FMath::RandRange(0, StockAttachments.Num() - 1)]));
+	TempArray.Add(FName(*GripAttachments[FMath::RandRange(0, GripAttachments.Num() - 1)]));
 	
 	return TempArray;
 }
@@ -190,23 +189,23 @@ TArray<FName> FAttachmentHelpers::ReplaceIncompatibleAttachments(UDataTable* Att
 	{
 		if (Type == EAttachmentType::Barrel)
 		{
-			CurrentAttachments.Add(FName(*BarrelAttachments[FMath::RandRange(0, (BarrelAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*BarrelAttachments[FMath::RandRange(0, BarrelAttachments.Num() - 1)]));
 		}
 		else if (Type == EAttachmentType::Magazine)
 		{
-			CurrentAttachments.Add(FName(*MagazineAttachments[FMath::RandRange(0, (MagazineAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*MagazineAttachments[FMath::RandRange(0, MagazineAttachments.Num() - 1)]));
 		}
 		else if (Type == EAttachmentType::Sights)
 		{
-			CurrentAttachments.Add(FName(*SightsAttachments[FMath::RandRange(0, (SightsAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*SightsAttachments[FMath::RandRange(0, SightsAttachments.Num() - 1)]));
 		}
 		else if (Type == EAttachmentType::Stock)
 		{
-			CurrentAttachments.Add(FName(*StockAttachments[FMath::RandRange(0, (StockAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*StockAttachments[FMath::RandRange(0, StockAttachments.Num() - 1)]));
 		}
 		else if (Type == EAttachmentType::Grip)
 		{
-			CurrentAttachments.Add(FName(*GripAttachments[FMath::RandRange(0, (GripAttachments.Num() - 1))]));
+			CurrentAttachments.Add(FName(*GripAttachments[FMath::RandRange(0, GripAttachments.Num() - 1)]));
 		}
 	}
 	

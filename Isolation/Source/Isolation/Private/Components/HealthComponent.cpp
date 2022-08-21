@@ -18,6 +18,7 @@ void UHealthComponent::BeginPlay()
 	AActor* Owner = GetOwner();
 	if (Owner)
 	{
+		// Binding our handling function to the owner's OnTakeAnyDamage
 		Owner->OnTakeAnyDamage.AddDynamic(this, &UHealthComponent::HandleTakeAnyDamage);
 	}
 }
@@ -27,11 +28,13 @@ void UHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage,
 {
 	if (Damage <= 0.0f)
 	{
+		// Health is already at most 0, so no need to perform any calculations
 		return;
 	}
 
-	// Updated health clamped
+	// Updating health, clamped between 0 and 100
 	Health = FMath::Clamp(Health - Damage, 0.0f, 100.0f);
-	
+
+	// Broadcasting our new health
 	OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
 }

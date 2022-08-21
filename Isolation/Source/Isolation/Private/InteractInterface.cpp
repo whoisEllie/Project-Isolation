@@ -6,6 +6,6 @@
 // Add default functionality here for any ISInteractInterface functions that are not pure virtual.
 
 // Empty, required for successful compile on Windows
-void ISInteractInterface::Interact()
+void IInteractInterface::Interact()
 {
 }

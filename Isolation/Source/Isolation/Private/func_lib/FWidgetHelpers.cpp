@@ -11,6 +11,7 @@ FWidgetHelpers::~FWidgetHelpers()
 {
 }
 
+// Iterates through a widget tree until it finds a canvas
 UUserWidget* FWidgetHelpers::GetParentCanvas(const UWidget* Widget)
 {
 	UObject* Outer = Widget->GetOuter();
