@@ -14,7 +14,7 @@ AAmmoPickup::AAmmoPickup()
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PreviewMeshComp"));
 	RootComponent = MeshComp;
 
-	// True by default
+	// False by default
 	bIsEmpty = false;
 }
 
@@ -27,6 +27,7 @@ void AAmmoPickup::BeginPlay()
 	if (AmmoData[AmmoType].FullAmmoBoxes.Find(AmmoAmount) != nullptr)
 	{
 		MeshComp->SetStaticMesh(AmmoData[AmmoType].FullAmmoBoxes[AmmoAmount]);
+		InteractionText = PickupName[AmmoType];
 	}
 	else
 	{
@@ -74,8 +75,8 @@ void AAmmoPickup::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	// Updating MeshComp with the desired mesh in editor if it exists
-	if (AmmoData[AmmoType].FullAmmoBoxes.Find(AmmoAmount) != nullptr)
+	//Updating MeshComp with the desired mesh in editor if it exists
+	if (AmmoData[AmmoType].FullAmmoBoxes.Contains(AmmoAmount))
 	{
 		MeshComp->SetStaticMesh(AmmoData[AmmoType].FullAmmoBoxes[AmmoAmount]);
 	}
