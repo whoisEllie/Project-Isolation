@@ -33,5 +33,5 @@ void ARepairKitPickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	PopupDescription = FText::FromString("Weapon Repair Kit");
+	InteractionText = FText::FromString("Weapon Repair Kit");
 }

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InteractionActor.h"
+#include "InteractionBase.h"
 #include "WeaponBase.h"
 #include "WeaponPickup.generated.h"
 
@@ -13,7 +13,7 @@ class AWeaponBase;
 class AFPSCharacter;
 
 UCLASS()
-class ISOLATION_API AWeaponPickup : public AActor, public IInteractInterface
+class ISOLATION_API AWeaponPickup : public AInteractionBase
 {
 	GENERATED_BODY()
 

@@ -60,6 +60,8 @@ void AWeaponPickup::BeginPlay()
 	{
 		MainMesh->SetSimulatePhysics(true);
 	}
+
+	InteractionText = WeaponName;
 }
 
 // Updating the appearance of the pickup in the editor
@@ -73,7 +75,10 @@ void AWeaponPickup::OnConstruction(const FTransform& Transform)
 	}
 
 	// Live attachment preview in the editor
-	SpawnAttachmentMesh();
+	if (WeaponReference)
+	{
+		SpawnAttachmentMesh();
+	}
 }
 
 
