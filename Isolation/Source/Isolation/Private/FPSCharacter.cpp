@@ -667,9 +667,7 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         }
 
         if (UInventoryComponent* InventoryComp = FindComponentByClass<UInventoryComponent>())
-        {
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("WHOOP"));
-            
+        {            
             InventoryComp->FiringAction = FiringAction;
             InventoryComp->PrimaryWeaponAction = PrimaryWeaponAction;
             InventoryComp->SecondaryWeaponAction = SecondaryWeaponAction;

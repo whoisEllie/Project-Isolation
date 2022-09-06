@@ -147,8 +147,6 @@ void AWeaponPickup::SpawnAttachmentMesh()
 
 void AWeaponPickup::Interact()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Testing!"));
-
 	// Getting a reference to the Character Controller
 	const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
@@ -157,7 +155,7 @@ void AWeaponPickup::Interact()
 		int InventoryPosition = PlayerCharacter->GetInventoryComponent()->GetCurrentWeaponSlot();
 		bool SpawnPickup = true;
 
-		// Checking if the player has a free weapon slot. If not, we swap out the currently equipped weaopon
+		// Checking if the player has a free weapon slot. If not, we swap out the currently equipped weapon
 		for (int Index = 0; Index < PlayerCharacter->GetInventoryComponent()->GetNumberOfWeaponSlots(); Index++)
 		{
 			if (PlayerCharacter->GetInventoryComponent()->GetEquippedWeapons().Find(Index) == nullptr)
