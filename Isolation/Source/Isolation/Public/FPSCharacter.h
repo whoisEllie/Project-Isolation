@@ -110,6 +110,7 @@ public:
 	bool IsPlayerCrouching() const { return bIsCrouching; }
 	
 	/** Returns the character's current movement state */
+	UFUNCTION(BlueprintPure, Category = "FPS Character")
 	EMovementState GetMovementState() const { return MovementState; }
 
 	/** Returns the character's hands mesh */
