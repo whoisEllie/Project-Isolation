@@ -146,6 +146,9 @@ public:
 	/** Returns the Inventory Component */
 	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
+	/** Sets default values for this character's properties */
+	AFPSCharacter();
+
 	
 protected:
 
@@ -193,10 +196,7 @@ protected:
 private:
 
 #pragma region FUNCTIONS
-
-	/** Sets default values for this character's properties */
-	AFPSCharacter();
-
+	
 	/** Called when the game starts or when spawned */
 	virtual void BeginPlay() override;
 
