@@ -2,7 +2,6 @@
 
 
 #include "WeaponPickup.h"
-
 #include "FPSCharacter.h"
 #include "WeaponBase.h"
 #include "Kismet/GameplayStatics.h"
