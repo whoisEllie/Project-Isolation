@@ -250,11 +250,6 @@ void AFPSCharacter::StartSlide()
     bPerformedSlide = true;
     UpdateMovementValues(EMovementState::State_Slide);
     GetWorldTimerManager().SetTimer(SlideStop, this, &AFPSCharacter::ReleaseCrouch, SlideTime, false, SlideTime);
-
-    UAIManager* AIManagerSubsystem = GetWorld()->GetSubsystem<UAIManager>();
-    if (AIManagerSubsystem)
-    {
-    }
 }
 
 void AFPSCharacter::StopSlide()
@@ -570,6 +565,13 @@ void AFPSCharacter::Tick(const float DeltaTime)
     FVector NewSpringArmLocation = SpringArmComp->GetRelativeLocation();
     NewSpringArmLocation.Z = NewLocation;
     SpringArmComp->SetRelativeLocation(NewSpringArmLocation);
+
+    // Vignette
+    if (VignetteMappingCurve != nullptr)
+    {
+        const float NewVignetteIntensity = FMath::FInterpTo(CameraComp->PostProcessSettings.VignetteIntensity, VignetteMappingCurve->GetFloatValue(BreathHealth), DeltaTime, CameraVignetteInterpSpeed);
+        CameraComp->PostProcessSettings.VignetteIntensity = NewVignetteIntensity;
+    }
     
     // FOV adjustments
     float TargetFOV = ((MovementState == EMovementState::State_Sprint || MovementState == EMovementState::State_Slide) && GetVelocity().Size() > MovementDataMap[EMovementState::State_Walk].MaxWalkSpeed)? BaseFOV + SpeedFOVChange : BaseFOV;

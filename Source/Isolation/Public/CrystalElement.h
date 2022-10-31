@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FPSCharacter.h"
 #include "GameFramework/Actor.h"
 #include "CrystalElement.generated.h"
 
@@ -31,9 +32,25 @@ private:
 	UPROPERTY(EditInstanceOnly, Category = "Crystal Element")
 	float InfluenceSphereRadius = 150.0f;
 
-	UFUNCTION()
-	void HandleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	UPROPERTY(EditInstanceOnly, Category = "Crystal Element")
+	float TimeFrame = 1.0f;
 
+	UPROPERTY(EditInstanceOnly, Category = "Crystal Element")
+	float MaxBreathDamage = 2.0f;
+
+	FTimerHandle BreathDamageTimerHandle;
+
+	UPROPERTY()
+	AFPSCharacter* FPSCharacterReference;
+
+	UFUNCTION()
+	void BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+
+	UFUNCTION()
+	void EndOverlap( UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	void ApplyBreathDamage() const;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

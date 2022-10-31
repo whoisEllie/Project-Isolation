@@ -22,10 +22,38 @@ void ACrystalElement::OnConstruction(const FTransform& Transform)
 	InfluenceRadiusSphere->SetSphereRadius(InfluenceSphereRadius);
 }
 
-void ACrystalElement::HandleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void ACrystalElement::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Hello world!"));
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Entered sphere of influence"));
+
+	if ((FPSCharacterReference = Cast<AFPSCharacter>(OtherActor)))
+	{
+		GetWorldTimerManager().SetTimer(BreathDamageTimerHandle, this, &ACrystalElement::ApplyBreathDamage, TimeFrame, true, TimeFrame);
+	}
+}
+
+void ACrystalElement::EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Exited sphere of influence"));
+
+	GetWorldTimerManager().ClearTimer(BreathDamageTimerHandle);
+
+	if (FPSCharacterReference)
+	{
+		FPSCharacterReference->ResumeBreathHealingTimer();
+	}
+}
+
+void ACrystalElement::ApplyBreathDamage() const
+{
+	if (FPSCharacterReference)
+	{
+		FPSCharacterReference->SubtractXFromBreathHealth(MaxBreathDamage * ((FMath::Clamp((1 - FVector::Distance(GetActorLocation(), FPSCharacterReference->GetActorLocation())/InfluenceSphereRadius), 0.25f, 1.0f))));
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Subtracted from breath health"));
 }
 
 // Called when the game starts or when spawned
@@ -33,6 +61,6 @@ void ACrystalElement::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InfluenceRadiusSphere->OnComponentBeginOverlap.AddDynamic(this, &ACrystalElement::HandleOverlap);
-	
+	InfluenceRadiusSphere->OnComponentEndOverlap.AddDynamic(this, &ACrystalElement::EndOverlap);
+	InfluenceRadiusSphere->OnComponentBeginOverlap.AddDynamic(this, &ACrystalElement::BeginOverlap);
 }

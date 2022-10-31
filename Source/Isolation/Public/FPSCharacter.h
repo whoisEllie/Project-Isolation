@@ -6,8 +6,11 @@
 #include "InputAction.h"
 #include "InputActionValue.h"
 // ReSharper disable once CppUnusedIncludeDirective
+#include <string>
+
 #include "InputMappingContext.h" // Rider may mark this as unused, but this is incorrect and removal will cause issues
 #include "WeaponBase.h"
+#include "Camera/CameraComponent.h"
 #include "Components/InventoryComponent.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
@@ -108,6 +111,24 @@ public:
 
 	/** Returns whether the player is crouching or not */
 	bool IsPlayerCrouching() const { return bIsCrouching; }
+
+	/** Subtracts the given amount from the player's breath health */
+	void SubtractXFromBreathHealth(const float XToSubtract)
+	{
+		BreathHealth = FMath::Clamp(BreathHealth - XToSubtract, 0.0f, 100.0f);
+		if (bDrawDebug)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::SanitizeFloat(XToSubtract));
+		}
+		GetWorldTimerManager().ClearTimer(BreathRegeneration);
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, FString::SanitizeFloat(BreathHealth));
+		if (FMath::IsNearlyEqual(BreathHealth, 0.0f, 0.1f))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Red, TEXT("WOULD HAVE DIED HERE"));
+		}
+	}
+
+	void ResumeBreathHealingTimer() { GetWorldTimerManager().SetTimer(BreathRegeneration, this, &AFPSCharacter::RegenerateBreath, 0.25f, true, 0.25f); }
 	
 	/** Returns the character's current movement state */
 	UFUNCTION(BlueprintPure, Category = "FPS Character")
@@ -269,6 +290,17 @@ private:
 	/** Called every frame */
 	virtual void Tick(float DeltaTime) override;
 
+	/** Quickly regenerating breath */
+	void RegenerateBreath()
+	{
+		BreathHealth = FMath::Clamp(BreathHealth + 5.0f, 0.0f, 100.0f);
+		if (FMath::IsNearlyEqual(BreathHealth, 100.0f, 0.25f))
+		{
+			GetWorldTimerManager().ClearTimer(BreathRegeneration);
+		}
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, FString::SanitizeFloat(BreathHealth));
+	}
+
 #pragma endregion 
 
 #pragma region USER_VARIABLES
@@ -313,7 +345,7 @@ private:
 	int VaultTraceAmount = 25.0f;
 
 	/** Curve that controls motion during vault */
-	UPROPERTY(EditAnywhere, Category = "Movement | Vault")
+	UPROPERTY(EditDefaultsOnly, Category = "Movement | Vault")
 	UCurveFloat* VaultTimelineCurve;
 	
 	/** A map holding data for each movement state */
@@ -335,6 +367,14 @@ private:
 	/** Name of the socket we attach our camera to */
 	UPROPERTY(EditDefaultsOnly, Category = "Camera | Socket")
 	FName CameraSocketName;
+
+	/** The speed at which to interpolate changes to the vignette intensity */
+	UPROPERTY(EditDefaultsOnly, Category = "Camera | Effects")
+	float CameraVignetteInterpSpeed = 4.0f;
+
+	/** The curve that determines the intensity of the vignette at various stages of breath */
+	UPROPERTY(EditDefaultsOnly, Category = "Camera | Effects")
+	UCurveFloat* VignetteMappingCurve;
 	
 	/** The material parameter collection that stores the scope opacity parameter to be changed */
 	UPROPERTY(EditDefaultsOnly, Category = "Materials")
@@ -427,12 +467,17 @@ private:
 
 	/** The right look value (used to drive procedural weapon sway) */
 	float MouseX;
+
+	/** The breath 'health' of the player (i.e. how much oxygen they have left). Used with XB-3 */
+	float BreathHealth = 100.0f;
 	
 	/** The target location of a vault or mantle */
 	FTransform VaultTargetLocation;
 
 	/** Timer manager for sliding */
 	FTimerHandle SlideStop;
+
+	FTimerHandle BreathRegeneration;
 
 	/** A reference to the player's Inventory Component */ 
 	UPROPERTY()
