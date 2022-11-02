@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AmmoPickup.h"
+#include "Interactables/AmmoPickup.h"
 #include "FPSCharacter.h"
 #include "FPSCharacterController.h"
 #include "Components/StaticMeshComponent.h"
@@ -38,8 +38,10 @@ void AAmmoPickup::BeginPlay()
 	}
 }
 
-void AAmmoPickup::Interact()
+void AAmmoPickup::Interact(AActor* InteractionDelegate)
 {
+	Super::Interact(InteractionDelegate);
+	
 	if (!bIsEmpty)
 	{
 		const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));

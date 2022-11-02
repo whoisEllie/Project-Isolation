@@ -166,7 +166,9 @@ public:
 
 	/** Returns the Inventory Component */
 	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
-
+	
+	UArrowComponent* GetDocumentLocationArrow() const { return DocInspectLocation; }
+	
 	/** Sets default values for this character's properties */
 	AFPSCharacter();
 
@@ -188,6 +190,10 @@ protected:
 	/** The component used to play audio for footsteps */
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	UAudioComponent* FootstepAudioComp;
+
+	/** Used to mark the location where documents that are being inspected will translate to */
+	UPROPERTY(EditDefaultsOnly, Category = "Compoennts")
+	UArrowComponent* DocInspectLocation;
 	
 	/** Hand animation blend space for when the player has no weapon  */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations | Blend Spaces")

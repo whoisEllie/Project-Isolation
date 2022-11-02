@@ -67,7 +67,7 @@ protected:
 private:
 	
 	/** Interact function from Interact Interface */
-	virtual void Interact() override;
+	virtual void Interact(AActor* InteractionDelegate) override;
 	
 	/** Sets default values for this actor's properties */
 	AAmmoPickup();

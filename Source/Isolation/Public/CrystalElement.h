@@ -9,6 +9,7 @@
 
 class USphereComponent;
 class UStaticMeshComponent;
+class UBillboardComponent;
 
 UCLASS()
 class ISOLATION_API ACrystalElement : public AActor
@@ -26,6 +27,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	USphereComponent* InfluenceRadiusSphere;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UBillboardComponent* SelectionBillboard;
 
 private:
 

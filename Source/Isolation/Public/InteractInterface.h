@@ -24,5 +24,5 @@ public:
 
 	/** Called by the interact interface */
 	UFUNCTION()
-	virtual void Interact();
+	virtual void Interact(AActor* InteractionDelegate);
 };

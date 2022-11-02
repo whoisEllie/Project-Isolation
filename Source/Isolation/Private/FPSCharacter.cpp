@@ -9,6 +9,7 @@
 #include "AI/AIManager.h"
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
+#include "Components/ArrowComponent.h"
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InteractionComponent.h"
@@ -50,6 +51,10 @@ AFPSCharacter::AFPSCharacter()
     FootstepAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("FootstepAudioComp"));
     FootstepAudioComp->SetupAttachment(RootComponent);
     FootstepAudioComp->bAutoActivate = false;
+
+    // Spawning the document location arrow
+    DocInspectLocation = CreateDefaultSubobject<UArrowComponent>(TEXT("DocumentInspectLocationArrow"));
+    DocInspectLocation->SetupAttachment(CameraComp);
     
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
 }

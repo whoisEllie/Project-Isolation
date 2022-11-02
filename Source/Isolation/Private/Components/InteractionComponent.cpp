@@ -2,11 +2,9 @@
 
 
 #include "Components/InteractionComponent.h"
-#include "AmmoPickup.h"
 #include "EnhancedInputComponent.h"
 #include "FPSCharacter.h"
-#include "InteractionActor.h"
-#include "WeaponPickup.h"
+#include "Interactables/InteractionActor.h"
 #include "Camera/CameraComponent.h"
 
 // Sets default values for this component's properties
@@ -52,7 +50,7 @@ void UInteractionComponent::WorldInteract()
             if(InteractionHit.GetActor()->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
             {
                 // Calling the Interact function within our hit actor via the interface
-                Cast<IInteractInterface>(InteractionHit.GetActor())->Interact();
+                Cast<IInteractInterface>(InteractionHit.GetActor())->Interact(this->GetOwner());
             }
         }
     }

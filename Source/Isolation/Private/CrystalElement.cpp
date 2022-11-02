@@ -2,6 +2,8 @@
 
 
 #include "CrystalElement.h"
+
+#include "Components/BillboardComponent.h"
 #include "Components/SphereComponent.h"
 
 // Sets default values
@@ -13,6 +15,9 @@ ACrystalElement::ACrystalElement()
 	InfluenceRadiusSphere = CreateDefaultSubobject<USphereComponent>(TEXT("Influence Sphere"));
 	InfluenceRadiusSphere->SetSphereRadius(InfluenceSphereRadius);
 	InfluenceRadiusSphere->SetupAttachment(CrystalMesh);
+
+	SelectionBillboard = CreateDefaultSubobject<UBillboardComponent>(TEXT("Billboard Component"));
+	SelectionBillboard->SetupAttachment(CrystalMesh);
 }
 
 void ACrystalElement::OnConstruction(const FTransform& Transform)

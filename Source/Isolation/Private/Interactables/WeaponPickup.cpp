@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "WeaponPickup.h"
+#include "Interactables/WeaponPickup.h"
 #include "FPSCharacter.h"
 #include "WeaponBase.h"
 #include "Kismet/GameplayStatics.h"
@@ -144,8 +144,10 @@ void AWeaponPickup::SpawnAttachmentMesh()
 	}
 }
 
-void AWeaponPickup::Interact()
+void AWeaponPickup::Interact(AActor* InteractionDelegate)
 {
+	Super::Interact(InteractionDelegate);
+	
 	// Getting a reference to the Character Controller
 	const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 

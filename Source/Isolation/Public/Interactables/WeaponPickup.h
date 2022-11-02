@@ -51,7 +51,7 @@ private:
 	AWeaponPickup();
 
 	/** Interface function */
-	virtual void Interact() override;
+	virtual void Interact(AActor* InteractionDelegate) override;
 
 	/** Called every time a variable is changed or the actor is moved in the editor */
 	virtual void OnConstruction(const FTransform& Transform) override;

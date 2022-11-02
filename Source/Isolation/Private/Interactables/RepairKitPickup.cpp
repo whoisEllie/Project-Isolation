@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "RepairKitPickup.h"
+#include "Interactables/RepairKitPickup.h"
 
 #include "FPSCharacter.h"
 #include "FPSCharacterController.h"
@@ -9,9 +9,9 @@
 #include "Kismet/GameplayStatics.h"
 
 
-void ARepairKitPickup::Interact()
+void ARepairKitPickup::Interact(AActor* InteractionDelegate)
 {
-	Super::Interact();
+	Super::Interact(InteractionDelegate);
 
 	const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	AFPSCharacterController* CharacterController = Cast<AFPSCharacterController>(PlayerCharacter->GetController());

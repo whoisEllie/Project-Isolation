@@ -15,7 +15,7 @@ class ISOLATION_API ARepairKitPickup : public AInteractionActor
 	GENERATED_BODY()
 	
 	/** Called from the interact interface */
-	virtual void Interact() override;
+	virtual void Interact(AActor* InteractionDelegate) override;
 
 	virtual void BeginPlay() override;
 
