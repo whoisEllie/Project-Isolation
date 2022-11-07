@@ -55,6 +55,10 @@ AFPSCharacter::AFPSCharacter()
     // Spawning the document location arrow
     DocInspectLocation = CreateDefaultSubobject<UArrowComponent>(TEXT("DocumentInspectLocationArrow"));
     DocInspectLocation->SetupAttachment(CameraComp);
+
+    // Spawning the bullet flyby component
+    FlybyAreaComponent = CreateDefaultSubobject<USphereComponent>(TEXT("FlybyAreaComp"));
+    FlybyAreaComponent->SetupAttachment(RootComponent);
     
     DefaultCapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight(); // setting the default height of the capsule
 }
@@ -94,6 +98,40 @@ void AFPSCharacter::PawnClientRestart()
 {
     Super::PawnClientRestart();
 
+    // Make sure that we have a valid PlayerController.
+    if (const AFPSCharacterController* PlayerController = Cast<AFPSCharacterController>(GetController()))
+    {
+        // Get the Enhanced Input Local Player Subsystem from the Local Player related to our Player Controller.
+        if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+        {
+            // PawnClientRestart can run more than once in an Actor's lifetime, so start by clearing out any leftover mappings.
+            Subsystem->ClearAllMappings();
+
+            // Add each mapping context, along with their priority values. Higher values outprioritize lower values.
+            Subsystem->AddMappingContext(BaseMappingContext, BaseMappingPriority);
+        }
+    }
+}
+
+void AFPSCharacter::UpdateInputMappingContext(const UInputMappingContext* NewMappingContext)
+{
+    // Make sure that we have a valid PlayerController.
+    if (const AFPSCharacterController* PlayerController = Cast<AFPSCharacterController>(GetController()))
+    {
+        // Get the Enhanced Input Local Player Subsystem from the Local Player related to our Player Controller.
+        if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+        {
+            // PawnClientRestart can run more than once in an Actor's lifetime, so start by clearing out any leftover mappings.
+            Subsystem->ClearAllMappings();
+
+            // Add each mapping context, along with their priority values. Higher values outprioritize lower values.
+            Subsystem->AddMappingContext(NewMappingContext, BaseMappingPriority);
+        }
+    } 
+}
+
+void AFPSCharacter::ResetInputMappingContext()
+{
     // Make sure that we have a valid PlayerController.
     if (const AFPSCharacterController* PlayerController = Cast<AFPSCharacterController>(GetController()))
     {
@@ -662,6 +700,12 @@ void AFPSCharacter::Tick(const float DeltaTime)
             }
         }
     }
+}
+
+void AFPSCharacter::PlayFlybySounds(FHitResult Hit)
+{
+    UGameplayStatics::PlaySoundAtLocation(GetWorld(), FlybySounds, Hit.Location);
+    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Orange, "Playing flyby sounds");
 }
 
 // Called to bind functionality to input

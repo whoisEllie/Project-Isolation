@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputMappingContext.h"
 #include "InteractionBase.h"
 #include "DocumentPickup.generated.h"
 
@@ -32,4 +33,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Interpolation")
 	float InterpTime = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputMappingContext* InspectMappingContext;
 };

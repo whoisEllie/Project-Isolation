@@ -12,6 +12,7 @@
 #include "WeaponBase.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InventoryComponent.h"
+#include "Components/SphereComponent.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "Widgets/PauseWidget.h"
@@ -168,6 +169,13 @@ public:
 	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 	
 	UArrowComponent* GetDocumentLocationArrow() const { return DocInspectLocation; }
+
+	void UpdateInputMappingContext(const UInputMappingContext* NewMappingContext);
+
+	void ResetInputMappingContext();
+
+	UFUNCTION(BlueprintCallable, Category = "FPS Character")
+	void PlayFlybySounds(FHitResult Hit);
 	
 	/** Sets default values for this character's properties */
 	AFPSCharacter();
@@ -192,8 +200,11 @@ protected:
 	UAudioComponent* FootstepAudioComp;
 
 	/** Used to mark the location where documents that are being inspected will translate to */
-	UPROPERTY(EditDefaultsOnly, Category = "Compoennts")
+	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	UArrowComponent* DocInspectLocation;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Componentsy")
+	USphereComponent* FlybyAreaComponent;
 	
 	/** Hand animation blend space for when the player has no weapon  */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animations | Blend Spaces")
@@ -228,7 +239,7 @@ private:
 	virtual void BeginPlay() override;
 
 	virtual void PawnClientRestart() override;
-	
+
 	/** Alternative to the built in Crouch function
 	 *  Handles crouch input and decides what action to perform based on the character's current state
 	 */
@@ -394,6 +405,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Footsteps")
 	TArray<UPhysicalMaterial*> SurfaceMaterialArray;
 
+	/** Sound cue for bullet flyby sounds */
+	UPROPERTY(EditDefaultsOnly, Category = "Flyby")
+	USoundBase* FlybySounds;
+
 #pragma endregion 
 
 #pragma region INTERNAL_VARIABLES
@@ -446,6 +461,9 @@ private:
 	
 	/** Whether the character is crouching */
 	bool bIsCrouching;
+
+	/** Whether the character should be able to use movement input controls */
+	bool bMovementInput;
 	
 	/** Keeps track of the opacity of scopes */
 	float ScopeBlend;

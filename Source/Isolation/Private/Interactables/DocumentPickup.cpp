@@ -4,6 +4,7 @@
 
 #include "FPSCharacter.h"
 #include "Components/ArrowComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 
@@ -25,13 +26,22 @@ void ADocumentPickup::Interact(AActor* InteractionDelegate)
 	if (bReturnToOrigin)
 	{
 		UKismetSystemLibrary::MoveComponentTo(MeshComp, BaseLocation, BaseRotation, false, false, InterpTime, false, EMoveComponentAction::Type::Move, LatentInfo);
+		AFPSCharacter* PlayerReference = Cast<AFPSCharacter>(InteractionDelegate);
+		if (PlayerReference)
+		{
+			PlayerReference->ResetInputMappingContext();
+		}	
 		bReturnToOrigin = false;
 	}
 	else if (CharacterRef)
 	{
-		MeshComp->AttachToComponent(CharacterRef->GetDocumentLocationArrow(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		// What do I do here? Design question - lock the player in place or let them move around with a document 🤔
 		UKismetSystemLibrary::MoveComponentTo(MeshComp, CharacterRef->GetDocumentLocationArrow()->GetComponentLocation(), CharacterRef->GetDocumentLocationArrow()->GetComponentRotation() , false, false, InterpTime, false, EMoveComponentAction::Type::Move, LatentInfo);
+		AFPSCharacter* PlayerReference = Cast<AFPSCharacter>(InteractionDelegate);
+		if (PlayerReference)
+		{
+			PlayerReference->UpdateInputMappingContext(InspectMappingContext);
+		}
 		bReturnToOrigin = true;
 	}
 }	
