@@ -9,6 +9,8 @@ public class IsolationTarget : TargetRules
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
+		bOverrideBuildEnvironment = true;
+		AdditionalCompilerArguments = "-Wno-unused-but-set-variable";
 		ExtraModuleNames.AddRange( new string[] { "Isolation" } );
 	}
 }

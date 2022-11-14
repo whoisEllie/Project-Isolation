@@ -179,10 +179,6 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
 	int ClipSize;
 
-	/** The default health of the weapon (Spawned on the pickup) */
-	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
-	float WeaponHealth = 100.0f;
-
 	/** The rate of fire of this magazine attachment */
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
 	float FireRate;
@@ -190,6 +186,10 @@ struct FAttachmentData : public FTableRowBase
 	/** Whether this magazine supports automatic fire */
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
 	bool AutomaticFire;
+	
+	/** The amount of damage the weapon takes every time it is fired */
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
+	float PerShotDegradation;
 	
 	/** The vertical recoil curve to be used with this magazine */
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
@@ -426,6 +426,10 @@ struct FStaticWeaponData : public FTableRowBase
 	/** Whether this weapon supports automatic fire */
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)", meta=(EditCondition="!bHasAttachments"))
 	bool bAutomaticFire;
+
+	/** The amount of damage the weapon takes every time it is fired */
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)", meta=(EditCondition="!bHasAttachments"))
+	float PerShotDegradation;
 		
 	/** The vertical recoil curve to be used with this weapon */
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)", meta=(EditCondition="!bHasAttachments"))

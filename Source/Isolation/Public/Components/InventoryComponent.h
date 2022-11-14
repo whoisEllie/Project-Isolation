@@ -69,6 +69,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FText GetCurrentWeaponRemainingAmmo() const;
 
+	void DestroyWeapon();
+
 	/** The input actions implemented by this component */
 	UPROPERTY()
 	UInputAction* FiringAction;

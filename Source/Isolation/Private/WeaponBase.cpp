@@ -10,6 +10,7 @@
 #include "FPSCharacterController.h"
 #include "FPSCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Components/InteractionComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Isolation/Isolation.h"
 #include "Particles/ParticleSystem.h"
@@ -185,6 +186,7 @@ void AWeaponBase::SpawnAttachments()
                     WeaponData.SilencedSound = AttachmentData->SilencedFiringSoundOverride;
                     WeaponData.RateOfFire = AttachmentData->FireRate;
                     WeaponData.bAutomaticFire = AttachmentData->AutomaticFire;
+                    WeaponData.PerShotDegradation = AttachmentData->PerShotDegradation;
                     WeaponData.VerticalRecoilCurve = AttachmentData->VerticalRecoilCurve;
                     WeaponData.HorizontalRecoilCurve = AttachmentData->HorizontalRecoilCurve;
                     WeaponData.RecoilCameraShake = AttachmentData->RecoilCameraShake;
@@ -324,7 +326,7 @@ void AWeaponBase::Fire()
         
 
         // Subtracting from the ammunition count of the weapon
-       GeneralWeaponData.ClipSize -= 1;
+        GeneralWeaponData.ClipSize -= 1;
 
         const int NumberOfShots = WeaponData.bIsShotgun? WeaponData.ShotgunPellets : 1;
         // We run this for the number of bullets/projectiles per shot, in order to support shotguns
@@ -480,17 +482,26 @@ void AWeaponBase::Fire()
         }
 
 
+        // Spawning the ejection bullets
         FRotator EjectionSpawnVector = FRotator::ZeroRotator;
         EjectionSpawnVector.Yaw = 270.0f;
         UNiagaraFunctionLibrary::SpawnSystemAttached(EjectedCasing, MagazineAttachment, FName("ejection_port"),
                                                      FVector::ZeroVector, EjectionSpawnVector,
                                                      EAttachLocation::SnapToTarget, true, true);
 
+        // Stopping the recoil timelines if we don't have automatic fire
         if (!WeaponData.bAutomaticFire)
         {
             VerticalRecoilTimeline.Stop();
             HorizontalRecoilTimeline.Stop();
             RecoilRecovery();
+        }
+
+        // Applying weapon damage
+        GeneralWeaponData.WeaponHealth -= WeaponData.PerShotDegradation;
+        if (GeneralWeaponData.WeaponHealth <= 0)
+        {
+           PlayerCharacter->GetInventoryComponent()->DestroyWeapon(); 
         }
     }
     else if (bCanFire && !bIsReloading)

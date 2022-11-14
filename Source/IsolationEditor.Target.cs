@@ -9,6 +9,8 @@ public class IsolationEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
+		bOverrideBuildEnvironment = true;
+		AdditionalCompilerArguments = "-Wno-unused-but-set-variable";
 		ExtraModuleNames.AddRange( new string[] { "Isolation" } );
 	}
 }

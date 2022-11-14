@@ -47,6 +47,17 @@ void UInventoryComponent::ScrollWeapon(const FInputActionValue& Value)
 	SwapWeapon(NewID);
 }
 
+void UInventoryComponent::DestroyWeapon()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StopFire();
+		const int* CurrentWeaponId = EquippedWeapons.FindKey(CurrentWeapon);
+		EquippedWeapons.Remove(*CurrentWeaponId);
+		CurrentWeapon->Destroy();
+	}
+}
+
 void UInventoryComponent::SwapWeapon(const int SlotId)
 {
 	// Returning if the target weapon is already equipped or it does not exist
@@ -118,6 +129,9 @@ void UInventoryComponent::UpdateWeapon(const TSubclassOf<AWeaponBase> NewWeapon,
             EquippedWeapons[InventoryPosition]->Destroy();
         }
     }
+
+
+	
     // Spawns the new weapon and sets the player as it's owner
     AWeaponBase* SpawnedWeapon = GetWorld()->SpawnActor<AWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
     if (SpawnedWeapon)
