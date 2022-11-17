@@ -69,7 +69,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FText GetCurrentWeaponRemainingAmmo() const;
 
-	void DestroyWeapon();
+	/** Destroys the weapon that it is called from
+	 *	@param WeaponDestroyedHandsAnim The animation the hands mesh should play when the weapon has been destroyed
+	 *	@param WeaponDestroyedParticleSystem The particle system to play during the transition to the DestroyedMesh
+	 */
+	void BeginDestroyCurrentWeapon(UAnimMontage* WeaponDestroyedHandsAnim, UNiagaraSystem* WeaponDestroyedParticleSystem);
+
 
 	/** The input actions implemented by this component */
 	UPROPERTY()
@@ -110,6 +115,9 @@ private:
 	/** Reloads the weapon */
 	void Reload();
 
+	/** Destroys the weapon component */
+	void DestroyCurrentWeapon();
+	
 	/** The distance at which pickups for old weapons spawn during a weapon swap */
 	UPROPERTY(EditDefaultsOnly, Category = "Camera | Interaction")
 	float WeaponSpawnDistance = 100.0f;
@@ -128,4 +136,6 @@ private:
 	/** The player's currently equipped weapon */
 	UPROPERTY()
 	AWeaponBase* CurrentWeapon;
+
+	FTimerHandle DestroyWeapon;
 };

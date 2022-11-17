@@ -5,9 +5,12 @@
 #include "EnhancedInputComponent.h"
 #include "FPSCharacter.h"
 #include "FPSCharacterController.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "WeaponBase.h"
 #include "Interactables/WeaponPickup.h"
 #include "Camera/CameraComponent.h"
+#include "Engine/StaticMeshActor.h"
 
 // Sets default values for this component's properties
 UInventoryComponent::UInventoryComponent()
@@ -47,14 +50,27 @@ void UInventoryComponent::ScrollWeapon(const FInputActionValue& Value)
 	SwapWeapon(NewID);
 }
 
-void UInventoryComponent::DestroyWeapon()
+void UInventoryComponent::BeginDestroyCurrentWeapon(UAnimMontage* WeaponDestroyedHandsAnim, UNiagaraSystem* WeaponDestroyedParticleSystem)
 {
 	if (CurrentWeapon)
 	{
 		CurrentWeapon->StopFire();
-		const int* CurrentWeaponId = EquippedWeapons.FindKey(CurrentWeapon);
-		EquippedWeapons.Remove(*CurrentWeaponId);
-		CurrentWeapon->Destroy();
+
+		if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
+		{
+			// Playing animation montage
+			FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(WeaponDestroyedHandsAnim);
+			
+			// Spawning the particle system
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponDestroyedParticleSystem,
+			                                               FPSCharacter->GetHandsMesh()->GetSocketLocation(
+				                                               CurrentWeapon->GetStaticWeaponData()->
+				                                                              WeaponAttachmentSocketName),
+			                                               FRotator::ZeroRotator);
+
+			// Updating the weapon meshes
+			
+		}
 	}
 }
 
@@ -84,10 +100,18 @@ void UInventoryComponent::SwapWeapon(const int SlotId)
         {
         	if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
         	{
-        		FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->GetStaticWeaponData()->WeaponEquip, 1.0f);
+	            const float AnimTime = FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->GetStaticWeaponData()->WeaponEquip, 1.0f);
+        		GetWorld()->GetTimerManager().SetTimer(DestroyWeapon, this, &UInventoryComponent::DestroyCurrentWeapon, AnimTime, false, AnimTime);
         	}
         }
     }
+}
+
+void UInventoryComponent::DestroyCurrentWeapon()
+{
+	const int* CurrentWeaponId = EquippedWeapons.FindKey(CurrentWeapon);
+	EquippedWeapons.Remove(*CurrentWeaponId);
+	CurrentWeapon->Destroy();
 }
 
 // Spawns a new weapon (either from weapon swap or picking up a new weapon)

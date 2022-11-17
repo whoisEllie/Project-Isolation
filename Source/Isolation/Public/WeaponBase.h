@@ -87,6 +87,9 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "General")
 	USkeletalMesh* AttachmentMesh;
 
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	USkeletalMesh* AttachmentBrokenMesh;
+
 	/** The static mesh displayed on the weapon pickup */
 	UPROPERTY(EditDefaultsOnly, Category = "General")
 	UStaticMesh* PickupMesh;
@@ -234,6 +237,16 @@ struct FAttachmentData : public FTableRowBase
 	/** An override for the player's reload animation */
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
 	UAnimMontage* PlayerReload;
+	
+	/** The animation to play when the weapon gets destroyed */
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
+	UAnimMontage* WeaponDestroyedHandsAnim;
+	
+	/** particle effect (Niagara System) to be spawned when the weapon is destroyed to mask the transition between
+	 *	the standard weapon model and the destroyed one
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::magazine"))
+	UNiagaraSystem* WeaponDestroyedParticleSystem;
 
 	/** The offset applied to the camera to align with the sights */
 	UPROPERTY(EditDefaultsOnly, Category = "Sights", meta=(EditCondition="AttachmentType == EAttachmentType::Sights"))
@@ -276,6 +289,10 @@ struct FStaticWeaponData : public FTableRowBase
 	/** Determines the socket or bone with which the weapon will be attached to the character's hand (typically the root bone or the grip bone) */
 	UPROPERTY(EditDefaultsOnly, Category = "Required")
 	FName WeaponAttachmentSocketName;
+
+	/** The skeletal mesh with which to replace the base when the weapon has been destroyed */
+	UPROPERTY(EditDefaultsOnly, Category = "Required")
+	USkeletalMesh* DestroyedMesh;
 		
 	/** The distance the shot will travel */
 	UPROPERTY(EditDefaultsOnly, Category = "Required")
@@ -360,6 +377,10 @@ struct FStaticWeaponData : public FTableRowBase
 	/** An override for the player's reload animation */
 	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)", meta=(EditCondition="!bHasAttachments"))
 	UAnimMontage* WeaponUnequip;
+	
+	/** The animation to play when the weapon gets destroyed */
+	UPROPERTY(EditDefaultsOnly, Category = "Unique Weapon (No Attachments)", meta=(EditCondition="!bHasAttachments"))
+	UAnimMontage* WeaponDestroyedHandsAnim;
 
 	/** Firing Mechanisms */
 
@@ -499,6 +520,12 @@ struct FStaticWeaponData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "VFX", meta=(EditCondition="!bHasAttachments"))
 	UParticleSystem* BulletTrace;
 
+	/** particle effect (Niagara System) to be spawned when the weapon is destroyed to mask the transition between
+	 *	the standard weapon model and the destroyed one
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "VFX", meta=(EditCondition="!bHasAttachments"))
+	UNiagaraSystem* WeaponDestroyedParticleSystem;
+
 	/** Sound bases */
 
 	/** Firing sound */
@@ -601,6 +628,9 @@ public:
 	/** Returns the vertical camera offset for this weapon instance */
 	UFUNCTION(BlueprintCallable)
 	float GetVerticalCameraOffset() const { return VerticalCameraOffset; }
+
+	/** Sets the weapon's display variables to the damaged state */
+	void SetWeaponDestroyed();
 	
 private:
 

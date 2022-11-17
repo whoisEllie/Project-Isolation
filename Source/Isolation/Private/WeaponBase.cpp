@@ -10,10 +10,49 @@
 #include "FPSCharacterController.h"
 #include "FPSCharacter.h"
 #include "Camera/CameraComponent.h"
-#include "Components/InteractionComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Isolation/Isolation.h"
 #include "Particles/ParticleSystem.h"
+
+void AWeaponBase::SetWeaponDestroyed()
+{
+
+    MeshComp->SetSkeletalMesh(WeaponData.DestroyedMesh);
+    
+    if (WeaponData.bHasAttachments)
+    {
+        for (FName RowName : GeneralWeaponData.WeaponAttachments)
+        {
+            // Going through each of our attachments and updating our static weapon data accordingly
+            AttachmentData = WeaponData.AttachmentsDataTable->FindRow<FAttachmentData>(
+                RowName, RowName.ToString(), true);
+
+            if (AttachmentData)
+            {
+                if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
+                {
+                    BarrelAttachment->SetSkeletalMesh(AttachmentData->AttachmentBrokenMesh);
+                }
+                else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
+                {
+                    MagazineAttachment->SetSkeletalMesh(AttachmentData->AttachmentBrokenMesh);
+                }
+                else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
+                {
+                    SightsAttachment->SetSkeletalMesh(AttachmentData->AttachmentBrokenMesh);
+                }
+                else if (AttachmentData->AttachmentType == EAttachmentType::Stock)
+                {
+                    StockAttachment->SetSkeletalMesh(AttachmentData->AttachmentBrokenMesh);
+                }
+                else if (AttachmentData->AttachmentType == EAttachmentType::Grip)
+                {
+                    GripAttachment->SetSkeletalMesh(AttachmentData->AttachmentBrokenMesh);
+                }
+            }
+        }
+    }
+}
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -198,6 +237,8 @@ void AWeaponBase::SpawnAttachments()
                     WeaponData.EmptyPlayerReload = AttachmentData->EmptyPlayerReload;
                     WeaponData.PlayerReload = AttachmentData->PlayerReload;
                     WeaponData.Gun_Shot = AttachmentData->Gun_Shot;
+                    WeaponData.WeaponDestroyedHandsAnim = AttachmentData->WeaponDestroyedHandsAnim;
+                    WeaponData.WeaponDestroyedParticleSystem = AttachmentData->WeaponDestroyedParticleSystem;
                     WeaponData.AccuracyDebuff = AttachmentData->AccuracyDebuff;
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
@@ -501,7 +542,7 @@ void AWeaponBase::Fire()
         GeneralWeaponData.WeaponHealth -= WeaponData.PerShotDegradation;
         if (GeneralWeaponData.WeaponHealth <= 0)
         {
-           PlayerCharacter->GetInventoryComponent()->DestroyWeapon(); 
+           PlayerCharacter->GetInventoryComponent()->BeginDestroyCurrentWeapon(WeaponData.WeaponDestroyedHandsAnim, WeaponData.WeaponDestroyedParticleSystem); 
         }
     }
     else if (bCanFire && !bIsReloading)
