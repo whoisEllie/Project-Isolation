@@ -69,7 +69,8 @@ void UInventoryComponent::BeginDestroyCurrentWeapon(UAnimMontage* WeaponDestroye
 			                                               FRotator::ZeroRotator);
 
 			// Updating the weapon meshes
-			
+			const float AnimTime = FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->GetStaticWeaponData()->WeaponDestroyedHandsAnim, 1.0f); 
+        	GetWorld()->GetTimerManager().SetTimer(DestroyWeapon, this, &UInventoryComponent::DestroyCurrentWeapon, AnimTime-0.1f, false, AnimTime-0.1f);
 		}
 	}
 }
@@ -100,8 +101,7 @@ void UInventoryComponent::SwapWeapon(const int SlotId)
         {
         	if (const AFPSCharacter* FPSCharacter = Cast<AFPSCharacter>(GetOwner()))
         	{
-	            const float AnimTime = FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->GetStaticWeaponData()->WeaponEquip, 1.0f);
-        		GetWorld()->GetTimerManager().SetTimer(DestroyWeapon, this, &UInventoryComponent::DestroyCurrentWeapon, AnimTime, false, AnimTime);
+	            FPSCharacter->GetHandsMesh()->GetAnimInstance()->Montage_Play(CurrentWeapon->GetStaticWeaponData()->WeaponEquip, 1.0f);
         	}
         }
     }

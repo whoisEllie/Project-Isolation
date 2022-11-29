@@ -1,0 +1,3 @@
+[submodule "Plugins/CoverGenerator"]
+	path = Plugins/CoverGenerator
+	url = https://github.com/whoisEllie/CoverGenerator.git
