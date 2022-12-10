@@ -13,7 +13,8 @@
 				"Niagara",
 				"UMG",
 				"Slate",
-				"SlateCore"
+				"SlateCore",
+				"AIModule"
 			]
 		}
 	],
