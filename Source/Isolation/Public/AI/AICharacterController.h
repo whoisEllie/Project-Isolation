@@ -32,11 +32,18 @@ enum class PreferredEngagementRange : uint8
  * 
  */
 UCLASS()
-class ISOLATION_API AAICharacterController : public AAIController
+class ISOLATION_API AAICharacterController : public AAIController 
 {
 	GENERATED_BODY()
 
 public:
+	AAICharacterController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	UPROPERTY(EditDefaultsOnly)
+	UAIPerceptionComponent* AiPerceptionComponent;
+
+	// Overriding team
+	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 
 	UPROPERTY()
 	AActor* TargetActor;

@@ -2,3 +2,13 @@
 
 
 #include "FPSCharacterController.h"
+
+AFPSCharacterController::AFPSCharacterController()
+{
+	TeamId = FGenericTeamId(10);
+}
+
+FGenericTeamId AFPSCharacterController::GetGenericTeamId() const
+{
+	return TeamId;
+}

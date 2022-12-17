@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
 #include "WeaponBase.h"
 #include "GameFramework/PlayerController.h"
 #include "FPSCharacterController.generated.h"
@@ -10,11 +11,13 @@
 class AWeaponBase; 
 
 UCLASS()
-class ISOLATION_API AFPSCharacterController : public APlayerController
+class ISOLATION_API AFPSCharacterController : public APlayerController, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 	
-	public:
+public:
+
+	AFPSCharacterController();
 	
 	/** Stored ammo data for the player character */
     UPROPERTY(EditDefaultsOnly, Category = "Inventory")
@@ -23,4 +26,9 @@ class ISOLATION_API AFPSCharacterController : public APlayerController
 	/** The amount of ammunition boxes that the player has */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory")
 	int AmmoBoxCount;
+
+private:
+
+	FGenericTeamId TeamId;
+	FGenericTeamId GetGenericTeamId() const;
 };
