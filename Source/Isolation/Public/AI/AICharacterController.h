@@ -6,6 +6,8 @@
 #include "AIController.h"
 #include "AICharacterController.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerceptionUpdateHandlingDelegate, const TArray<AActor*>&, UpdatedActors);
+
 UENUM()
 enum class Attitude : uint8
 {
@@ -45,6 +47,14 @@ public:
 	// Overriding team
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 
+	UFUNCTION(BlueprintCallable)
+	void PickTargetActor(TArray<AActor*> InArray);
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FPerceptionUpdateHandlingDelegate PerceptionUpdateHandlingDelegate;
+
+	virtual void BeginPlay() override;
+	
 	UPROPERTY()
 	AActor* TargetActor;
 
@@ -65,4 +75,14 @@ private:
 	bool bAllowAmbush;
 
 	bool bAllowHardpointAssignment;
+
+	int Partition(TArray<AActor*> *InArray, int Start, int End) const;
+
+	void QuickSort(TArray<AActor*> *InArray, int Start, int End);
+
+	UFUNCTION()
+	void HandlePerceptionUpdate(const TArray<AActor*>& UpdatedActors);
+
+	UPROPERTY()
+	TArray<AActor*> TargetsArray;
 };
