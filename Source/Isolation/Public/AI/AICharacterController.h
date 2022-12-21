@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Perception/AISense.h"
 #include "AICharacterController.generated.h"
+
+class UAISenseConfig_Sight;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPerceptionUpdateHandlingDelegate, const TArray<AActor*>&, UpdatedActors);
 
@@ -47,16 +50,13 @@ public:
 	// Overriding team
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 
-	UFUNCTION(BlueprintCallable)
-	void PickTargetActor(TArray<AActor*> InArray);
-
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FPerceptionUpdateHandlingDelegate PerceptionUpdateHandlingDelegate;
 
 	virtual void BeginPlay() override;
-	
-	UPROPERTY()
-	AActor* TargetActor;
+
+	UFUNCTION(BlueprintCallable)
+	AActor* GetTargetActor() const { return TargetActor; }
 
 private:
 
@@ -75,6 +75,9 @@ private:
 	bool bAllowAmbush;
 
 	bool bAllowHardpointAssignment;
+	
+	UPROPERTY()
+	AActor* TargetActor;
 
 	int Partition(TArray<AActor*> *InArray, int Start, int End) const;
 
@@ -82,6 +85,9 @@ private:
 
 	UFUNCTION()
 	void HandlePerceptionUpdate(const TArray<AActor*>& UpdatedActors);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateTargetActor();
 
 	UPROPERTY()
 	TArray<AActor*> TargetsArray;

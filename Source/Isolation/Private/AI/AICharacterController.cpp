@@ -24,21 +24,10 @@ ETeamAttitude::Type AAICharacterController::GetTeamAttitudeTowards(const AActor&
 	return ETeamAttitude::Neutral;
 }
 
-void AAICharacterController::PickTargetActor(TArray<AActor*> InArray)
-{
-	TargetsArray = InArray;
-
-	QuickSort(&TargetsArray, 0, TargetsArray.Num() - 1);
-
-	TargetActor = TargetsArray[0];
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TargetActor->GetName());
-}
-
 void AAICharacterController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Emerald, TEXT("Binding perception update"));
 	AiPerceptionComponent->OnPerceptionUpdated.AddDynamic(this, &AAICharacterController::HandlePerceptionUpdate);
 }
 
@@ -92,10 +81,22 @@ void AAICharacterController::QuickSort(TArray<AActor*> *InArray, int Start, int 
 	QuickSort(InArray, P+1, End);
 }
 
+
+
 void AAICharacterController::HandlePerceptionUpdate(const TArray<AActor*>& UpdatedActors)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Perception Updated"));
-	TargetsArray = UpdatedActors;
-	QuickSort(&TargetsArray, 0, TargetsArray.Num() - 1);
-	TargetActor = TargetsArray[0];
+	UpdateTargetActor();	
+}
+
+void AAICharacterController::UpdateTargetActor()
+{
+	AiPerceptionComponent->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), TargetsArray);
+	if (TargetsArray.Num() > 0)
+	{
+		TargetActor = TargetsArray[0];
+	}
+	else
+	{
+		TargetActor = nullptr;
+	}
 }
