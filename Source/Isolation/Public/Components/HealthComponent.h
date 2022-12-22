@@ -23,6 +23,9 @@ public:
 	/** Implementation of our delegate  */
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnHealthChangedSignature OnHealthChanged;
+
+	UFUNCTION(BlueprintPure, Category = "HealthComponent")
+	float GetHealth() const { return Health; }
 	
 protected:
 	/** Called when the game starts */

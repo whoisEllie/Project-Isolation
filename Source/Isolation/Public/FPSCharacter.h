@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "InputAction.h"
 #include "InputActionValue.h"
+#include "Perception/AISightTargetInterface.h"
 // ReSharper disable once CppUnusedIncludeDirective
 #include <string>
 
@@ -60,7 +61,7 @@ struct FMovementVariables
 };
 
 UCLASS()
-class ISOLATION_API AFPSCharacter : public ACharacter
+class ISOLATION_API AFPSCharacter : public ACharacter, public IAISightTargetInterface
 {
 	GENERATED_BODY()
 
@@ -136,6 +137,7 @@ public:
 	EMovementState GetMovementState() const { return MovementState; }
 
 	/** Returns the character's hands mesh */
+	UFUNCTION(BlueprintPure, Category = "FPS Character") //TODO: Remove after moving targeting code to C++
 	USkeletalMeshComponent* GetHandsMesh() const { return HandsMeshComp; }
 
 	/** Returns a reference to the player's camera component */
@@ -180,6 +182,7 @@ public:
 	/** Sets default values for this character's properties */
 	AFPSCharacter();
 
+	virtual bool CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutSeenLocation, int32& NumberOfLoSChecksPerformed, float& OutSightStrength, const AActor* IgnoreActor, const bool* bWasVisible, int32* UserData) const override;
 	
 protected:
 
@@ -393,6 +396,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Camera | Effects")
 	UCurveFloat* VignetteMappingCurve;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "AI | Detection")
+	TArray<FName> DetectionSocketBoneNames;
+
 	/** The material parameter collection that stores the scope opacity parameter to be changed */
 	UPROPERTY(EditDefaultsOnly, Category = "Materials")
 	UMaterialParameterCollection* ScopeOpacityParameterCollection;
