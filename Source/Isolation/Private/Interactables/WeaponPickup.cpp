@@ -80,7 +80,6 @@ void AWeaponPickup::OnConstruction(const FTransform& Transform)
 	}
 }
 
-
 void AWeaponPickup::SpawnAttachmentMesh()
 {
 	// Getting a reference to our Weapon Data table in order to see if we have attachments

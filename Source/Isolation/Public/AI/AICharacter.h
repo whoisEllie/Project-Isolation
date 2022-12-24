@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BaseAIWeapon.h"
 #include "FPSCharacter.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "AICharacter.generated.h"
@@ -18,4 +19,22 @@ class ISOLATION_API AAICharacter : public AFPSCharacter
 public:
 
 	AAICharacter();
+
+	virtual void BeginPlay() override;
+
+	void UpdateWeapon(const TSubclassOf<ABaseAIWeapon> NewWeapon) const;
+
+	UFUNCTION(BlueprintCallable, Category = "AI Character")
+	void StartFire();
+
+	UFUNCTION(BlueprintCallable, Category = "AI Character")
+	void StopFire();
+	
+private:
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI | Weapon")
+	TSubclassOf<ABaseAIWeapon> StarterWeapon;
+	
+	UPROPERTY()
+	ABaseAIWeapon* CurrentWeapon;
 };

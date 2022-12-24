@@ -233,6 +233,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Animations | Montages")
 	UAnimMontage* VaultMontage;
 
+	virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
+
 
 private:
 

@@ -6,8 +6,6 @@
 #include "Components/TimelineComponent.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
-#include "Components/SceneComponent.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "WeaponBase.generated.h"
 
 class AWeaponBase;
