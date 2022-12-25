@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseAIWeapon.h"
+#include "WeaponBase.h"
 #include "FPSCharacter.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "AICharacter.generated.h"
@@ -22,19 +22,24 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void UpdateWeapon(const TSubclassOf<ABaseAIWeapon> NewWeapon) const;
+	void UpdateWeapon(const TSubclassOf<AWeaponBase> NewWeapon);
+
+	UFUNCTION(BlueprintCallable)
+	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
 
 	UFUNCTION(BlueprintCallable, Category = "AI Character")
 	void StartFire();
 
 	UFUNCTION(BlueprintCallable, Category = "AI Character")
 	void StopFire();
+
+	virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
 	
 private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI | Weapon")
-	TSubclassOf<ABaseAIWeapon> StarterWeapon;
+	TSubclassOf<AWeaponBase> StarterWeapon;
 	
 	UPROPERTY()
-	ABaseAIWeapon* CurrentWeapon;
+	AWeaponBase* CurrentWeapon;
 };

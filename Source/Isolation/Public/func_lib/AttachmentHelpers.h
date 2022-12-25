@@ -15,7 +15,7 @@ public:
 	 * @warning Make sure that AttachmentDataTable is of type FAttachmentData
 	 * @return A randomised array of weapon attachments
 	 */
-	TArray<FName> RandomiseAllAttachments(UDataTable* AttachmentDataTable) const;
+	static TArray<FName> RandomiseAllAttachments(UDataTable* AttachmentDataTable);
 
 	/**
 	 * Clean up attachment incompatibilities in the given attachment set
@@ -24,7 +24,7 @@ public:
 	 * @warning Make sure that AttachmentDataTable is of type FAttachmentData
 	 * @return A cleaned up array of weapon attachments with no incompatibilities
 	 */
-	TArray<FName> ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments) const;
+	static TArray<FName> ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments);
 
 	/**
 	 * Collect all keys from a data table

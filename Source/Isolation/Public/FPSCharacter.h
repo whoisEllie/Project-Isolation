@@ -183,6 +183,9 @@ public:
 	AFPSCharacter();
 
 	virtual bool CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutSeenLocation, int32& NumberOfLoSChecksPerformed, float& OutSightStrength, const AActor* IgnoreActor, const bool* bWasVisible, int32* UserData) const override;
+
+	/** Called when the game starts or when spawned */
+	virtual void BeginPlay() override;
 	
 protected:
 
@@ -233,15 +236,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Animations | Montages")
 	UAnimMontage* VaultMontage;
 
-	virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
-
-
 private:
 
 #pragma region FUNCTIONS
-	
-	/** Called when the game starts or when spawned */
-	virtual void BeginPlay() override;
 
 	virtual void PawnClientRestart() override;
 

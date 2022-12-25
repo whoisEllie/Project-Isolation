@@ -177,7 +177,6 @@ void UInventoryComponent::UpdateWeapon(const TSubclassOf<AWeaponBase> NewWeapon,
             CurrentWeapon->SetActorHiddenInGame(true);
         	CurrentWeapon->StopFire();
         }
-
     	
     	// Swapping to the new weapon, enabling it and playing it's equip animation
         CurrentWeapon = EquippedWeapons[InventoryPosition];

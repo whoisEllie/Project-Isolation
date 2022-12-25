@@ -100,13 +100,6 @@ bool AFPSCharacter::CanBeSeenFrom(const FVector& ObserverLocation, FVector& OutS
     return false;
 }
 
-void AFPSCharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
-{
-    Super::GetActorEyesViewPoint(OutLocation, OutRotation);
-    OutLocation = GetMesh()->GetSocketLocation("HeadSocket");
-    OutRotation = GetMesh()->GetSocketRotation("HeadSocket");
-}
-
 // Called when the game starts or when spawned
 void AFPSCharacter::BeginPlay()
 {

@@ -9,9 +9,12 @@
 #include "Math/UnrealMathUtility.h"
 #include "FPSCharacterController.h"
 #include "FPSCharacter.h"
+#include "AI/AICharacter.h"
+#include "AI/AICharacterController.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Isolation/Isolation.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Particles/ParticleSystem.h"
 
 void AWeaponBase::SetWeaponDestroyed()
@@ -318,6 +321,20 @@ void AWeaponBase::StartFire()
     
 }
 
+void AWeaponBase::StartAiFire()
+{
+    if (bCanFire)
+    {
+        // sets a timer for firing the weapon - if bAutomaticFire is true then this timer will repeat until cleared by StopFire(), leading to fully automatic fire
+        GetWorldTimerManager().SetTimer(ShotDelay, this, &AWeaponBase::AiFire, WeaponData.RateOfFire, WeaponData.bAutomaticFire, 0.0f);
+
+        if (bShowDebug)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Started firing timer"));
+        }
+    }
+}
+
 void AWeaponBase::StartRecoil()
 {
     const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
@@ -552,6 +569,187 @@ void AWeaponBase::Fire()
         GetWorldTimerManager().ClearTimer(ShotDelay);
 
         RecoilRecovery();
+    }
+    
+}
+
+void AWeaponBase::AiFire()
+{
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("Called Ai fire in WeaponBase"));
+    
+    // Casting to the game instance (which stores all the ammunition and health variables)
+    AActor* TargetActor = Cast<AAICharacterController>(Cast<AAICharacter>(GetOwner())->GetController())->GetTargetActor();
+    AAICharacter* OwnerCharacter = Cast<AAICharacter>(GetOwner());
+    
+    // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
+    if(bCanFire && !bIsReloading && IsValid(TargetActor) && IsValid(OwnerCharacter))
+    {
+        // Printing debug strings
+        if(bShowDebug)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ai Fire", true);
+        }
+        
+
+        const int NumberOfShots = WeaponData.bIsShotgun? WeaponData.ShotgunPellets : 1;
+        // We run this for the number of bullets/projectiles per shot, in order to support shotguns
+        for (int i = 0; i < NumberOfShots; i++)
+        {
+            // Calculating the start and end points of our line trace, and applying randomised variation
+            TraceStart = WeaponData.bHasAttachments? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation) : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation); 
+            TraceStartRotation = UKismetMathLibrary::FindLookAtRotation(MeshComp->GetSocketLocation(WeaponData.MuzzleLocation), TargetActor->GetActorLocation()); 
+
+            TraceStartRotation.Pitch += FMath::FRandRange(
+                -((WeaponData.AiPitchVariation + WeaponPitchModifier)),
+                (WeaponData.AiPitchVariation + WeaponPitchModifier));
+            TraceStartRotation.Yaw += FMath::FRandRange(
+                -((WeaponData.AiYawVariation + WeaponYawModifier)),
+                (WeaponData.AiYawVariation + WeaponYawModifier));
+            TraceDirection = TraceStartRotation.Vector();
+            TraceEnd = TraceStart + (TraceDirection * (WeaponData.bIsShotgun
+                                                           ? WeaponData.ShotgunRange
+                                                           : WeaponData.LengthMultiplier));
+            
+
+            // Playing an animation on the weapon mesh
+            if (WeaponData.Gun_Shot)
+            {
+                MeshComp->PlayAnimation(WeaponData.Gun_Shot, false);
+            }
+
+            FVector EndPoint = TraceEnd;
+
+            // Drawing a line trace based on the parameters calculated previously 
+            if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ENEMYWEAPON_TRACE, QueryParams))
+            {                
+                // Drawing debug line trace
+                if (bShowDebug)
+                {
+                    DrawDebugLine(
+                        GetWorld(), (WeaponData.bHasAttachments
+                                         ? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation)
+                                         : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation)), Hit.Location,
+                        FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                }
+                
+                if (Hit.PhysMaterial.Get() == WeaponData.HeadshotDamageSurface)
+                {
+                    FinalDamage = (WeaponData.BaseDamage + DamageModifier) * WeaponData.HeadshotMultiplier;
+                }
+
+                AActor* HitActor = Hit.GetActor();
+
+                // Applying the previously set damage to the hit actor
+                UGameplayStatics::ApplyPointDamage(HitActor, WeaponData.AiDamage, TraceDirection, Hit,
+                                                   GetInstigatorController(), this, DamageType);
+
+                EndPoint = Hit.Location;
+            }
+            else
+            {
+                // Drawing debug line trace
+                if (bShowDebug)
+                {
+                    DrawDebugLine(
+                        GetWorld(), (WeaponData.bHasAttachments
+                                         ? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation)
+                                         : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation)), TraceEnd,
+                        FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                }
+            }
+
+            const FRotator ParticleRotation = (EndPoint - (WeaponData.bHasAttachments
+                                                               ? BarrelAttachment->GetSocketLocation(
+                                                                   WeaponData.MuzzleLocation)
+                                                               : MeshComp->GetSocketLocation(
+                                                                   WeaponData.MuzzleLocation))).Rotation();
+            
+            // Spawning the bullet trace particle effect
+            if (WeaponData.bHasAttachments)
+            {
+                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData.BulletTrace,
+                                                         BarrelAttachment->GetSocketLocation(
+                                                             WeaponData.ParticleSpawnLocation), ParticleRotation);
+            }
+            else
+            {
+                UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponData.BulletTrace,
+                                                         MeshComp->GetSocketLocation(WeaponData.ParticleSpawnLocation),
+                                                         ParticleRotation);
+            }
+
+            // Selecting the hit effect based on the hit physical surface material (hit.PhysMaterial.Get()) and spawning it (Niagara)
+
+            if (Hit.PhysMaterial.Get() == WeaponData.NormalDamageSurface || Hit.PhysMaterial.Get() == WeaponData.HeadshotDamageSurface)
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData.EnemyHitEffect, Hit.ImpactPoint,
+                                                               Hit.ImpactNormal.Rotation());
+            }
+            else if (Hit.PhysMaterial.Get() == WeaponData.GroundSurface)
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData.GroundHitEffect, Hit.ImpactPoint,
+                                                               Hit.ImpactNormal.Rotation());
+            }
+            else if (Hit.PhysMaterial.Get() == WeaponData.RockSurface)
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData.RockHitEffect, Hit.ImpactPoint,
+                                                               Hit.ImpactNormal.Rotation());
+            }
+            else
+            {
+                UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), WeaponData.DefaultHitEffect, Hit.ImpactPoint,
+                                                               Hit.ImpactNormal.Rotation());
+            }
+        }
+
+        // Spawning the muzzle flash particle
+        if (WeaponData.bHasAttachments)
+        {
+            UGameplayStatics::SpawnEmitterAttached(WeaponData.MuzzleFlash, BarrelAttachment,
+                                                   WeaponData.ParticleSpawnLocation, FVector::ZeroVector,
+                                                   BarrelAttachment->
+                                                   GetSocketRotation(WeaponData.ParticleSpawnLocation),
+                                                   FVector::OneVector);
+        }
+        else
+        {
+            UGameplayStatics::SpawnEmitterAttached(WeaponData.MuzzleFlash, MeshComp, WeaponData.ParticleSpawnLocation,
+                                                   FVector::ZeroVector,
+                                                   MeshComp->GetSocketRotation(WeaponData.ParticleSpawnLocation),
+                                                   FVector::OneVector);
+        }
+
+        // Spawning the firing sound
+        if(WeaponData.bSilenced)
+        {
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData.SilencedSound, TraceStart);
+        }
+        else
+        {
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData.FireSound, TraceStart);
+        }
+
+
+        // Spawning the ejection bullets
+        FRotator EjectionSpawnVector = FRotator::ZeroRotator;
+        EjectionSpawnVector.Yaw = 270.0f;
+        UNiagaraFunctionLibrary::SpawnSystemAttached(EjectedCasing, MagazineAttachment, FName("ejection_port"),
+                                                     FVector::ZeroVector, EjectionSpawnVector,
+                                                     EAttachLocation::SnapToTarget, true, true);
+
+        // Stopping the recoil timelines if we don't have automatic fire
+        if (!WeaponData.bAutomaticFire)
+        {
+            VerticalRecoilTimeline.Stop();
+            HorizontalRecoilTimeline.Stop();
+            RecoilRecovery();
+        }
+    }
+    else if (bCanFire && !bIsReloading)
+    {
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData.EmptyFireSound, MeshComp->GetSocketLocation(WeaponData.MuzzleLocation));
+        // Clearing the ShotDelay timer so that we don't have a constant ticking when the player has no ammo, just a single click
+        GetWorldTimerManager().ClearTimer(ShotDelay);
     }
     
 }

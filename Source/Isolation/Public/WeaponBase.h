@@ -537,6 +537,24 @@ struct FStaticWeaponData : public FTableRowBase
 	/** Empty firing sound */
 	UPROPERTY(EditDefaultsOnly, Category = "Sound bases", meta=(EditCondition="!bHasAttachments"))
 	USoundBase* EmptyFireSound;
+
+	/** AI */
+	
+	/** The socket on AI characters that this weapon attaches to */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	FName AiAttachmentSocketName;
+
+	/** The damage that AI enemies will do when wielding this weapons */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float AiDamage;
+
+	/** The pitch variation applied to the bullet as it leaves the barrel */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float AiPitchVariation;
+	
+	/** The yaw variation applied to the bullet as it leaves the barrel */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float AiYawVariation;
 	
 };
 
@@ -565,6 +583,9 @@ public:
 	
 	/** Starts firing the gun (sets the timer for automatic fire) */
 	void StartFire();
+
+	/** Starts firing the gun in the case of an AI using it, targeting the TargetActor */
+	void StartAiFire();
 	
 	/** Stops the timer that allows for automatic fire */
 	void StopFire();
@@ -638,7 +659,10 @@ private:
 	AWeaponBase();
 	
 	/** Spawns the line trace that deals damage and applies sound/visual effects */
-	void Fire();	
+	void Fire();
+
+	/** Handles firing logic for AI enemies wielding this weapon */
+	void AiFire();
 
 	/** Applies recoil to the player controller */
 	void Recoil();

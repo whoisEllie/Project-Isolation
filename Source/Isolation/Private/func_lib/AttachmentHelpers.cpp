@@ -3,7 +3,7 @@
 #include "func_lib/AttachmentHelpers.h"
 #include "Math/UnrealMathUtility.h"	
 
-TArray<FName> FAttachmentHelpers::RandomiseAllAttachments(UDataTable* AttachmentDataTable) const
+TArray<FName> FAttachmentHelpers::RandomiseAllAttachments(UDataTable* AttachmentDataTable)
 {
 	TArray<FString> BarrelAttachments;
 	TArray<FString> MagazineAttachments;
@@ -50,7 +50,7 @@ TArray<FName> FAttachmentHelpers::RandomiseAllAttachments(UDataTable* Attachment
 }
 
 
-TArray<FName> FAttachmentHelpers::ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments) const
+TArray<FName> FAttachmentHelpers::ReplaceIncompatibleAttachments(UDataTable* AttachmentDataTable, TArray<FName> CurrentAttachments)
 {
 	TArray<FString> BarrelAttachments;
 	TArray<FString> MagazineAttachments;

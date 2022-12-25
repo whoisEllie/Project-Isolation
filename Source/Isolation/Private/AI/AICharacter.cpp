@@ -2,6 +2,8 @@
 
 
 #include "AI/AICharacter.h"
+#include "func_lib/AttachmentHelpers.h"
+#include "AI/AICharacterController.h"
 
 AAICharacter::AAICharacter()
 {
@@ -10,34 +12,44 @@ AAICharacter::AAICharacter()
 
 void AAICharacter::BeginPlay()
 {
+	Super::BeginPlay();
+	
 	if (StarterWeapon)
 	{
 		UpdateWeapon(StarterWeapon);
 	}
 }
 
-void AAICharacter::UpdateWeapon(const TSubclassOf<ABaseAIWeapon> NewWeapon) const
+void AAICharacter::UpdateWeapon(const TSubclassOf<AWeaponBase> NewWeapon)
 {
 	 // Determining spawn parameters (forcing the weapon to spawn at all times)
     FActorSpawnParameters SpawnParameters;
     SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
     // Spawns the new weapon and sets the enemy AI as it's owner
-    ABaseAIWeapon* SpawnedWeapon = GetWorld()->SpawnActor<ABaseAIWeapon>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
-    if (SpawnedWeapon)
+    CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
+    if (CurrentWeapon)
     {
     	// Placing the new weapon at the correct location and finishing up it's initialisation
-        SpawnedWeapon->SetOwner(GetOwner());
-    	SpawnedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SpawnedWeapon->GetAIWeaponData()->WeaponAttachmentSocketName);
-        SpawnedWeapon->SpawnAttachments();
+        CurrentWeapon->SetOwner(this);
+    	CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->GetStaticWeaponData()->AiAttachmentSocketName);
+    	CurrentWeapon->GetRuntimeWeaponData()->WeaponAttachments = FAttachmentHelpers::ReplaceIncompatibleAttachments(CurrentWeapon->GetStaticWeaponData()->AttachmentsDataTable, FAttachmentHelpers::RandomiseAllAttachments(CurrentWeapon->GetStaticWeaponData()->AttachmentsDataTable));
+        CurrentWeapon->SpawnAttachments();
     }
 }
 
 void AAICharacter::StartFire()
 {
-	CurrentWeapon->Fire();
+	CurrentWeapon->StartAiFire();
 }
 
 void AAICharacter::StopFire()
 {
+}
+
+void AAICharacter::GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const
+{
+	Super::GetActorEyesViewPoint(OutLocation, OutRotation);
+	OutLocation = GetMesh()->GetSocketLocation("HeadSocket");
+	OutRotation = GetMesh()->GetSocketRotation("HeadSocket");
 }
