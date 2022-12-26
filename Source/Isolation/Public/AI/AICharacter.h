@@ -28,7 +28,7 @@ public:
 	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
 
 	UFUNCTION(BlueprintCallable, Category = "AI Character")
-	void StartFire();
+	void StartFire(int ShotsToTake);
 
 	UFUNCTION(BlueprintCallable, Category = "AI Character")
 	void StopFire();

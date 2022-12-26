@@ -246,6 +246,14 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::magazine"))
 	UNiagaraSystem* WeaponDestroyedParticleSystem;
 
+	/** The rate of fire of this magazine attachment when it is controlled by AI */
+	UPROPERTY(EditDefaultsOnly, Category = "AI", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
+	float AiFireRate;
+
+	/** The damage that this weapon should do per shot */	
+	UPROPERTY(EditDefaultsOnly, Category = "AI", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
+	float AiDamageOverride;
+	
 	/** The offset applied to the camera to align with the sights */
 	UPROPERTY(EditDefaultsOnly, Category = "Sights", meta=(EditCondition="AttachmentType == EAttachmentType::Sights"))
 	float VerticalCameraOffset;
@@ -555,7 +563,10 @@ struct FStaticWeaponData : public FTableRowBase
 	/** The yaw variation applied to the bullet as it leaves the barrel */
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	float AiYawVariation;
-	
+
+	/** The rate of fire of the weapon when wielded by an AI */ 
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float AiRateOfFire;
 };
 
 UCLASS()
@@ -585,7 +596,7 @@ public:
 	void StartFire();
 
 	/** Starts firing the gun in the case of an AI using it, targeting the TargetActor */
-	void StartAiFire();
+	void AiFire(int Shots);
 	
 	/** Stops the timer that allows for automatic fire */
 	void StopFire();
@@ -807,6 +818,10 @@ private:
 	UPROPERTY()
 	FHitResult Hit;
 
+	/** Hit results variable set when a multi line trace is spawned, used for AI traces */
+	UPROPERTY()
+	TArray<FHitResult> AiHitResults;
+
 	/** internal variable used to keep track of the final damage value after modifications */
 	float FinalDamage;
 	
@@ -862,6 +877,16 @@ private:
 	/** The offset given to the camera in order to align the gun sights */
 	UPROPERTY()
 	float VerticalCameraOffset;
+
+	/** AI */
+
+	/** The amount of shots that the AI wants to take */
+	UPROPERTY()
+	int ShotsToTake;
+
+	/** The amount of shots that the AI has taken */
+	UPROPERTY()
+	int ShotsTaken;
 	
 	/** Local instances of animations for use in AnimBP (Set from WeaponData and/or Attachments) */
 

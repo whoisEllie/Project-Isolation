@@ -38,9 +38,9 @@ void AAICharacter::UpdateWeapon(const TSubclassOf<AWeaponBase> NewWeapon)
     }
 }
 
-void AAICharacter::StartFire()
+void AAICharacter::StartFire(int ShotsToTake)
 {
-	CurrentWeapon->StartAiFire();
+	CurrentWeapon->AiFire(ShotsToTake);
 }
 
 void AAICharacter::StopFire()

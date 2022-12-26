@@ -243,6 +243,8 @@ void AWeaponBase::SpawnAttachments()
                     WeaponData.WeaponDestroyedHandsAnim = AttachmentData->WeaponDestroyedHandsAnim;
                     WeaponData.WeaponDestroyedParticleSystem = AttachmentData->WeaponDestroyedParticleSystem;
                     WeaponData.AccuracyDebuff = AttachmentData->AccuracyDebuff;
+                    WeaponData.AiRateOfFire = AttachmentData->AiFireRate;
+                    WeaponData.AiDamage = AttachmentData->AiDamageOverride;
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
                 {
@@ -321,12 +323,14 @@ void AWeaponBase::StartFire()
     
 }
 
-void AWeaponBase::StartAiFire()
+void AWeaponBase::AiFire(int Shots)
 {
     if (bCanFire)
     {
+        ShotsToTake = Shots;
+        
         // sets a timer for firing the weapon - if bAutomaticFire is true then this timer will repeat until cleared by StopFire(), leading to fully automatic fire
-        GetWorldTimerManager().SetTimer(ShotDelay, this, &AWeaponBase::AiFire, WeaponData.RateOfFire, WeaponData.bAutomaticFire, 0.0f);
+        GetWorldTimerManager().SetTimer(ShotDelay, this, &AWeaponBase::AiFire, 60/WeaponData.AiRateOfFire, WeaponData.bAutomaticFire, 0.0f);
 
         if (bShowDebug)
         {
@@ -582,8 +586,8 @@ void AWeaponBase::AiFire()
     AAICharacter* OwnerCharacter = Cast<AAICharacter>(GetOwner());
     
     // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
-    if(bCanFire && !bIsReloading && IsValid(TargetActor) && IsValid(OwnerCharacter))
-    {
+    if(bCanFire && !bIsReloading && IsValid(TargetActor) && IsValid(OwnerCharacter) && ShotsTaken < ShotsToTake)
+    {        
         // Printing debug strings
         if(bShowDebug)
         {
@@ -618,45 +622,52 @@ void AWeaponBase::AiFire()
             }
 
             FVector EndPoint = TraceEnd;
-
+            
             // Drawing a line trace based on the parameters calculated previously 
-            if(GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ENEMYWEAPON_TRACE, QueryParams))
-            {                
-                // Drawing debug line trace
-                if (bShowDebug)
-                {
-                    DrawDebugLine(
-                        GetWorld(), (WeaponData.bHasAttachments
-                                         ? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation)
-                                         : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation)), Hit.Location,
-                        FColor::Red, false, 10.0f, 0.0f, 2.0f);
-                }
-                
-                if (Hit.PhysMaterial.Get() == WeaponData.HeadshotDamageSurface)
-                {
-                    FinalDamage = (WeaponData.BaseDamage + DamageModifier) * WeaponData.HeadshotMultiplier;
-                }
-
-                AActor* HitActor = Hit.GetActor();
-
-                // Applying the previously set damage to the hit actor
-                UGameplayStatics::ApplyPointDamage(HitActor, WeaponData.AiDamage, TraceDirection, Hit,
-                                                   GetInstigatorController(), this, DamageType);
-
-                EndPoint = Hit.Location;
-            }
-            else
+            GetWorld()->LineTraceMultiByChannel(AiHitResults, TraceStart, TraceEnd, ENEMYWEAPON_TRACE, QueryParams);
+            
+            for (FHitResult AiHit : AiHitResults)
             {
-                // Drawing debug line trace
-                if (bShowDebug)
+                if (AiHit.bBlockingHit)
                 {
-                    DrawDebugLine(
-                        GetWorld(), (WeaponData.bHasAttachments
-                                         ? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation)
-                                         : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation)), TraceEnd,
-                        FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                    // Drawing debug line trace
+                    if (bShowDebug)
+                    {
+                        DrawDebugLine(
+                            GetWorld(), (WeaponData.bHasAttachments
+                                             ? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation)
+                                             : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation)), AiHit.Location,
+                            FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                    }
+            
+                    if (AiHit.PhysMaterial.Get() == WeaponData.HeadshotDamageSurface)
+                    {
+                        FinalDamage = (WeaponData.BaseDamage + DamageModifier) * WeaponData.HeadshotMultiplier;
+                    }
+
+                    AActor* HitActor = AiHit.GetActor();
+
+                    // Applying the previously set damage to the hit actor
+                    UGameplayStatics::ApplyPointDamage(HitActor, WeaponData.AiDamage, TraceDirection, AiHit,
+                                                       GetInstigatorController(), this, DamageType);
+
+                    EndPoint = AiHit.Location;
+                }
+                else
+                {
+                    Cast<AFPSCharacter>(AiHit.Actor)->PlayFlybySounds(AiHit);
+                    // Drawing debug line trace
+                    if (bShowDebug)
+                    {
+                        DrawDebugLine(
+                            GetWorld(), (WeaponData.bHasAttachments
+                                             ? BarrelAttachment->GetSocketLocation(WeaponData.MuzzleLocation)
+                                             : MeshComp->GetSocketLocation(WeaponData.MuzzleLocation)), TraceEnd,
+                            FColor::Red, false, 10.0f, 0.0f, 2.0f);
+                    }
                 }
             }
+            
 
             const FRotator ParticleRotation = (EndPoint - (WeaponData.bHasAttachments
                                                                ? BarrelAttachment->GetSocketLocation(
