@@ -30,17 +30,66 @@ void AAICharacter::UpdateWeapon(const TSubclassOf<AWeaponBase> NewWeapon)
     CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
     if (CurrentWeapon)
     {
+
+    	
     	// Placing the new weapon at the correct location and finishing up it's initialisation
         CurrentWeapon->SetOwner(this);
     	CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeapon->GetStaticWeaponData()->AiAttachmentSocketName);
-    	CurrentWeapon->GetRuntimeWeaponData()->WeaponAttachments = FAttachmentHelpers::ReplaceIncompatibleAttachments(CurrentWeapon->GetStaticWeaponData()->AttachmentsDataTable, FAttachmentHelpers::RandomiseAllAttachments(CurrentWeapon->GetStaticWeaponData()->AttachmentsDataTable));
+
+		FRuntimeWeaponData DataStruct;
+    	
+    	DataStruct.WeaponAttachments = FAttachmentHelpers::ReplaceIncompatibleAttachments(CurrentWeapon->GetStaticWeaponData()->AttachmentsDataTable, FAttachmentHelpers::RandomiseAllAttachments(CurrentWeapon->GetStaticWeaponData()->AttachmentsDataTable));
+
+    	// Applying default values if the weapon doesn't use attachments
+		DataStruct.AmmoType = CurrentWeapon->GetStaticWeaponData()->AmmoToUse;
+		DataStruct.ClipCapacity = CurrentWeapon->GetStaticWeaponData()->ClipCapacity;
+		DataStruct.ClipSize = CurrentWeapon->GetStaticWeaponData()->ClipSize;
+		DataStruct.WeaponHealth = FMath::FRandRange(10.0f, 75.0f);
+    	
+    	// Getting a reference to our Weapon Data table in order to see if we have attachments
+        if (const FStaticWeaponData* WeaponData = CurrentWeapon->GetWeaponDataTable()->FindRow<FStaticWeaponData>(FName(CurrentWeapon->GetDataTableNameRef()), FString(CurrentWeapon->GetDataTableNameRef()),true))
+        {
+	        // Spawning attachments if the weapon has them and the attachments table exists
+	        if (WeaponData->bHasAttachments && CurrentWeapon->GetStaticWeaponData()->AttachmentsDataTable)
+	        {
+		        // Iterating through all the attachments in AttachmentArray
+		        for (FName RowName : DataStruct.WeaponAttachments)
+		        {
+			        // Searching the data table for the attachment
+			        const FAttachmentData* AttachmentData = CurrentWeapon->GetStaticWeaponData()->AttachmentsDataTable->FindRow<FAttachmentData>(
+				        RowName, RowName.ToString(), true);
+
+			        // Applying the effects of the attachment
+			        if (AttachmentData)
+			        {
+				        if (AttachmentData->AttachmentType == EAttachmentType::Barrel)
+				        {
+				        }
+				        else if (AttachmentData->AttachmentType == EAttachmentType::Magazine)
+				        {
+					        // Pulling default values from the Magazine attachment type
+						    DataStruct.AmmoType = AttachmentData->AmmoToUse;
+						    DataStruct.ClipCapacity = AttachmentData->ClipCapacity;
+						    DataStruct.ClipSize = AttachmentData->ClipSize;
+						    DataStruct.WeaponHealth = FMath::FRandRange(10.0f, 75.0f);
+				        }
+			        }
+		        }
+	        }
+		
+        }
+    	CurrentWeapon->SetRuntimeWeaponData(DataStruct);
         CurrentWeapon->SpawnAttachments();
+
+    	//TODO: Visibility check for AI, to make sure the player is still visible
+    	//TODO: AI Request firing tokens from AI subsystem
+    	//TODO: Handle AI dropping weapon pickups when they die
     }
 }
 
-void AAICharacter::StartFire(int ShotsToTake)
+void AAICharacter::StartFire()
 {
-	CurrentWeapon->AiFire(ShotsToTake);
+	CurrentWeapon->ScheduleAiFire();
 }
 
 void AAICharacter::StopFire()

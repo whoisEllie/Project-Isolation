@@ -154,8 +154,6 @@ void UInventoryComponent::UpdateWeapon(const TSubclassOf<AWeaponBase> NewWeapon,
         }
     }
 
-
-	
     // Spawns the new weapon and sets the player as it's owner
     AWeaponBase* SpawnedWeapon = GetWorld()->SpawnActor<AWeaponBase>(NewWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParameters);
     if (SpawnedWeapon)

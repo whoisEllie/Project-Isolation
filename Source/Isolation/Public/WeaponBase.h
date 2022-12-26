@@ -75,6 +75,47 @@ struct FRuntimeWeaponData
 	TArray<FName> WeaponAttachments;
 };
 
+USTRUCT(BlueprintType)
+struct FAiWeaponData
+{
+	GENERATED_BODY()
+	
+	/** AI */
+
+	/** The damage that AI enemies will do when wielding this weapons */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float AiDamage;
+
+	/** The pitch variation applied to the bullet as it leaves the barrel */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float MinAiPitchVariation;
+
+	/** The pitch variation applied to the bullet as it leaves the barrel */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float MaxAiPitchVariation;
+
+	float AiPitchVariation;
+	
+	/** The yaw variation applied to the bullet as it leaves the barrel */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float MinAiYawVariation;
+
+	/** The yaw variation applied to the bullet as it leaves the barrel */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float MaxAiYawVariation;
+
+	float AiYawVariation;
+
+	/** The amount which is subtracted from the pitch/yaw variation each shot until the AI stops firing, or the min variation is reached */
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float PerShotAccuracyImprovement = 0.1;
+	
+	/** The rate of fire of the weapon when wielded by an AI */ 
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	float AiRateOfFire;
+	
+};
+
 /** Struct holding all data required by an attachment */
 USTRUCT(BlueprintType)
 struct FAttachmentData : public FTableRowBase
@@ -246,13 +287,11 @@ struct FAttachmentData : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::magazine"))
 	UNiagaraSystem* WeaponDestroyedParticleSystem;
 
-	/** The rate of fire of this magazine attachment when it is controlled by AI */
-	UPROPERTY(EditDefaultsOnly, Category = "AI", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
-	float AiFireRate;
+	/** AI */ 
 
-	/** The damage that this weapon should do per shot */	
-	UPROPERTY(EditDefaultsOnly, Category = "AI", meta=(EditCondition="AttachmentType == EAttachmentType::Magazine"))
-	float AiDamageOverride;
+	/** The weapon data for this  */
+	UPROPERTY(EditDefaultsOnly, Category = "Magazine", meta=(EditCondition="AttachmentType == EAttachmentType::magazine"))
+	FAiWeaponData AiWeaponData;
 	
 	/** The offset applied to the camera to align with the sights */
 	UPROPERTY(EditDefaultsOnly, Category = "Sights", meta=(EditCondition="AttachmentType == EAttachmentType::Sights"))
@@ -547,27 +586,17 @@ struct FStaticWeaponData : public FTableRowBase
 	USoundBase* EmptyFireSound;
 
 	/** AI */
-	
+
 	/** The socket on AI characters that this weapon attaches to */
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	FName AiAttachmentSocketName;
 
-	/** The damage that AI enemies will do when wielding this weapons */
+	/** AI Data Struct */	
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	float AiDamage;
-
-	/** The pitch variation applied to the bullet as it leaves the barrel */
-	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	float AiPitchVariation;
-	
-	/** The yaw variation applied to the bullet as it leaves the barrel */
-	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	float AiYawVariation;
-
-	/** The rate of fire of the weapon when wielded by an AI */ 
-	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	float AiRateOfFire;
+	FAiWeaponData AiWeaponData;
 };
+
+
 
 UCLASS()
 class ISOLATION_API AWeaponBase : public AActor
@@ -577,12 +606,12 @@ class ISOLATION_API AWeaponBase : public AActor
 public:
 
 	/** Returns the runtime weapon data of the weapon */
-	FRuntimeWeaponData* GetRuntimeWeaponData() { return &GeneralWeaponData; }
+	FRuntimeWeaponData* GetRuntimeWeaponData() { return &RuntimeWeaponData; }
 
 	/** Update the weapon's runtime weapon data
 	 *	@param NewWeaponData The weapons new runtime weapon data 
 	 */
-	void SetRuntimeWeaponData(const FRuntimeWeaponData NewWeaponData) { GeneralWeaponData = NewWeaponData; }
+	void SetRuntimeWeaponData(const FRuntimeWeaponData NewWeaponData) { RuntimeWeaponData = NewWeaponData; }
 
 	/** Returns a reference to the static weapon data of the weapon */
 	FStaticWeaponData* GetStaticWeaponData() { return &WeaponData; }
@@ -591,12 +620,14 @@ public:
 	 *	@param NewWeaponData The weapon's new static weapon data
 	 */
 	void SetStaticWeaponData(const FStaticWeaponData NewWeaponData) { WeaponData = NewWeaponData; }
-	
+
+	UDataTable* GetWeaponDataTable() const { return WeaponDataTable; }
+
 	/** Starts firing the gun (sets the timer for automatic fire) */
 	void StartFire();
 
 	/** Starts firing the gun in the case of an AI using it, targeting the TargetActor */
-	void AiFire(int Shots);
+	void ScheduleAiFire();
 	
 	/** Stops the timer that allows for automatic fire */
 	void StopFire();
@@ -617,6 +648,9 @@ public:
 
 	/** Whether the weapon is currently in it's reload state */
 	bool IsReloading() const { return bIsReloading; }
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void WeaponIsEmpty();
 
 	/** Update the weapon's recovery behaviour
 	 *	@param bNewShouldRecover Whether the weapon should recover from recoil or not
@@ -750,7 +784,7 @@ private:
 
 #pragma region INTERNAL_VARIABLES
 	
-	FRuntimeWeaponData GeneralWeaponData;
+	FRuntimeWeaponData RuntimeWeaponData;
 
 	/** The skeletal mesh used to hold the current barrel attachment */
 	UPROPERTY()

@@ -24,7 +24,7 @@ void AWeaponBase::SetWeaponDestroyed()
     
     if (WeaponData.bHasAttachments)
     {
-        for (FName RowName : GeneralWeaponData.WeaponAttachments)
+        for (FName RowName : RuntimeWeaponData.WeaponAttachments)
         {
             // Going through each of our attachments and updating our static weapon data accordingly
             AttachmentData = WeaponData.AttachmentsDataTable->FindRow<FAttachmentData>(
@@ -200,7 +200,7 @@ void AWeaponBase::SpawnAttachments()
 {
     if (WeaponData.bHasAttachments)
     {
-        for (FName RowName : GeneralWeaponData.WeaponAttachments)
+        for (FName RowName : RuntimeWeaponData.WeaponAttachments)
         {
             // Going through each of our attachments and updating our static weapon data accordingly
             AttachmentData = WeaponData.AttachmentsDataTable->FindRow<FAttachmentData>(RowName, RowName.ToString(), true);
@@ -243,8 +243,8 @@ void AWeaponBase::SpawnAttachments()
                     WeaponData.WeaponDestroyedHandsAnim = AttachmentData->WeaponDestroyedHandsAnim;
                     WeaponData.WeaponDestroyedParticleSystem = AttachmentData->WeaponDestroyedParticleSystem;
                     WeaponData.AccuracyDebuff = AttachmentData->AccuracyDebuff;
-                    WeaponData.AiRateOfFire = AttachmentData->AiFireRate;
-                    WeaponData.AiDamage = AttachmentData->AiDamageOverride;
+                    WeaponData.AiWeaponData = AttachmentData->AiWeaponData;
+                    RuntimeWeaponData.ClipSize = AttachmentData->ClipSize;
                 }
                 else if (AttachmentData->AttachmentType == EAttachmentType::Sights)
                 {
@@ -323,14 +323,15 @@ void AWeaponBase::StartFire()
     
 }
 
-void AWeaponBase::AiFire(int Shots)
+void AWeaponBase::ScheduleAiFire()
 {
     if (bCanFire)
     {
-        ShotsToTake = Shots;
-        
         // sets a timer for firing the weapon - if bAutomaticFire is true then this timer will repeat until cleared by StopFire(), leading to fully automatic fire
-        GetWorldTimerManager().SetTimer(ShotDelay, this, &AWeaponBase::AiFire, 60/WeaponData.AiRateOfFire, WeaponData.bAutomaticFire, 0.0f);
+        GetWorldTimerManager().SetTimer(ShotDelay, this, &AWeaponBase::AiFire, 60/WeaponData.AiWeaponData.AiRateOfFire, true, 0.0f);
+
+        WeaponData.AiWeaponData.AiPitchVariation = WeaponData.AiWeaponData.MaxAiPitchVariation;
+        WeaponData.AiWeaponData.AiYawVariation = WeaponData.AiWeaponData.MaxAiYawVariation;
 
         if (bShowDebug)
         {
@@ -346,7 +347,7 @@ void AWeaponBase::StartRecoil()
 
     ShotsFired = 0;
     
-    if (bCanFire && GeneralWeaponData.ClipSize > 0 && !bIsReloading && CharacterController)
+    if (bCanFire && RuntimeWeaponData.ClipSize > 0 && !bIsReloading && CharacterController)
     {
         // Plays the recoil timelines and saves the current control rotation in order to recover to it
         VerticalRecoilTimeline.PlayFromStart();
@@ -377,18 +378,18 @@ void AWeaponBase::Fire()
     const AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
     
     // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
-    if(bCanFire && GeneralWeaponData.ClipSize > 0 && !bIsReloading)
+    if(bCanFire && RuntimeWeaponData.ClipSize > 0 && !bIsReloading)
     {
         // Printing debug strings
         if(bShowDebug)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Fire", true);
-            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt(GeneralWeaponData.ClipSize > 0 && !bIsReloading), true);
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString::FromInt(RuntimeWeaponData.ClipSize > 0 && !bIsReloading), true);
         }
         
 
         // Subtracting from the ammunition count of the weapon
-        GeneralWeaponData.ClipSize -= 1;
+        RuntimeWeaponData.ClipSize -= 1;
 
         const int NumberOfShots = WeaponData.bIsShotgun? WeaponData.ShotgunPellets : 1;
         // We run this for the number of bullets/projectiles per shot, in order to support shotguns
@@ -560,8 +561,8 @@ void AWeaponBase::Fire()
         }
 
         // Applying weapon damage
-        GeneralWeaponData.WeaponHealth -= WeaponData.PerShotDegradation;
-        if (GeneralWeaponData.WeaponHealth <= 0)
+        RuntimeWeaponData.WeaponHealth -= WeaponData.PerShotDegradation;
+        if (RuntimeWeaponData.WeaponHealth <= 0)
         {
            PlayerCharacter->GetInventoryComponent()->BeginDestroyCurrentWeapon(WeaponData.WeaponDestroyedHandsAnim, WeaponData.WeaponDestroyedParticleSystem); 
         }
@@ -584,16 +585,19 @@ void AWeaponBase::AiFire()
     // Casting to the game instance (which stores all the ammunition and health variables)
     AActor* TargetActor = Cast<AAICharacterController>(Cast<AAICharacter>(GetOwner())->GetController())->GetTargetActor();
     AAICharacter* OwnerCharacter = Cast<AAICharacter>(GetOwner());
+
+    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::FromInt(RuntimeWeaponData.ClipSize));
     
     // Allowing the gun to fire if it has ammunition, is not reloading and the bCanFire variable is true
-    if(bCanFire && !bIsReloading && IsValid(TargetActor) && IsValid(OwnerCharacter) && ShotsTaken < ShotsToTake)
+    if(!bIsReloading && IsValid(TargetActor) && IsValid(OwnerCharacter) && RuntimeWeaponData.ClipSize > 0)
     {        
         // Printing debug strings
         if(bShowDebug)
         {
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, "Ai Fire", true);
         }
-        
+
+        RuntimeWeaponData.ClipSize -= 1;
 
         const int NumberOfShots = WeaponData.bIsShotgun? WeaponData.ShotgunPellets : 1;
         // We run this for the number of bullets/projectiles per shot, in order to support shotguns
@@ -604,11 +608,11 @@ void AWeaponBase::AiFire()
             TraceStartRotation = UKismetMathLibrary::FindLookAtRotation(MeshComp->GetSocketLocation(WeaponData.MuzzleLocation), TargetActor->GetActorLocation()); 
 
             TraceStartRotation.Pitch += FMath::FRandRange(
-                -((WeaponData.AiPitchVariation + WeaponPitchModifier)),
-                (WeaponData.AiPitchVariation + WeaponPitchModifier));
+                -((WeaponData.AiWeaponData.AiPitchVariation + WeaponPitchModifier)),
+                (WeaponData.AiWeaponData.AiPitchVariation + WeaponPitchModifier));
             TraceStartRotation.Yaw += FMath::FRandRange(
-                -((WeaponData.AiYawVariation + WeaponYawModifier)),
-                (WeaponData.AiYawVariation + WeaponYawModifier));
+                -((WeaponData.AiWeaponData.AiYawVariation + WeaponYawModifier)),
+                (WeaponData.AiWeaponData.AiYawVariation + WeaponYawModifier));
             TraceDirection = TraceStartRotation.Vector();
             TraceEnd = TraceStart + (TraceDirection * (WeaponData.bIsShotgun
                                                            ? WeaponData.ShotgunRange
@@ -648,7 +652,7 @@ void AWeaponBase::AiFire()
                     AActor* HitActor = AiHit.GetActor();
 
                     // Applying the previously set damage to the hit actor
-                    UGameplayStatics::ApplyPointDamage(HitActor, WeaponData.AiDamage, TraceDirection, AiHit,
+                    UGameplayStatics::ApplyPointDamage(HitActor, WeaponData.AiWeaponData.AiDamage, TraceDirection, AiHit,
                                                        GetInstigatorController(), this, DamageType);
 
                     EndPoint = AiHit.Location;
@@ -713,6 +717,10 @@ void AWeaponBase::AiFire()
             }
         }
 
+        // Updating Ai Accuracy
+        WeaponData.AiWeaponData.AiPitchVariation = FMath::Clamp(WeaponData.AiWeaponData.AiPitchVariation - WeaponData.AiWeaponData.PerShotAccuracyImprovement, WeaponData.AiWeaponData.MinAiPitchVariation, WeaponData.AiWeaponData.MaxAiPitchVariation);
+        WeaponData.AiWeaponData.AiYawVariation = FMath::Clamp(WeaponData.AiWeaponData.AiYawVariation - WeaponData.AiWeaponData.PerShotAccuracyImprovement, WeaponData.AiWeaponData.MinAiYawVariation, WeaponData.AiWeaponData.MaxAiYawVariation);
+
         // Spawning the muzzle flash particle
         if (WeaponData.bHasAttachments)
         {
@@ -759,6 +767,7 @@ void AWeaponBase::AiFire()
     else if (bCanFire && !bIsReloading)
     {
         UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponData.EmptyFireSound, MeshComp->GetSocketLocation(WeaponData.MuzzleLocation));
+        WeaponIsEmpty();
         // Clearing the ShotDelay timer so that we don't have a constant ticking when the player has no ammo, just a single click
         GetWorldTimerManager().ClearTimer(ShotDelay);
     }
@@ -812,12 +821,12 @@ void AWeaponBase::Reload()
 
     // Checking if we are not reloading, if a reloading montage exists, and if there is any point in reloading
     // (current ammunition does not match maximum magazine capacity and there is spare ammunition to load into the gun)
-    if (!bIsReloading && CharacterController->AmmoMap[GeneralWeaponData.AmmoType] > 0 && (GeneralWeaponData.ClipSize !=
-        (GeneralWeaponData.ClipCapacity + Value)))
+    if (!bIsReloading && CharacterController->AmmoMap[RuntimeWeaponData.AmmoType] > 0 && (RuntimeWeaponData.ClipSize !=
+        (RuntimeWeaponData.ClipCapacity + Value)))
     {
         // Differentiating between having no ammunition in the magazine (having to chamber a round after reloading)
         // or not, and playing an animation relevant to that
-        if (GeneralWeaponData.ClipSize <= 0 && WeaponData.EmptyPlayerReload)
+        if (RuntimeWeaponData.ClipSize <= 0 && WeaponData.EmptyPlayerReload)
         {
             if (WeaponData.bHasAttachments)
             {
@@ -879,7 +888,7 @@ void AWeaponBase::UpdateAmmo()
     int Value = 0;
 
     // Checking to see if there is already ammunition within the gun and that this particular gun supports chambered rounds
-    if (GeneralWeaponData.ClipSize > 0 && WeaponData.bCanBeChambered)
+    if (RuntimeWeaponData.ClipSize > 0 && WeaponData.bCanBeChambered)
     {
         Value = 1;
 
@@ -891,27 +900,27 @@ void AWeaponBase::UpdateAmmo()
     
     // First, we set Temp, which keeps track of the difference between the maximum ammunition and the amount that there
     // is currently loaded (i.e. how much ammunition we need to reload into the gun)
-    const int Temp = GeneralWeaponData.ClipCapacity - GeneralWeaponData.ClipSize;
+    const int Temp = RuntimeWeaponData.ClipCapacity - RuntimeWeaponData.ClipSize;
     // Making sure we have enough ammunition to reload
-    if (CharacterController->AmmoMap[GeneralWeaponData.AmmoType] >= Temp + Value)
+    if (CharacterController->AmmoMap[RuntimeWeaponData.AmmoType] >= Temp + Value)
     {
         // Then, we update the weapon to have full ammunition, plus the value (1 if there is a bullet in the chamber, 0 if not)
-        GeneralWeaponData.ClipSize = GeneralWeaponData.ClipCapacity + Value;
+        RuntimeWeaponData.ClipSize = RuntimeWeaponData.ClipCapacity + Value;
         // Finally, we remove temp (and an extra bullet, if one is chambered) from the player's ammunition store
-        CharacterController->AmmoMap[GeneralWeaponData.AmmoType] -= (Temp + Value);
+        CharacterController->AmmoMap[RuntimeWeaponData.AmmoType] -= (Temp + Value);
     }
     // If we don't, add the remaining ammunition to the clip, and set the remaining ammunition to 0
     else
     {
-        GeneralWeaponData.ClipSize = GeneralWeaponData.ClipSize + CharacterController->AmmoMap[GeneralWeaponData.AmmoType];
-        CharacterController->AmmoMap[GeneralWeaponData.AmmoType] = 0;
+        RuntimeWeaponData.ClipSize = RuntimeWeaponData.ClipSize + CharacterController->AmmoMap[RuntimeWeaponData.AmmoType];
+        CharacterController->AmmoMap[RuntimeWeaponData.AmmoType] = 0;
     }
 
     // Print debug strings
     if(bShowDebug)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(GeneralWeaponData.ClipSize), true);
-        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->AmmoMap[GeneralWeaponData.AmmoType]), true);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(RuntimeWeaponData.ClipSize), true);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(CharacterController->AmmoMap[RuntimeWeaponData.AmmoType]), true);
     }
 
     // Resetting bIsReloading and allowing the player to fire the gun again
